@@ -1,0 +1,99 @@
+.Tile {
+  background-color: #4a7c59;
+  border: 3px solid #2d4a35;
+  border-radius: 8px;
+  padding: 8px;
+  position: relative;
+}
+
+/* Label showing tile number */
+.tile-label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Grid of spaces within each tile */
+.spaces-grid {
+  display: grid;
+  gap: 4px;
+}
+
+/* Square tiles have 3×3 grid of spaces */
+.Tile[data-shape="square"] .spaces-grid {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+/* L-shaped tiles have a custom layout */
+/* The L shape is: 3 spaces vertically + 1 exit space to the right of the bottom space */
+.Tile[data-shape="L"] .spaces-grid {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+/* Position the L-shaped tile spaces */
+.Tile[data-shape="L"] .space:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+.Tile[data-shape="L"] .space:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+}
+.Tile[data-shape="L"] .space:nth-child(3) {
+  grid-column: 1;
+  grid-row: 3;
+}
+.Tile[data-shape="L"] .space:nth-child(4) {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+/* Individual space styling */
+.space {
+  background-color: #6b9b7f;
+  border: 2px solid #5a8a6f;
+  border-radius: 4px;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 18px;
+}
+
+/* Coordinate labels */
+.coord {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+/* Exit spaces (half-spaces) */
+.space[data-exit="true"] {
+  background-color: #8b7355;
+  border-color: #6b5335;
+  opacity: 0.8;
+}
+
+/* Spaces with rocks */
+.space[data-rock="true"] {
+  background-color: #4a4a4a;
+  border-color: #3a3a3a;
+}
+
+/* Style the emoji icons */
+.rock,
+.exit {
+  font-size: 24px;
+}

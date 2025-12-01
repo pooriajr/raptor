@@ -1,0 +1,57 @@
+.Board {
+  display: grid;
+  /* 5 columns: L-tile + 3 square tiles + L-tile */
+  /* 2 rows: top row and bottom row */
+  grid-template-columns: 100px repeat(3, 200px) 100px;
+  grid-template-rows: repeat(2, 200px);
+  gap: 10px;
+  padding: 20px;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  width: fit-content;
+  margin: 20px auto;
+}
+
+/* Position the 6 square tiles in the center 2×3 grid */
+.Tile[data-shape="square"]:nth-child(1) {
+  grid-column: 2;
+  grid-row: 1;
+}
+.Tile[data-shape="square"]:nth-child(2) {
+  grid-column: 3;
+  grid-row: 1;
+}
+.Tile[data-shape="square"]:nth-child(3) {
+  grid-column: 4;
+  grid-row: 1;
+}
+.Tile[data-shape="square"]:nth-child(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+.Tile[data-shape="square"]:nth-child(5) {
+  grid-column: 3;
+  grid-row: 2;
+}
+.Tile[data-shape="square"]:nth-child(6) {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+/* Position the 4 L-shaped tiles on the left and right sides */
+.Tile[data-shape="L"]:nth-child(7) {
+  grid-column: 1;
+  grid-row: 1;
+}
+.Tile[data-shape="L"]:nth-child(8) {
+  grid-column: 1;
+  grid-row: 2;
+}
+.Tile[data-shape="L"]:nth-child(9) {
+  grid-column: 5;
+  grid-row: 1;
+}
+.Tile[data-shape="L"]:nth-child(10) {
+  grid-column: 5;
+  grid-row: 2;
+}
