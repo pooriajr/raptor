@@ -6,7 +6,12 @@ import type { Tile as TileType } from "./types/board.ts";
 // The { tile }: { tile: TileType } means "expect an object with a tile property"
 function Tile({ tile }: { tile: TileType }) {
   return (
-    <div className="Tile" data-shape={tile.shape}>
+    <div
+      className="Tile"
+      data-shape={tile.shape}
+      data-side={tile.shape === "L" ? tile.side : undefined}
+      data-exit-position={tile.shape === "L" ? tile.exitPosition : undefined}
+    >
       {/* Show tile number for debugging */}
       <div className="tile-label">Tile {tile.id}</div>
 
@@ -18,6 +23,7 @@ function Tile({ tile }: { tile: TileType }) {
             className="space"
             data-exit={space.isExit}
             data-rock={space.hasRock}
+            data-unusable={space.isUnusable}
           >
             {/* Show coordinates for debugging */}
             <span className="coord">

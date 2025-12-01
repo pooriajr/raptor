@@ -11,12 +11,13 @@
   position: absolute;
   top: 4px;
   left: 4px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: bold;
-  color: rgba(255, 255, 255, 0.5);
-  background-color: rgba(0, 0, 0, 0.3);
-  padding: 2px 6px;
-  border-radius: 3px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 10;
 }
 
 /* Grid of spaces within each tile */
@@ -31,29 +32,11 @@
   grid-template-rows: repeat(3, 1fr);
 }
 
-/* L-shaped tiles have a custom layout */
-/* The L shape is: 3 spaces vertically + 1 exit space to the right of the bottom space */
+/* L-shaped tiles are always a 3×2 grid */
+/* One column has the vertical L part, the other has 1 exit + 2 unusable spaces */
 .Tile[data-shape="L"] .spaces-grid {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(3, 1fr);
-}
-
-/* Position the L-shaped tile spaces */
-.Tile[data-shape="L"] .space:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-.Tile[data-shape="L"] .space:nth-child(2) {
-  grid-column: 1;
-  grid-row: 2;
-}
-.Tile[data-shape="L"] .space:nth-child(3) {
-  grid-column: 1;
-  grid-row: 3;
-}
-.Tile[data-shape="L"] .space:nth-child(4) {
-  grid-column: 2;
-  grid-row: 3;
 }
 
 /* Individual space styling */
@@ -90,6 +73,13 @@
 .space[data-rock="true"] {
   background-color: #4a4a4a;
   border-color: #3a3a3a;
+}
+
+/* Unusable spaces (empty grid cells in L-tiles) */
+.space[data-unusable="true"] {
+  background-color: transparent;
+  border-color: transparent;
+  visibility: hidden;
 }
 
 /* Style the emoji icons */

@@ -12,46 +12,49 @@
   margin: 20px auto;
 }
 
-/* Position the 6 square tiles in the center 2×3 grid */
-.Tile[data-shape="square"]:nth-child(1) {
-  grid-column: 2;
-  grid-row: 1;
-}
-.Tile[data-shape="square"]:nth-child(2) {
-  grid-column: 3;
-  grid-row: 1;
-}
-.Tile[data-shape="square"]:nth-child(3) {
-  grid-column: 4;
-  grid-row: 1;
-}
-.Tile[data-shape="square"]:nth-child(4) {
-  grid-column: 2;
-  grid-row: 2;
-}
-.Tile[data-shape="square"]:nth-child(5) {
-  grid-column: 3;
-  grid-row: 2;
-}
-.Tile[data-shape="square"]:nth-child(6) {
-  grid-column: 4;
-  grid-row: 2;
-}
+/* Tiles are now in visual order, so we can use simple grid auto-flow */
+/* But we need to override for specific positioning */
 
-/* Position the 4 L-shaped tiles on the left and right sides */
-.Tile[data-shape="L"]:nth-child(7) {
+/* Row 1: positions 1-5 (indices 0-4) */
+.Tile:nth-child(1) {
   grid-column: 1;
   grid-row: 1;
 }
-.Tile[data-shape="L"]:nth-child(8) {
-  grid-column: 1;
-  grid-row: 2;
+.Tile:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
 }
-.Tile[data-shape="L"]:nth-child(9) {
+.Tile:nth-child(3) {
+  grid-column: 3;
+  grid-row: 1;
+}
+.Tile:nth-child(4) {
+  grid-column: 4;
+  grid-row: 1;
+}
+.Tile:nth-child(5) {
   grid-column: 5;
   grid-row: 1;
 }
-.Tile[data-shape="L"]:nth-child(10) {
+
+/* Row 2: positions 6-10 (indices 5-9) */
+.Tile:nth-child(6) {
+  grid-column: 1;
+  grid-row: 2;
+}
+.Tile:nth-child(7) {
+  grid-column: 2;
+  grid-row: 2;
+}
+.Tile:nth-child(8) {
+  grid-column: 3;
+  grid-row: 2;
+}
+.Tile:nth-child(9) {
+  grid-column: 4;
+  grid-row: 2;
+}
+.Tile:nth-child(10) {
   grid-column: 5;
   grid-row: 2;
 }
