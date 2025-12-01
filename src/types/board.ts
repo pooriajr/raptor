@@ -149,14 +149,6 @@ export function createLShapedTile(
     }
   }
 
-  // Debug: log the tile configuration
-  console.log(`L-Tile ${id}: side=${side}, exitPosition=${exitPosition}`);
-  spaces.forEach((s, i) => {
-    console.log(
-      `  Space ${i}: (${s.coordinate.x},${s.coordinate.y}) exit=${s.isExit} unusable=${s.isUnusable}`,
-    );
-  });
-
   return {
     id,
     shape: "L",
