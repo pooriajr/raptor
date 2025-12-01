@@ -63,7 +63,6 @@ export function createLShapedTile(
 ): LTile {
   const spaces: Space[] = [];
   const exitCol = side === "left" ? 0 : 1;
-  const usableCol = side === "left" ? 1 : 0;
   const exitRow = exitPosition === "top" ? 0 : 2;
 
   for (let y = 0; y < 3; y++) {

@@ -2,13 +2,8 @@ import "./Board.css";
 import Tile from "./Tile.tsx";
 import { useState } from "react";
 import { createBoard } from "./types/board.ts";
-import type { Board as BoardType } from "./types/board.ts";
 
 function Board() {
-  // useState creates the board ONCE and remembers it
-  // The () => createBoard() is called a "lazy initializer"
-  // It only runs the first time the component renders
-  // In Ruby: @board ||= create_board (memoization)
   const [board] = useState(() => createBoard());
 
   return (
