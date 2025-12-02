@@ -42,8 +42,16 @@ export interface LTile extends BaseTile {
 
 export type Tile = SquareTile | LTile;
 
+export interface Piece {
+  id: string;
+  tileId: number;
+  localX: number;
+  localY: number;
+}
+
 export interface Board {
   tiles: Tile[];
+  pieces: Piece[];
 }
 
 // Mountain patterns for square tiles (3x3 grid, coordinates 0-2)
@@ -135,5 +143,19 @@ export function createBoard(): Board {
     createLShapedTile(9, "right", rightBottom),
   ];
 
-  return { tiles };
+  return { tiles, pieces: [] };
+}
+
+export function addPiece(
+  board: Board,
+  id: string,
+  tileId: number,
+  localX: number,
+  localY: number,
+): Board {
+  const newPiece: Piece = { id, tileId, localX, localY };
+  return {
+    ...board,
+    pieces: [...board.pieces, newPiece],
+  };
 }

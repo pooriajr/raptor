@@ -84,6 +84,7 @@
 
 /* Style the emoji icons */
 .mountain,
-.exit {
+.exit,
+.piece {
   font-size: 24px;
 }

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { createBoard, createLShapedTile, createSquareTile } from "./board";
+import {
+  createBoard,
+  createLShapedTile,
+  createSquareTile,
+  addPiece,
+} from "./board";
 
 describe("Board Generation", () => {
   describe("createSquareTile", () => {
@@ -357,6 +362,59 @@ describe("Board Generation", () => {
         const mountainsCount = tile.spaces.filter((s) => s.hasMountain).length;
         expect(mountainsCount).toBe(0);
       });
+    });
+  });
+
+  describe("Piece Management", () => {
+    it("creates board with empty pieces array", () => {
+      const board = createBoard();
+      expect(board.pieces).toBeDefined();
+      expect(board.pieces).toHaveLength(0);
+    });
+
+    it("adds a piece to the board", () => {
+      const board = createBoard();
+      const updatedBoard = addPiece(board, "piece-1", 1, 1, 1);
+
+      expect(updatedBoard.pieces).toHaveLength(1);
+      expect(updatedBoard.pieces[0]).toEqual({
+        id: "piece-1",
+        tileId: 1,
+        localX: 1,
+        localY: 1,
+      });
+    });
+
+    it("adds multiple pieces to the board", () => {
+      let board = createBoard();
+      board = addPiece(board, "piece-1", 1, 0, 0);
+      board = addPiece(board, "piece-2", 2, 1, 1);
+      board = addPiece(board, "piece-3", 3, 2, 2);
+
+      expect(board.pieces).toHaveLength(3);
+      expect(board.pieces[0].id).toBe("piece-1");
+      expect(board.pieces[1].id).toBe("piece-2");
+      expect(board.pieces[2].id).toBe("piece-3");
+    });
+
+    it("does not mutate original board when adding piece", () => {
+      const board = createBoard();
+      const updatedBoard = addPiece(board, "piece-1", 1, 1, 1);
+
+      expect(board.pieces).toHaveLength(0);
+      expect(updatedBoard.pieces).toHaveLength(1);
+    });
+
+    it("allows pieces on different tiles at same local coordinates", () => {
+      let board = createBoard();
+      board = addPiece(board, "piece-1", 1, 1, 1);
+      board = addPiece(board, "piece-2", 2, 1, 1);
+
+      expect(board.pieces).toHaveLength(2);
+      expect(board.pieces[0].tileId).toBe(1);
+      expect(board.pieces[1].tileId).toBe(2);
+      expect(board.pieces[0].localX).toBe(1);
+      expect(board.pieces[1].localX).toBe(1);
     });
   });
 });
