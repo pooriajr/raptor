@@ -37,4 +37,8 @@ export class BabyRaptor extends Piece {
 
     return moves;
   }
+
+  clone(tileId: number, localX: number, localY: number): BabyRaptor {
+    return new BabyRaptor(this.id, tileId, localX, localY);
+  }
 }

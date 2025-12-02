@@ -89,6 +89,7 @@
 .exit,
 .piece {
   font-size: 36px;
+  display: inline-block;
 }
 
 /* Draggable piece styling */

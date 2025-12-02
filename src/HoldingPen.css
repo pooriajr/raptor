@@ -1,0 +1,55 @@
+.HoldingPen {
+  background-color: #3a3a3a;
+  border: 3px solid #555;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px auto;
+  width: fit-content;
+  color: white;
+}
+
+.HoldingPen h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.pen-section {
+  margin-bottom: 16px;
+}
+
+.pen-section:last-child {
+  margin-bottom: 0;
+}
+
+.pen-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #ccc;
+}
+
+.piece-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+  min-height: 60px;
+}
+
+.holding-piece {
+  font-size: 36px;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.2s;
+}
+
+.holding-piece:hover {
+  transform: scale(1.1);
+}
+
+.holding-piece:active {
+  cursor: grabbing;
+}

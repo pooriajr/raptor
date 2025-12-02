@@ -78,13 +78,24 @@ describe("Coordinate System", () => {
   });
 
   describe("globalToLocal", () => {
-    it("converts global (0,0) to L-tile 0 local (0,0)", () => {
+    it("converts global coordinate on L-tile 0 to correct local coordinate", () => {
       const board = createBoard();
-      const local = globalToLocal(board, 0, 0);
+      const tile0 = board.tiles.find((t) => t.id === 0)!;
+
+      // Find a usable space on L-tile 0 (not unusable, not exit)
+      const usableSpace = tile0.spaces.find((s) => !s.isUnusable && !s.isExit)!;
+
+      const global = localToGlobal(
+        0,
+        usableSpace.coordinate.x,
+        usableSpace.coordinate.y,
+      );
+      const local = globalToLocal(board, global.globalX, global.globalY);
+
       expect(local).not.toBeNull();
       expect(local?.tileId).toBe(0);
-      expect(local?.localX).toBe(0);
-      expect(local?.localY).toBe(0);
+      expect(local?.localX).toBe(usableSpace.coordinate.x);
+      expect(local?.localY).toBe(usableSpace.coordinate.y);
     });
 
     it("converts global (2,0) to square tile 1 local (0,0)", () => {
@@ -116,9 +127,13 @@ describe("Coordinate System", () => {
       // L-tile 0 has unusable spaces in one column
       // Try to convert a coordinate that would be unusable
       const tile0 = board.tiles[0];
-      const unusableSpace = tile0.spaces.find(s => s.isUnusable);
+      const unusableSpace = tile0.spaces.find((s) => s.isUnusable);
       if (unusableSpace) {
-        const global = localToGlobal(0, unusableSpace.coordinate.x, unusableSpace.coordinate.y);
+        const global = localToGlobal(
+          0,
+          unusableSpace.coordinate.x,
+          unusableSpace.coordinate.y,
+        );
         const local = globalToLocal(board, global.globalX, global.globalY);
         expect(local).toBeNull();
       }
@@ -154,12 +169,21 @@ describe("Coordinate System", () => {
       // They should be adjacent
 
       const fromGlobal = localToGlobal(0, 1, 1); // L-tile 0, right edge
-      const adjacent = getAdjacentGlobalCoordinates(fromGlobal.globalX, fromGlobal.globalY);
+      const adjacent = getAdjacentGlobalCoordinates(
+        fromGlobal.globalX,
+        fromGlobal.globalY,
+      );
 
-      const rightNeighbor = adjacent.find(a => a.globalX === fromGlobal.globalX + 1);
+      const rightNeighbor = adjacent.find(
+        (a) => a.globalX === fromGlobal.globalX + 1,
+      );
       expect(rightNeighbor).toBeDefined();
 
-      const local = globalToLocal(board, rightNeighbor!.globalX, rightNeighbor!.globalY);
+      const local = globalToLocal(
+        board,
+        rightNeighbor!.globalX,
+        rightNeighbor!.globalY,
+      );
       expect(local).not.toBeNull();
       expect(local?.tileId).toBe(1); // Should be on square tile 1
     });
@@ -172,12 +196,21 @@ describe("Coordinate System", () => {
       // They should be adjacent
 
       const fromGlobal = localToGlobal(1, 1, 2); // Tile 1, bottom edge
-      const adjacent = getAdjacentGlobalCoordinates(fromGlobal.globalX, fromGlobal.globalY);
+      const adjacent = getAdjacentGlobalCoordinates(
+        fromGlobal.globalX,
+        fromGlobal.globalY,
+      );
 
-      const bottomNeighbor = adjacent.find(a => a.globalY === fromGlobal.globalY + 1);
+      const bottomNeighbor = adjacent.find(
+        (a) => a.globalY === fromGlobal.globalY + 1,
+      );
       expect(bottomNeighbor).toBeDefined();
 
-      const local = globalToLocal(board, bottomNeighbor!.globalX, bottomNeighbor!.globalY);
+      const local = globalToLocal(
+        board,
+        bottomNeighbor!.globalX,
+        bottomNeighbor!.globalY,
+      );
       expect(local).not.toBeNull();
       expect(local?.tileId).toBe(6); // Should be on tile 6 (bottom row)
     });

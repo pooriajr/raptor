@@ -111,4 +111,10 @@ export class Scientist extends Piece {
 
     return moves;
   }
+
+  clone(tileId: number, localX: number, localY: number): Scientist {
+    const cloned = new Scientist(this.id, tileId, localX, localY);
+    cloned.jeepMode = this.jeepMode; // Preserve jeep mode state
+    return cloned;
+  }
 }

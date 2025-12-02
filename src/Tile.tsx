@@ -1,6 +1,7 @@
 import "./Tile.css";
 import { useState } from "react";
-import type { Tile as TileType, Piece } from "./types/board.ts";
+import type { Tile as TileType } from "./types/board.ts";
+import type { Piece } from "./pieces/Piece.ts";
 
 interface TileProps {
   tile: TileType;
@@ -30,11 +31,12 @@ function Tile({
     localX: number,
     localY: number,
     hasMountain: boolean,
+    isUnusable: boolean,
     isOccupied: boolean,
   ) => {
     e.preventDefault(); // Allow drop
     // Only highlight if it's a valid drop zone
-    if (!hasMountain && !isOccupied) {
+    if (!hasMountain && !isUnusable && !isOccupied) {
       setDragOverSpace(`${localX},${localY}`);
     } else {
       setDragOverSpace(null);
@@ -94,6 +96,7 @@ function Tile({
                   space.coordinate.x,
                   space.coordinate.y,
                   space.hasMountain,
+                  space.isUnusable,
                   !!pieceOnSpace,
                 )
               }

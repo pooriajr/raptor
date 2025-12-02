@@ -72,4 +72,8 @@ export class MotherRaptor extends Piece {
 
     return moves;
   }
+
+  clone(tileId: number, localX: number, localY: number): MotherRaptor {
+    return new MotherRaptor(this.id, tileId, localX, localY);
+  }
 }

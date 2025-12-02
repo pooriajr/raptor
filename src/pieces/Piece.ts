@@ -27,4 +27,7 @@ export abstract class Piece {
       (move) => move.tileId === tileId && move.x === x && move.y === y,
     );
   }
+
+  // Abstract method to create a new instance with updated position
+  abstract clone(tileId: number, localX: number, localY: number): Piece;
 }
