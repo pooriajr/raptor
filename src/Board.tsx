@@ -3,13 +3,19 @@ import Tile from "./Tile.tsx";
 import { useState } from "react";
 import { createBoard, addPiece, movePiece } from "./types/board.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
+import { MotherRaptor } from "./pieces/MotherRaptor.ts";
+import { Scientist } from "./pieces/Scientist.ts";
 
 function Board() {
   const [board, setBoard] = useState(() => {
     let newBoard = createBoard();
+    // Add mother raptor
+    newBoard = addPiece(newBoard, new MotherRaptor("mother", 2, 1, 1));
     // Add two baby raptor pieces
     newBoard = addPiece(newBoard, new BabyRaptor("baby-1", 1, 1, 1));
     newBoard = addPiece(newBoard, new BabyRaptor("baby-2", 1, 2, 1));
+    // Add scientist
+    newBoard = addPiece(newBoard, new Scientist("scientist-1", 7, 1, 1));
     return newBoard;
   });
 
@@ -27,6 +33,15 @@ function Board() {
   const handleDragStart = (pieceId: string) => {
     setDraggedPieceId(pieceId);
     setHoveredPieceId(null); // Clear hover when drag starts
+  };
+
+  const handlePieceClick = (pieceId: string) => {
+    const piece = board.pieces.find((p) => p.id === pieceId);
+    if (piece instanceof Scientist) {
+      piece.toggleJeepMode();
+      // Force re-render by updating the board
+      setBoard({ ...board });
+    }
   };
 
   // Get the valid moves for the currently dragged or hovered piece
@@ -93,6 +108,7 @@ function Board() {
             onMouseUp={handleMouseUp}
             onDragStart={handleDragStart}
             onDrop={handleDrop}
+            onPieceClick={handlePieceClick}
           />
         );
       })}

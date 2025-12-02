@@ -4,12 +4,18 @@
   /* 2 rows: top row and bottom row */
   grid-template-columns: 150px repeat(3, 200px) 150px;
   grid-template-rows: repeat(2, 200px);
-  gap: 10px;
+  gap: 4px;
   padding: 20px;
   background-color: #2a2a2a;
   border-radius: 8px;
   width: fit-content;
   margin: 20px auto;
+
+  /* 3D perspective effect */
+  transform: perspective(1200px) rotateX(15deg);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Tiles are now in visual order, so we can use simple grid auto-flow */

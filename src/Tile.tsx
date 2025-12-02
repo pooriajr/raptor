@@ -10,6 +10,7 @@ interface TileProps {
   onMouseUp: () => void;
   onDragStart: (pieceId: string) => void;
   onDrop: (tileId: number, localX: number, localY: number) => void;
+  onPieceClick: (pieceId: string) => void;
 }
 
 function Tile({
@@ -20,6 +21,7 @@ function Tile({
   onMouseUp,
   onDragStart,
   onDrop,
+  onPieceClick,
 }: TileProps) {
   const [dragOverSpace, setDragOverSpace] = useState<string | null>(null);
 
@@ -113,6 +115,10 @@ function Tile({
                   onMouseDown={() => onMouseDown(pieceOnSpace.id)}
                   onMouseUp={onMouseUp}
                   onDragStart={() => onDragStart(pieceOnSpace.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPieceClick(pieceOnSpace.id);
+                  }}
                 >
                   {pieceOnSpace.getEmoji()}
                 </span>

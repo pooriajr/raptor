@@ -1,6 +1,6 @@
 .Tile {
-  background-color: #4a7c59;
-  border: 3px solid #2d4a35;
+  background-color: #7a9d88;
+  border: 3px solid #5a7d68;
   border-radius: 8px;
   padding: 8px;
   position: relative;
@@ -43,8 +43,8 @@
 
 /* Individual space styling */
 .space {
-  background-color: #6b9b7f;
-  border: 2px solid #5a8a6f;
+  background-color: #a8c4b8;
+  border: 2px solid #8aa89c;
   border-radius: 4px;
   min-height: 50px;
   display: flex;
@@ -88,7 +88,7 @@
 .mountain,
 .exit,
 .piece {
-  font-size: 24px;
+  font-size: 36px;
 }
 
 /* Draggable piece styling */
