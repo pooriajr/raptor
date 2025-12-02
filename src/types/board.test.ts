@@ -13,7 +13,9 @@ describe("Board Generation", () => {
     it("creates spaces with correct coordinates", () => {
       const tile = createSquareTile(1);
       // Check that all 9 positions exist
-      const coords = tile.spaces.map((s) => `${s.coordinate.x},${s.coordinate.y}`);
+      const coords = tile.spaces.map(
+        (s) => `${s.coordinate.x},${s.coordinate.y}`,
+      );
       expect(coords).toContain("0,0");
       expect(coords).toContain("0,1");
       expect(coords).toContain("0,2");
@@ -31,6 +33,31 @@ describe("Board Generation", () => {
         expect(space.isExit).toBe(false);
         expect(space.isUnusable).toBe(false);
       });
+    });
+
+    it("creates tile without rocks when no pattern provided", () => {
+      const tile = createSquareTile(1);
+      const rocksCount = tile.spaces.filter((s) => s.hasRock).length;
+      expect(rocksCount).toBe(0);
+    });
+
+    it("places rocks according to pattern", () => {
+      const pattern = [
+        { x: 0, y: 0 },
+        { x: 2, y: 2 },
+      ];
+      const tile = createSquareTile(1, pattern);
+      const rocksCount = tile.spaces.filter((s) => s.hasRock).length;
+      expect(rocksCount).toBe(2);
+
+      const rockSpace1 = tile.spaces.find(
+        (s) => s.coordinate.x === 0 && s.coordinate.y === 0,
+      );
+      const rockSpace2 = tile.spaces.find(
+        (s) => s.coordinate.x === 2 && s.coordinate.y === 2,
+      );
+      expect(rockSpace1?.hasRock).toBe(true);
+      expect(rockSpace2?.hasRock).toBe(true);
     });
   });
 
@@ -164,8 +191,12 @@ describe("Board Generation", () => {
       const board = createBoard();
       const lTiles = board.tiles.filter((t) => t.shape === "L");
 
-      const leftTiles = lTiles.filter((t) => t.shape === "L" && t.side === "left");
-      const rightTiles = lTiles.filter((t) => t.shape === "L" && t.side === "right");
+      const leftTiles = lTiles.filter(
+        (t) => t.shape === "L" && t.side === "left",
+      );
+      const rightTiles = lTiles.filter(
+        (t) => t.shape === "L" && t.side === "right",
+      );
 
       expect(leftTiles).toHaveLength(2);
       expect(rightTiles).toHaveLength(2);
@@ -235,9 +266,12 @@ describe("Board Generation", () => {
       const tile4 = board.tiles[4];
       const tile9 = board.tiles[9];
 
-      if (tile0.shape === "L" && tile5.shape === "L" &&
-          tile4.shape === "L" && tile9.shape === "L") {
-
+      if (
+        tile0.shape === "L" &&
+        tile5.shape === "L" &&
+        tile4.shape === "L" &&
+        tile9.shape === "L"
+      ) {
         // If tile0 has exit at top, then:
         // - tile5 should have exit at bottom (left side spread)
         // - tile4 should have exit at bottom (right side clustered)
@@ -288,6 +322,41 @@ describe("Board Generation", () => {
         const exitSpace = tile9.spaces.find((s) => s.isExit);
         expect(exitSpace?.coordinate.x).toBe(1);
       }
+    });
+
+    it("distributes rocks across square tiles", () => {
+      const board = createBoard();
+      const squareTiles = board.tiles.filter((t) => t.shape === "square");
+
+      // Count total rocks across all square tiles
+      const totalRocks = squareTiles.reduce((count, tile) => {
+        return count + tile.spaces.filter((s) => s.hasRock).length;
+      }, 0);
+
+      // Should have 0+1+1+2+2+3 = 9 rocks total
+      expect(totalRocks).toBe(9);
+    });
+
+    it("has correct rock distribution: one tile with 0, two with 1, two with 2, one with 3", () => {
+      const board = createBoard();
+      const squareTiles = board.tiles.filter((t) => t.shape === "square");
+
+      const rockCounts = squareTiles.map(
+        (tile) => tile.spaces.filter((s) => s.hasRock).length,
+      );
+      rockCounts.sort();
+
+      expect(rockCounts).toEqual([0, 1, 1, 2, 2, 3]);
+    });
+
+    it("L-tiles never have rocks", () => {
+      const board = createBoard();
+      const lTiles = board.tiles.filter((t) => t.shape === "L");
+
+      lTiles.forEach((tile) => {
+        const rocksCount = tile.spaces.filter((s) => s.hasRock).length;
+        expect(rocksCount).toBe(0);
+      });
     });
   });
 });

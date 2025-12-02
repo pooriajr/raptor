@@ -46,11 +46,44 @@ export interface Board {
   tiles: Tile[];
 }
 
-export function createSquareTile(id: number): SquareTile {
+// Rock patterns for square tiles (3x3 grid, coordinates 0-2)
+// Pattern represents which spaces have rocks (x,y coordinates)
+type RockPattern = Array<{ x: number; y: number }>;
+
+const ROCK_PATTERNS: RockPattern[] = [
+  // Pattern 0: No rocks
+  [],
+  // Pattern 1: Center rock (1 rock)
+  [{ x: 1, y: 1 }],
+  // Pattern 2: Corner rock (1 rock)
+  [{ x: 0, y: 0 }],
+  // Pattern 3: Two opposite corners (2 rocks)
+  [
+    { x: 0, y: 0 },
+    { x: 2, y: 2 },
+  ],
+  // Pattern 4: Two adjacent corners (2 rocks)
+  [
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+  ],
+  // Pattern 5: Three corners (3 rocks)
+  [
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+    { x: 0, y: 2 },
+  ],
+];
+
+export function createSquareTile(
+  id: number,
+  rockPattern: RockPattern = [],
+): SquareTile {
   const spaces: Space[] = [];
   for (let y = 0; y < 3; y++) {
     for (let x = 0; x < 3; x++) {
-      spaces.push(createSpace(x, y));
+      const hasRock = rockPattern.some((rock) => rock.x === x && rock.y === y);
+      spaces.push(createSpace(x, y, hasRock));
     }
   }
   return { id, shape: "square", spaces };
@@ -82,16 +115,19 @@ export function createBoard(): Board {
   const rightTop = leftExitAtTop ? "bottom" : "top";
   const rightBottom = leftExitAtTop ? "top" : "bottom";
 
+  // Shuffle rock patterns and assign to the 6 square tiles
+  const shuffledPatterns = [...ROCK_PATTERNS].sort(() => Math.random() - 0.5);
+
   const tiles: Tile[] = [
     createLShapedTile(0, "left", leftExitAtTop ? "top" : "bottom"),
-    createSquareTile(1),
-    createSquareTile(2),
-    createSquareTile(3),
+    createSquareTile(1, shuffledPatterns[0]),
+    createSquareTile(2, shuffledPatterns[1]),
+    createSquareTile(3, shuffledPatterns[2]),
     createLShapedTile(4, "right", rightTop),
     createLShapedTile(5, "left", leftBottom),
-    createSquareTile(6),
-    createSquareTile(7),
-    createSquareTile(8),
+    createSquareTile(6, shuffledPatterns[3]),
+    createSquareTile(7, shuffledPatterns[4]),
+    createSquareTile(8, shuffledPatterns[5]),
     createLShapedTile(9, "right", rightBottom),
   ];
 
