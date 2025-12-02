@@ -16,9 +16,16 @@ function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
     e: React.DragEvent,
     localX: number,
     localY: number,
+    hasMountain: boolean,
+    isOccupied: boolean,
   ) => {
     e.preventDefault(); // Allow drop
-    setDragOverSpace(`${localX},${localY}`);
+    // Only highlight if it's a valid drop zone
+    if (!hasMountain && !isOccupied) {
+      setDragOverSpace(`${localX},${localY}`);
+    } else {
+      setDragOverSpace(null);
+    }
   };
 
   const handleDragLeave = () => {
@@ -62,7 +69,13 @@ function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
               data-unusable={space.isUnusable}
               data-drag-over={isDragOver}
               onDragOver={(e) =>
-                handleDragOver(e, space.coordinate.x, space.coordinate.y)
+                handleDragOver(
+                  e,
+                  space.coordinate.x,
+                  space.coordinate.y,
+                  space.hasMountain,
+                  !!pieceOnSpace,
+                )
               }
               onDragLeave={handleDragLeave}
               onDrop={(e) =>
