@@ -30,6 +30,7 @@
 .Tile[data-shape="square"] .spaces-grid {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
+  height: 100%;
 }
 
 /* L-shaped tiles are always a 3×2 grid */
@@ -37,6 +38,7 @@
 .Tile[data-shape="L"] .spaces-grid {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(3, 1fr);
+  height: 100%;
 }
 
 /* Individual space styling */
