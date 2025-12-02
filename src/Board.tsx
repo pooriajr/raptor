@@ -47,9 +47,9 @@ function Board() {
     setDraggedPieceId(null);
   };
 
-  const handlePieceClick = (_pieceId: string) => {
-    // Piece click handler - functionality to be added later
-    // (e.g., select piece, show info, toggle jeep mode, etc.)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handlePieceClick = (pieceId: string) => {
+    // TODO: Piece click handler (select piece, show info, toggle jeep mode)
   };
 
   // Get the valid moves for the currently dragged or hovered piece
