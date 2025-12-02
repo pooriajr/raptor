@@ -37,7 +37,7 @@ function Board() {
 
   // Filter valid moves to exclude mountains and occupied spaces
   const validMoves = activePiece
-    ? activePiece.getValidMoves().filter((move) => {
+    ? activePiece.getValidMoves(board).filter((move) => {
         // Find the target tile
         const targetTile = board.tiles.find((t) => t.id === move.tileId);
         if (!targetTile) return false;

@@ -1,3 +1,5 @@
+import type { Board } from "../types/board.ts";
+
 // Base class for all game pieces
 export abstract class Piece {
   id: string;
@@ -14,13 +16,15 @@ export abstract class Piece {
 
   // Abstract methods that each piece type must implement
   abstract getEmoji(): string;
-  abstract getValidMoves(): Array<{ tileId: number; x: number; y: number }>;
+  abstract getValidMoves(
+    board: Board,
+  ): Array<{ tileId: number; x: number; y: number }>;
 
   // Common method to check if a move is valid
-  isValidMove(tileId: number, x: number, y: number): boolean {
-    const validMoves = this.getValidMoves();
+  isValidMove(board: Board, tileId: number, x: number, y: number): boolean {
+    const validMoves = this.getValidMoves(board);
     return validMoves.some(
-      (move) => move.tileId === tileId && move.x === x && move.y === y
+      (move) => move.tileId === tileId && move.x === x && move.y === y,
     );
   }
 }

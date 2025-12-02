@@ -160,7 +160,7 @@ export function movePiece(
   if (!piece) return null;
 
   // Check if the target position is valid for this piece type
-  if (!piece.isValidMove(tileId, localX, localY)) {
+  if (!piece.isValidMove(board, tileId, localX, localY)) {
     return null;
   }
 
