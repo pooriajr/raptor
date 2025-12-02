@@ -5,7 +5,7 @@ export interface Coordinate {
 
 export interface Space {
   coordinate: Coordinate;
-  hasRock: boolean;
+  hasMountain: boolean;
   isExit: boolean;
   isUnusable: boolean;
 }
@@ -13,13 +13,13 @@ export interface Space {
 export function createSpace(
   x: number,
   y: number,
-  hasRock = false,
+  hasMountain = false,
   isExit = false,
   isUnusable = false,
 ): Space {
   return {
     coordinate: { x, y },
-    hasRock,
+    hasMountain,
     isExit,
     isUnusable,
   };
@@ -46,28 +46,28 @@ export interface Board {
   tiles: Tile[];
 }
 
-// Rock patterns for square tiles (3x3 grid, coordinates 0-2)
-// Pattern represents which spaces have rocks (x,y coordinates)
-type RockPattern = Array<{ x: number; y: number }>;
+// Mountain patterns for square tiles (3x3 grid, coordinates 0-2)
+// Pattern represents which spaces have mountains (x,y coordinates)
+type MountainPattern = Array<{ x: number; y: number }>;
 
-const ROCK_PATTERNS: RockPattern[] = [
-  // Pattern 0: No rocks
+const MOUNTAIN_PATTERNS: MountainPattern[] = [
+  // Pattern 0: No mountains
   [],
-  // Pattern 1: Center rock (1 rock)
+  // Pattern 1: Center mountain (1 mountain)
   [{ x: 1, y: 1 }],
-  // Pattern 2: Corner rock (1 rock)
+  // Pattern 2: Corner mountain (1 mountain)
   [{ x: 0, y: 0 }],
-  // Pattern 3: Two opposite corners (2 rocks)
+  // Pattern 3: Two opposite corners (2 mountains)
   [
     { x: 0, y: 0 },
     { x: 2, y: 2 },
   ],
-  // Pattern 4: Two adjacent corners (2 rocks)
+  // Pattern 4: Two adjacent corners (2 mountains)
   [
     { x: 0, y: 0 },
     { x: 2, y: 0 },
   ],
-  // Pattern 5: Three corners (3 rocks)
+  // Pattern 5: Three corners (3 mountains)
   [
     { x: 0, y: 0 },
     { x: 2, y: 0 },
@@ -77,13 +77,15 @@ const ROCK_PATTERNS: RockPattern[] = [
 
 export function createSquareTile(
   id: number,
-  rockPattern: RockPattern = [],
+  mountainPattern: MountainPattern = [],
 ): SquareTile {
   const spaces: Space[] = [];
   for (let y = 0; y < 3; y++) {
     for (let x = 0; x < 3; x++) {
-      const hasRock = rockPattern.some((rock) => rock.x === x && rock.y === y);
-      spaces.push(createSpace(x, y, hasRock));
+      const hasMountain = mountainPattern.some(
+        (mountain) => mountain.x === x && mountain.y === y,
+      );
+      spaces.push(createSpace(x, y, hasMountain));
     }
   }
   return { id, shape: "square", spaces };
@@ -115,8 +117,10 @@ export function createBoard(): Board {
   const rightTop = leftExitAtTop ? "bottom" : "top";
   const rightBottom = leftExitAtTop ? "top" : "bottom";
 
-  // Shuffle rock patterns and assign to the 6 square tiles
-  const shuffledPatterns = [...ROCK_PATTERNS].sort(() => Math.random() - 0.5);
+  // Shuffle mountain patterns and assign to the 6 square tiles
+  const shuffledPatterns = [...MOUNTAIN_PATTERNS].sort(
+    () => Math.random() - 0.5,
+  );
 
   const tiles: Tile[] = [
     createLShapedTile(0, "left", leftExitAtTop ? "top" : "bottom"),

@@ -22,14 +22,14 @@ function Tile({ tile }: { tile: TileType }) {
             key={index}
             className="space"
             data-exit={space.isExit}
-            data-rock={space.hasRock}
+            data-mountain={space.hasMountain}
             data-unusable={space.isUnusable}
           >
             {/* Show coordinates for debugging */}
             <span className="coord">
               {space.coordinate.x},{space.coordinate.y}
             </span>
-            {space.hasRock && <span className="rock">🪨</span>}
+            {space.hasMountain && <span className="mountain">⛰️</span>}
             {space.isExit && <span className="exit">🚪</span>}
           </div>
         ))}

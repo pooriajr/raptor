@@ -35,29 +35,29 @@ describe("Board Generation", () => {
       });
     });
 
-    it("creates tile without rocks when no pattern provided", () => {
+    it("creates tile without mountains when no pattern provided", () => {
       const tile = createSquareTile(1);
-      const rocksCount = tile.spaces.filter((s) => s.hasRock).length;
-      expect(rocksCount).toBe(0);
+      const mountainsCount = tile.spaces.filter((s) => s.hasMountain).length;
+      expect(mountainsCount).toBe(0);
     });
 
-    it("places rocks according to pattern", () => {
+    it("places mountains according to pattern", () => {
       const pattern = [
         { x: 0, y: 0 },
         { x: 2, y: 2 },
       ];
       const tile = createSquareTile(1, pattern);
-      const rocksCount = tile.spaces.filter((s) => s.hasRock).length;
-      expect(rocksCount).toBe(2);
+      const mountainsCount = tile.spaces.filter((s) => s.hasMountain).length;
+      expect(mountainsCount).toBe(2);
 
-      const rockSpace1 = tile.spaces.find(
+      const mountainSpace1 = tile.spaces.find(
         (s) => s.coordinate.x === 0 && s.coordinate.y === 0,
       );
-      const rockSpace2 = tile.spaces.find(
+      const mountainSpace2 = tile.spaces.find(
         (s) => s.coordinate.x === 2 && s.coordinate.y === 2,
       );
-      expect(rockSpace1?.hasRock).toBe(true);
-      expect(rockSpace2?.hasRock).toBe(true);
+      expect(mountainSpace1?.hasMountain).toBe(true);
+      expect(mountainSpace2?.hasMountain).toBe(true);
     });
   });
 
@@ -324,38 +324,38 @@ describe("Board Generation", () => {
       }
     });
 
-    it("distributes rocks across square tiles", () => {
+    it("distributes mountains across square tiles", () => {
       const board = createBoard();
       const squareTiles = board.tiles.filter((t) => t.shape === "square");
 
-      // Count total rocks across all square tiles
-      const totalRocks = squareTiles.reduce((count, tile) => {
-        return count + tile.spaces.filter((s) => s.hasRock).length;
+      // Count total mountains across all square tiles
+      const totalMountains = squareTiles.reduce((count, tile) => {
+        return count + tile.spaces.filter((s) => s.hasMountain).length;
       }, 0);
 
-      // Should have 0+1+1+2+2+3 = 9 rocks total
-      expect(totalRocks).toBe(9);
+      // Should have 0+1+1+2+2+3 = 9 mountains total
+      expect(totalMountains).toBe(9);
     });
 
-    it("has correct rock distribution: one tile with 0, two with 1, two with 2, one with 3", () => {
+    it("has correct mountain distribution: one tile with 0, two with 1, two with 2, one with 3", () => {
       const board = createBoard();
       const squareTiles = board.tiles.filter((t) => t.shape === "square");
 
-      const rockCounts = squareTiles.map(
-        (tile) => tile.spaces.filter((s) => s.hasRock).length,
+      const mountainCounts = squareTiles.map(
+        (tile) => tile.spaces.filter((s) => s.hasMountain).length,
       );
-      rockCounts.sort();
+      mountainCounts.sort();
 
-      expect(rockCounts).toEqual([0, 1, 1, 2, 2, 3]);
+      expect(mountainCounts).toEqual([0, 1, 1, 2, 2, 3]);
     });
 
-    it("L-tiles never have rocks", () => {
+    it("L-tiles never have mountains", () => {
       const board = createBoard();
       const lTiles = board.tiles.filter((t) => t.shape === "L");
 
       lTiles.forEach((tile) => {
-        const rocksCount = tile.spaces.filter((s) => s.hasRock).length;
-        expect(rocksCount).toBe(0);
+        const mountainsCount = tile.spaces.filter((s) => s.hasMountain).length;
+        expect(mountainsCount).toBe(0);
       });
     });
   });

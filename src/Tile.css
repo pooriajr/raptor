@@ -69,10 +69,10 @@
   opacity: 0.8;
 }
 
-/* Spaces with rocks */
-.space[data-rock="true"] {
-  background-color: #4a4a4a;
-  border-color: #3a3a3a;
+/* Spaces with mountains */
+.space[data-mountain="true"] {
+  background-color: #8b7355;
+  border-color: #6b5335;
 }
 
 /* Unusable spaces (empty grid cells in L-tiles) */
@@ -83,7 +83,7 @@
 }
 
 /* Style the emoji icons */
-.rock,
+.mountain,
 .exit {
   font-size: 24px;
 }
