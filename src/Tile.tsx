@@ -5,11 +5,22 @@ import type { Tile as TileType, Piece } from "./types/board.ts";
 interface TileProps {
   tile: TileType;
   pieces: Piece[];
+  validMoves: Array<{ tileId: number; x: number; y: number }>;
+  onMouseDown: (pieceId: string) => void;
+  onMouseUp: () => void;
   onDragStart: (pieceId: string) => void;
   onDrop: (tileId: number, localX: number, localY: number) => void;
 }
 
-function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
+function Tile({
+  tile,
+  pieces,
+  validMoves,
+  onMouseDown,
+  onMouseUp,
+  onDragStart,
+  onDrop,
+}: TileProps) {
   const [dragOverSpace, setDragOverSpace] = useState<string | null>(null);
 
   const handleDragOver = (
@@ -60,6 +71,12 @@ function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
           const isDragOver =
             dragOverSpace === `${space.coordinate.x},${space.coordinate.y}`;
 
+          // Check if this space is a valid move
+          const isValidMove = validMoves.some(
+            (move) =>
+              move.x === space.coordinate.x && move.y === space.coordinate.y,
+          );
+
           return (
             <div
               key={index}
@@ -68,6 +85,7 @@ function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
               data-mountain={space.hasMountain}
               data-unusable={space.isUnusable}
               data-drag-over={isDragOver}
+              data-valid-move={isValidMove}
               onDragOver={(e) =>
                 handleDragOver(
                   e,
@@ -92,9 +110,11 @@ function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
                 <span
                   className="piece"
                   draggable
+                  onMouseDown={() => onMouseDown(pieceOnSpace.id)}
+                  onMouseUp={onMouseUp}
                   onDragStart={() => onDragStart(pieceOnSpace.id)}
                 >
-                  🔵
+                  {pieceOnSpace.getEmoji()}
                 </span>
               )}
             </div>

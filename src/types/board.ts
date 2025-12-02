@@ -42,12 +42,7 @@ export interface LTile extends BaseTile {
 
 export type Tile = SquareTile | LTile;
 
-export interface Piece {
-  id: string;
-  tileId: number;
-  localX: number;
-  localY: number;
-}
+import type { Piece } from "../pieces/Piece.ts";
 
 export interface Board {
   tiles: Tile[];
@@ -146,17 +141,10 @@ export function createBoard(): Board {
   return { tiles, pieces: [] };
 }
 
-export function addPiece(
-  board: Board,
-  id: string,
-  tileId: number,
-  localX: number,
-  localY: number,
-): Board {
-  const newPiece: Piece = { id, tileId, localX, localY };
+export function addPiece(board: Board, piece: Piece): Board {
   return {
     ...board,
-    pieces: [...board.pieces, newPiece],
+    pieces: [...board.pieces, piece],
   };
 }
 
@@ -167,6 +155,15 @@ export function movePiece(
   localX: number,
   localY: number,
 ): Board | null {
+  // Find the piece being moved
+  const piece = board.pieces.find((p) => p.id === pieceId);
+  if (!piece) return null;
+
+  // Check if the target position is valid for this piece type
+  if (!piece.isValidMove(tileId, localX, localY)) {
+    return null;
+  }
+
   // Find the target tile
   const targetTile = board.tiles.find((t) => t.id === tileId);
   if (!targetTile) return null;
@@ -190,11 +187,16 @@ export function movePiece(
   );
   if (isOccupied) return null;
 
-  // Move is valid - return updated board
+  // Move is valid - update piece position and return updated board
   return {
     ...board,
-    pieces: board.pieces.map((piece) =>
-      piece.id === pieceId ? { ...piece, tileId, localX, localY } : piece,
-    ),
+    pieces: board.pieces.map((p) => {
+      if (p.id === pieceId) {
+        p.tileId = tileId;
+        p.localX = localX;
+        p.localY = localY;
+      }
+      return p;
+    }),
   };
 }

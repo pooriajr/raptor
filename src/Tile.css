@@ -103,6 +103,13 @@
   opacity: 0.5;
 }
 
+/* Valid move highlighting - show when dragging starts */
+.space[data-valid-move="true"] {
+  background-color: #a8d590 !important;
+  border-color: #6f9d4a !important;
+  box-shadow: inset 0 0 8px rgba(111, 157, 74, 0.4);
+}
+
 /* Drag over feedback - highlight valid drop zones */
 .space[data-drag-over="true"] {
   background-color: #90d5a8 !important;

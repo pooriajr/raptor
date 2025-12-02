@@ -6,6 +6,7 @@ import {
   addPiece,
   movePiece,
 } from "./board";
+import { BabyRaptor } from "../pieces/BabyRaptor";
 
 describe("Board Generation", () => {
   describe("createSquareTile", () => {
@@ -375,22 +376,21 @@ describe("Board Generation", () => {
 
     it("adds a piece to the board", () => {
       const board = createBoard();
-      const updatedBoard = addPiece(board, "piece-1", 1, 1, 1);
+      const piece = new BabyRaptor("piece-1", 1, 1, 1);
+      const updatedBoard = addPiece(board, piece);
 
       expect(updatedBoard.pieces).toHaveLength(1);
-      expect(updatedBoard.pieces[0]).toEqual({
-        id: "piece-1",
-        tileId: 1,
-        localX: 1,
-        localY: 1,
-      });
+      expect(updatedBoard.pieces[0].id).toBe("piece-1");
+      expect(updatedBoard.pieces[0].tileId).toBe(1);
+      expect(updatedBoard.pieces[0].localX).toBe(1);
+      expect(updatedBoard.pieces[0].localY).toBe(1);
     });
 
     it("adds multiple pieces to the board", () => {
       let board = createBoard();
-      board = addPiece(board, "piece-1", 1, 0, 0);
-      board = addPiece(board, "piece-2", 2, 1, 1);
-      board = addPiece(board, "piece-3", 3, 2, 2);
+      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
+      board = addPiece(board, new BabyRaptor("piece-2", 2, 1, 1));
+      board = addPiece(board, new BabyRaptor("piece-3", 3, 2, 2));
 
       expect(board.pieces).toHaveLength(3);
       expect(board.pieces[0].id).toBe("piece-1");
@@ -400,7 +400,8 @@ describe("Board Generation", () => {
 
     it("does not mutate original board when adding piece", () => {
       const board = createBoard();
-      const updatedBoard = addPiece(board, "piece-1", 1, 1, 1);
+      const piece = new BabyRaptor("piece-1", 1, 1, 1);
+      const updatedBoard = addPiece(board, piece);
 
       expect(board.pieces).toHaveLength(0);
       expect(updatedBoard.pieces).toHaveLength(1);
@@ -408,8 +409,8 @@ describe("Board Generation", () => {
 
     it("allows pieces on different tiles at same local coordinates", () => {
       let board = createBoard();
-      board = addPiece(board, "piece-1", 1, 1, 1);
-      board = addPiece(board, "piece-2", 2, 1, 1);
+      board = addPiece(board, new BabyRaptor("piece-1", 1, 1, 1));
+      board = addPiece(board, new BabyRaptor("piece-2", 2, 1, 1));
 
       expect(board.pieces).toHaveLength(2);
       expect(board.pieces[0].tileId).toBe(1);
@@ -423,7 +424,7 @@ describe("Board Generation", () => {
     it("prevents piece from moving onto a mountain space", () => {
       let board = createBoard();
       // Add piece to tile 1, position (0, 0) - no mountain
-      board = addPiece(board, "piece-1", 1, 0, 0);
+      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
 
       // Find a tile with a mountain and try to move there
       const tileWithMountain = board.tiles.find((t) =>
@@ -447,8 +448,8 @@ describe("Board Generation", () => {
 
     it("prevents piece from moving onto space occupied by another piece", () => {
       let board = createBoard();
-      board = addPiece(board, "piece-1", 1, 0, 0);
-      board = addPiece(board, "piece-2", 1, 1, 1);
+      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
+      board = addPiece(board, new BabyRaptor("piece-2", 1, 1, 1));
 
       // Try to move piece-1 to the same space as piece-2
       const result = movePiece(board, "piece-1", 1, 1, 1);
@@ -458,7 +459,7 @@ describe("Board Generation", () => {
 
     it("allows piece to move to valid empty space", () => {
       let board = createBoard();
-      board = addPiece(board, "piece-1", 1, 0, 0);
+      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
 
       const result = movePiece(board, "piece-1", 1, 1, 0);
 
