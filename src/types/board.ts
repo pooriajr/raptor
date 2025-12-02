@@ -159,3 +159,42 @@ export function addPiece(
     pieces: [...board.pieces, newPiece],
   };
 }
+
+export function movePiece(
+  board: Board,
+  pieceId: string,
+  tileId: number,
+  localX: number,
+  localY: number,
+): Board | null {
+  // Find the target tile
+  const targetTile = board.tiles.find((t) => t.id === tileId);
+  if (!targetTile) return null;
+
+  // Find the target space
+  const targetSpace = targetTile.spaces.find(
+    (s) => s.coordinate.x === localX && s.coordinate.y === localY,
+  );
+  if (!targetSpace) return null;
+
+  // Check if target space has a mountain
+  if (targetSpace.hasMountain) return null;
+
+  // Check if another piece already occupies this space
+  const isOccupied = board.pieces.some(
+    (p) =>
+      p.id !== pieceId &&
+      p.tileId === tileId &&
+      p.localX === localX &&
+      p.localY === localY,
+  );
+  if (isOccupied) return null;
+
+  // Move is valid - return updated board
+  return {
+    ...board,
+    pieces: board.pieces.map((piece) =>
+      piece.id === pieceId ? { ...piece, tileId, localX, localY } : piece,
+    ),
+  };
+}

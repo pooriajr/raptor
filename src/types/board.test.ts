@@ -4,6 +4,7 @@ import {
   createLShapedTile,
   createSquareTile,
   addPiece,
+  movePiece,
 } from "./board";
 
 describe("Board Generation", () => {
@@ -415,6 +416,55 @@ describe("Board Generation", () => {
       expect(board.pieces[1].tileId).toBe(2);
       expect(board.pieces[0].localX).toBe(1);
       expect(board.pieces[1].localX).toBe(1);
+    });
+  });
+
+  describe("movePiece", () => {
+    it("prevents piece from moving onto a mountain space", () => {
+      let board = createBoard();
+      // Add piece to tile 1, position (0, 0) - no mountain
+      board = addPiece(board, "piece-1", 1, 0, 0);
+
+      // Find a tile with a mountain and try to move there
+      const tileWithMountain = board.tiles.find((t) =>
+        t.spaces.some((s) => s.hasMountain),
+      );
+      const mountainSpace = tileWithMountain!.spaces.find(
+        (s) => s.hasMountain,
+      )!;
+
+      // Try to move to mountain space - should return null or unchanged board
+      const result = movePiece(
+        board,
+        "piece-1",
+        tileWithMountain!.id,
+        mountainSpace.coordinate.x,
+        mountainSpace.coordinate.y,
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("prevents piece from moving onto space occupied by another piece", () => {
+      let board = createBoard();
+      board = addPiece(board, "piece-1", 1, 0, 0);
+      board = addPiece(board, "piece-2", 1, 1, 1);
+
+      // Try to move piece-1 to the same space as piece-2
+      const result = movePiece(board, "piece-1", 1, 1, 1);
+
+      expect(result).toBeNull();
+    });
+
+    it("allows piece to move to valid empty space", () => {
+      let board = createBoard();
+      board = addPiece(board, "piece-1", 1, 0, 0);
+
+      const result = movePiece(board, "piece-1", 1, 1, 0);
+
+      expect(result).not.toBeNull();
+      expect(result!.pieces[0].localX).toBe(1);
+      expect(result!.pieces[0].localY).toBe(0);
     });
   });
 });

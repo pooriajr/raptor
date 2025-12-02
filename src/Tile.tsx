@@ -1,7 +1,36 @@
 import "./Tile.css";
+import { useState } from "react";
 import type { Tile as TileType, Piece } from "./types/board.ts";
 
-function Tile({ tile, pieces }: { tile: TileType; pieces: Piece[] }) {
+interface TileProps {
+  tile: TileType;
+  pieces: Piece[];
+  onDragStart: (pieceId: string) => void;
+  onDrop: (tileId: number, localX: number, localY: number) => void;
+}
+
+function Tile({ tile, pieces, onDragStart, onDrop }: TileProps) {
+  const [dragOverSpace, setDragOverSpace] = useState<string | null>(null);
+
+  const handleDragOver = (
+    e: React.DragEvent,
+    localX: number,
+    localY: number,
+  ) => {
+    e.preventDefault(); // Allow drop
+    setDragOverSpace(`${localX},${localY}`);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverSpace(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, localX: number, localY: number) => {
+    e.preventDefault();
+    setDragOverSpace(null);
+    onDrop(tile.id, localX, localY);
+  };
+
   return (
     <div
       className="Tile"
@@ -21,6 +50,9 @@ function Tile({ tile, pieces }: { tile: TileType; pieces: Piece[] }) {
               p.localY === space.coordinate.y,
           );
 
+          const isDragOver =
+            dragOverSpace === `${space.coordinate.x},${space.coordinate.y}`;
+
           return (
             <div
               key={index}
@@ -28,6 +60,14 @@ function Tile({ tile, pieces }: { tile: TileType; pieces: Piece[] }) {
               data-exit={space.isExit}
               data-mountain={space.hasMountain}
               data-unusable={space.isUnusable}
+              data-drag-over={isDragOver}
+              onDragOver={(e) =>
+                handleDragOver(e, space.coordinate.x, space.coordinate.y)
+              }
+              onDragLeave={handleDragLeave}
+              onDrop={(e) =>
+                handleDrop(e, space.coordinate.x, space.coordinate.y)
+              }
             >
               {/* Show coordinates for debugging */}
               <span className="coord">
@@ -35,7 +75,15 @@ function Tile({ tile, pieces }: { tile: TileType; pieces: Piece[] }) {
               </span>
               {space.hasMountain && <span className="mountain">⛰️</span>}
               {space.isExit && <span className="exit">🚪</span>}
-              {pieceOnSpace && <span className="piece">🔵</span>}
+              {pieceOnSpace && (
+                <span
+                  className="piece"
+                  draggable
+                  onDragStart={() => onDragStart(pieceOnSpace.id)}
+                >
+                  🔵
+                </span>
+              )}
             </div>
           );
         })}

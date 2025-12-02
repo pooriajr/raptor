@@ -88,3 +88,22 @@
 .piece {
   font-size: 24px;
 }
+
+/* Draggable piece styling */
+.piece {
+  cursor: grab;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+.piece:active {
+  cursor: grabbing;
+  opacity: 0.5;
+}
+
+/* Drag over feedback - highlight valid drop zones */
+.space[data-drag-over="true"] {
+  background-color: #90d5a8 !important;
+  border-color: #4a9d6f !important;
+  box-shadow: inset 0 0 10px rgba(74, 157, 111, 0.5);
+}
