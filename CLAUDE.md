@@ -139,16 +139,21 @@ npm run preview
 ### Components
 
 - **App.tsx**: Root component
-- **Board.tsx**: Game board container, renders all 10 tiles in visual order
+- **Board.tsx**: Game board container, manages piece placement from holding pen, validates setup rules
 - **Tile.tsx**: Individual tile component with data attributes for styling
+- **HoldingPen.tsx**: Displays pieces available for placement during setup (draggable)
 
-### Types (`src/types/board.ts`)
+### Types (`src/types/`)
 
-- **Coordinate**: x, y position
-- **Space**: Board space with coordinate, hasRock, isExit, isUnusable flags
-- **SquareTile**: 3×3 grid (9 spaces)
-- **LTile**: 3×2 grid with side (left/right) and exitPosition (top/bottom)
-- **Board**: Container for all 10 tiles
+- **board.ts**: Coordinate, Space, SquareTile, LTile, Board types + creation functions
+- **coordinates.ts**: Global coordinate system (localToGlobal, globalToLocal, adjacency)
+
+### Pieces (`src/pieces/`)
+
+- **Piece.ts**: Abstract base class with id, tileId, localX, localY, getValidMoves(), clone()
+- **MotherRaptor.ts**: Mother raptor piece (emoji: 🦖)
+- **BabyRaptor.ts**: Baby raptor piece (emoji: 🦎)
+- **Scientist.ts**: Scientist piece with jeep mode support (emoji: 🧑‍🔬 or 🚙)
 
 ### Board Generation Logic
 
@@ -171,16 +176,17 @@ npm run preview
 **Core Data Models:**
 
 - ✅ Board structure (tiles, spaces, coordinates)
-- ⬜ Rock placement on square tiles
+- ✅ Mountain placement on square tiles (random patterns)
+- ✅ Piece positions (mother, babies, scientists)
 - ⬜ Game state (current round, active player, phase)
-- ⬜ Piece positions (mother, babies, scientists)
 - ⬜ Card state (decks, hands, played cards)
 - ⬜ Win condition tracking
 
 **Key Systems to Build:**
 
 - ✅ Tile/space coordinate system
-- ⬜ Global coordinate system (converting tile-local to board-global)
+- ✅ Global coordinate system (converting tile-local to board-global)
+- ✅ Setup validation (piece placement rules)
 - ⬜ Card selection and simultaneous reveal UI
 - ⬜ Action point system and action validation
 - ⬜ Line of sight calculations (for shooting mother)
@@ -192,7 +198,8 @@ npm run preview
 
 - ✅ Board grid rendering
 - ✅ Tile rendering with spaces
-- ⬜ Piece rendering (mother, babies, scientists, rocks, fire)
+- ✅ Piece rendering (mother, babies, scientists)
+- ✅ HoldingPen for setup piece placement
 - ⬜ Card hand display (hidden from opponent)
 - ⬜ Player aids (tracking captured babies, sleep tokens, reserves)
 - ⬜ Action point counter
@@ -206,20 +213,24 @@ npm run preview
 - ✅ Board generation with asymmetric L-tile exit configuration
 - ✅ Visual board rendering with 10 tiles in correct positions
 - ✅ L-tile CSS for all 4 orientations (left/right × top/bottom)
-- ✅ Comprehensive test suite (21 tests, all passing)
-- ✅ Aggressive refactor reducing code by 63%
+- ✅ Global coordinate system (localToGlobal, globalToLocal, adjacency)
+- ✅ Piece classes (MotherRaptor, BabyRaptor, Scientist) with movement rules
+- ✅ HoldingPen component for setup piece placement
+- ✅ Setup validation with placement rules (scientists on L-tiles, raptors on squares, etc.)
+- ✅ Mountain patterns randomly assigned to square tiles
+- ✅ Comprehensive test suite (82 tests, all passing)
 
 ### Next Steps
 
-1. **Add rock placement** - Implement rock positions on square tiles (rules specify certain spaces)
-2. **Global coordinates** - Convert tile-local (x,y) to board-global coordinates
-3. **Piece rendering** - Add game pieces (mother, babies, scientists) to board
-4. **Initial setup** - Place pieces in starting positions per game rules
+1. **Game state management** - Track current round, active player, phase
+2. **Card system** - Implement decks, hands, card selection UI
+3. **Action point system** - Track and spend action points
+4. **Line of sight** - Calculate shooting paths for scientists
 
 ### Technical Notes
 
 - Tiles use local coordinates (0-2 for squares, 0-1 x-axis for L-tiles)
-- Board needs global coordinate system for piece movement
+- Global coordinates span entire board for cross-tile movement
 - L-tiles have "unusable" spaces (empty grid cells for layout)
 - Exit spaces are only for baby raptor escapes
-- Game rules: rocks placed on spaces without circles (need to determine pattern)
+- Setup rules: Scientists on L-tiles (1 per tile), Mother on central tiles (2 or 7), Babies on remaining squares
