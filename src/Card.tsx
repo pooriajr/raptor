@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import "./Card.css";
+import { playCardFlipSound } from "./utils/sound";
 
 interface CardProps {
   value: number;
@@ -42,6 +43,12 @@ function Card({
         type: "spring",
         stiffness: 100,
         damping: 15,
+      }}
+      onAnimationStart={() => {
+        // Play sound when the flip animation starts (with delay accounted for)
+        if (initialPosition) {
+          setTimeout(() => playCardFlipSound(), animationDelay * 1000 + 200);
+        }
       }}
       whileHover={onClick ? { scale: 1.05, y: -5 } : undefined}
       whileTap={onClick ? { scale: 0.98 } : undefined}
