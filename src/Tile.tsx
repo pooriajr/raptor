@@ -15,6 +15,7 @@ interface TileProps {
   tile: TileType;
   pieces: AdaptedPiece[];
   validMoves: Array<{ tileId: number; x: number; y: number }>;
+  showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;
   onDragStart: (pieceId: string) => void;
@@ -26,6 +27,7 @@ function Tile({
   tile,
   pieces,
   validMoves,
+  showCoordinates = false,
   onMouseDown,
   onMouseUp,
   onDragStart,
@@ -69,7 +71,7 @@ function Tile({
       data-exit-position={tile.shape === "L" ? tile.exitPosition : undefined}
     >
       {/* Show tile number for debugging */}
-      <div className="tile-label">Tile {tile.id}</div>
+      {showCoordinates && <div className="tile-label">Tile {tile.id}</div>}
 
       {/* Render all spaces in this tile */}
       <div className="spaces-grid">
@@ -114,9 +116,11 @@ function Tile({
               }
             >
               {/* Show coordinates for debugging */}
-              <span className="coord">
-                {space.coordinate.x},{space.coordinate.y}
-              </span>
+              {showCoordinates && (
+                <span className="coord">
+                  {space.coordinate.x},{space.coordinate.y}
+                </span>
+              )}
               {space.hasMountain && <span className="mountain">⛰️</span>}
               {space.isExit && <span className="exit">🚪</span>}
               {pieceOnSpace && (

@@ -32,7 +32,11 @@ function adaptPieceForRender(piece: PieceState) {
   };
 }
 
-function Board() {
+interface BoardProps {
+  showCoordinates?: boolean;
+}
+
+function Board({ showCoordinates = false }: BoardProps) {
   const { state, dispatch } = useGame();
 
   const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
@@ -275,6 +279,7 @@ function Board() {
               tile={tile}
               pieces={piecesOnTile}
               validMoves={validMovesOnTile}
+              showCoordinates={showCoordinates}
               onMouseDown={handleMouseDown}
               onMouseUp={handleMouseUp}
               onDragStart={handleDragStart}
