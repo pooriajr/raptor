@@ -1,4 +1,5 @@
 import type { Tile } from "./board.ts";
+import { createBoard } from "./board.ts";
 
 // Game phases - only SETUP for now, more will be added later
 export type GamePhase = "SETUP";
@@ -34,5 +35,16 @@ export function createInitialHoldingPen(): HoldingPen {
     scientists: 10,
     babies: 5,
     mother: 1,
+  };
+}
+
+// Create initial game state
+export function createInitialGameState(): GameState {
+  const board = createBoard();
+  return {
+    phase: "SETUP",
+    tiles: board.tiles,
+    pieces: [],
+    holdingPen: createInitialHoldingPen(),
   };
 }
