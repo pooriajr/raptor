@@ -2,7 +2,8 @@ import "./Board.css";
 import Tile from "./Tile.tsx";
 import SetupPanel from "./SetupPanel.tsx";
 import CardDeck from "./CardDeck.tsx";
-import { useState } from "react";
+import Hand from "./Hand.tsx";
+import { useState, useEffect, useRef } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
@@ -41,6 +42,25 @@ function Board({ showCoordinates = false }: BoardProps) {
   const { state, dispatch } = useGame();
 
   const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
+  const [isNewDraw, setIsNewDraw] = useState(false);
+  const scientistDeckRef = useRef<HTMLDivElement>(null);
+  const prevPhaseRef = useRef(state.phase);
+
+  // Draw cards when entering SCIENTIST_CARD_SELECTION phase
+  useEffect(() => {
+    if (
+      state.phase === "SCIENTIST_CARD_SELECTION" &&
+      prevPhaseRef.current !== "SCIENTIST_CARD_SELECTION"
+    ) {
+      // Trigger draw cards action
+      dispatch({ type: "DRAW_CARDS", player: "scientist" });
+      setIsNewDraw(true);
+      // Reset new draw flag after animation completes
+      const timeout = setTimeout(() => setIsNewDraw(false), 1500);
+      return () => clearTimeout(timeout);
+    }
+    prevPhaseRef.current = state.phase;
+  }, [state.phase, dispatch]);
   const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
     useState<PieceType | null>(null);
   const [hoveredPieceId, setHoveredPieceId] = useState<string | null>(null);
@@ -268,7 +288,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       />
       <div className="board-area">
         <div className="deck-area left">
-          <CardDeck player="raptor" cardCount={9} />
+          <CardDeck player="raptor" cardCount={state.raptorCards.deck.length} />
         </div>
         <div className="Board">
           {state.tiles.map((tile) => {
@@ -294,8 +314,21 @@ function Board({ showCoordinates = false }: BoardProps) {
             );
           })}
         </div>
-        <div className="deck-area right">
-          <CardDeck player="scientist" cardCount={9} />
+        <div className="deck-area right" ref={scientistDeckRef}>
+          <CardDeck
+            player="scientist"
+            cardCount={state.scientistCards.deck.length}
+          />
+          {state.phase === "SCIENTIST_CARD_SELECTION" && (
+            <Hand
+              cards={state.scientistCards.hand}
+              player="scientist"
+              isNewDraw={isNewDraw}
+              deckPosition={
+                scientistDeckRef.current ? { x: 0, y: -200 } : undefined
+              }
+            />
+          )}
         </div>
       </div>
     </>

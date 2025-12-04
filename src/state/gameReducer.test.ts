@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { gameReducer } from "./gameReducer";
-import { createInitialGameState, GameState } from "../types/gameState";
+import { createInitialGameState, type GameState } from "../types/gameState";
 
 // Helper to complete raptor setup and transition to scientist setup phase
 function completeRaptorSetup(initialState: GameState): GameState {

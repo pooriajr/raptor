@@ -1,0 +1,31 @@
+.Hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.Hand.raptor {
+  border: 2px solid #3d6a37;
+}
+
+.Hand.scientist {
+  border: 2px solid #2a4a6c;
+}
+
+.hand-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ccc;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hand-cards {
+  display: flex;
+  gap: 12px;
+  perspective: 1000px;
+}

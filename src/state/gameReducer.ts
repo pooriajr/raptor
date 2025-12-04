@@ -1,4 +1,4 @@
-import type { GameState, PieceState } from "../types/gameState.ts";
+import type { CardState, GameState, PieceState } from "../types/gameState.ts";
 
 // Action types
 export type GameAction =
@@ -12,7 +12,26 @@ export type GameAction =
       x: number;
       y: number;
     }
-  | { type: "START_GAME" };
+  | { type: "START_GAME" }
+  | { type: "DRAW_CARDS"; player: "raptor" | "scientist" };
+
+// Helper to draw cards from deck to hand (up to 3 cards in hand)
+function drawCards(cardState: CardState): CardState {
+  const cardsNeeded = 3 - cardState.hand.length;
+  if (cardsNeeded <= 0 || cardState.deck.length === 0) {
+    return cardState;
+  }
+
+  const cardsToDraw = Math.min(cardsNeeded, cardState.deck.length);
+  const newHand = [...cardState.hand, ...cardState.deck.slice(0, cardsToDraw)];
+  const newDeck = cardState.deck.slice(cardsToDraw);
+
+  return {
+    ...cardState,
+    deck: newDeck,
+    hand: newHand,
+  };
+}
 
 // Helper to check if a space is occupied
 function isSpaceOccupied(
@@ -281,6 +300,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: "SCIENTIST_CARD_SELECTION",
       };
+    }
+
+    case "DRAW_CARDS": {
+      if (action.player === "raptor") {
+        return {
+          ...state,
+          raptorCards: drawCards(state.raptorCards),
+        };
+      } else {
+        return {
+          ...state,
+          scientistCards: drawCards(state.scientistCards),
+        };
+      }
     }
 
     default:
