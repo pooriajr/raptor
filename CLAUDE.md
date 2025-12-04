@@ -26,7 +26,8 @@ React + TypeScript + Vite implementation of **Raptor**, an asymmetric two-player
 
 - Each player has identical decks numbered 1-9
 - Players hold 3 cards in hand, draw back to 3 after each round
-- Simultaneously reveal one card per round
+- Card selection is sequential (scientist picks first, then raptor) since this is a single-screen game
+- Cards revealed after both players have selected
 - If cards match: no effect, round ends immediately
 - If different values:
   - Lower card: Player uses that card's special action
@@ -136,9 +137,18 @@ npm run preview
 
 ## Current Architecture
 
+See **ARCHITECTURE.md** for detailed state management design.
+
+### State Management (Planned)
+
+- Single `GameState` object at App level via `useReducer`
+- React Context provides state and dispatch to all components
+- Phase-based state machine controls game flow
+- Piece data stored as plain objects; piece classes used for logic only
+
 ### Components
 
-- **App.tsx**: Root component
+- **App.tsx**: Root component, will hold game state and provide context
 - **Board.tsx**: Game board container, manages piece placement from holding pen, validates setup rules
 - **Tile.tsx**: Individual tile component with data attributes for styling
 - **HoldingPen.tsx**: Displays pieces available for placement during setup (draggable)
@@ -178,8 +188,8 @@ npm run preview
 - ✅ Board structure (tiles, spaces, coordinates)
 - ✅ Mountain placement on square tiles (random patterns)
 - ✅ Piece positions (mother, babies, scientists)
-- ⬜ Game state (current round, active player, phase)
-- ⬜ Card state (decks, hands, played cards)
+- 📐 Game state (current round, active player, phase) - designed in ARCHITECTURE.md
+- 📐 Card state (decks, hands, played cards) - designed in ARCHITECTURE.md
 - ⬜ Win condition tracking
 
 **Key Systems to Build:**
@@ -187,12 +197,13 @@ npm run preview
 - ✅ Tile/space coordinate system
 - ✅ Global coordinate system (converting tile-local to board-global)
 - ✅ Setup validation (piece placement rules)
-- ⬜ Card selection and simultaneous reveal UI
+- 📐 State machine phases - designed in ARCHITECTURE.md
+- ⬜ Card selection UI (sequential: scientist then raptor)
 - ⬜ Action point system and action validation
 - ⬜ Line of sight calculations (for shooting mother)
 - ⬜ Movement validation (orthogonal, obstacles)
 - ⬜ Win condition checking
-- ⬜ Turn/round management
+- ⬜ Turn/round management via reducer
 
 **UI Components Needed:**
 
@@ -222,10 +233,11 @@ npm run preview
 
 ### Next Steps
 
-1. **Game state management** - Track current round, active player, phase
-2. **Card system** - Implement decks, hands, card selection UI
-3. **Action point system** - Track and spend action points
-4. **Line of sight** - Calculate shooting paths for scientists
+1. **Implement GameState type and reducer** - Based on ARCHITECTURE.md design
+2. **Add GameContext provider** - Wrap App with context for state/dispatch access
+3. **Card selection UI** - Sequential picking (scientist first, then raptor)
+4. **Action point system** - Track and spend action points
+5. **Line of sight** - Calculate shooting paths for scientists
 
 ### Technical Notes
 
@@ -234,3 +246,6 @@ npm run preview
 - L-tiles have "unusable" spaces (empty grid cells for layout)
 - Exit spaces are only for baby raptor escapes
 - Setup rules: Scientists on L-tiles (1 per tile), Mother on central tiles (2 or 7), Babies on remaining squares
+- State lives in single GameState object at App level via useReducer
+- Pieces in state are plain objects; piece classes (MotherRaptor, BabyRaptor, Scientist) encapsulate all piece logic (movement, actions, validation)
+- Phase-based state machine controls valid actions at each point in the game
