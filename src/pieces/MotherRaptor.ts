@@ -1,5 +1,6 @@
 import { Piece } from "./Piece.ts";
-import type { Board } from "../types/board.ts";
+import type { Tile } from "../types/board.ts";
+import type { PieceState } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal } from "../types/coordinates.ts";
 
 export class MotherRaptor extends Piece {
@@ -7,7 +8,10 @@ export class MotherRaptor extends Piece {
     return "🦖";
   }
 
-  getValidMoves(board: Board): Array<{ tileId: number; x: number; y: number }> {
+  getValidMoves(
+    tiles: Tile[],
+    pieces: PieceState[],
+  ): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
     // Convert current position to global coordinates
@@ -30,13 +34,13 @@ export class MotherRaptor extends Piece {
         const targetGlobalY = globalPos.globalY + dir.dy * distance;
 
         // Try to convert to local coordinates
-        const localPos = globalToLocal(board, targetGlobalX, targetGlobalY);
+        const localPos = globalToLocal(tiles, targetGlobalX, targetGlobalY);
 
         // Stop if out of bounds
         if (!localPos) break;
 
         // Find the target tile and space
-        const targetTile = board.tiles.find((t) => t.id === localPos.tileId);
+        const targetTile = tiles.find((t) => t.id === localPos.tileId);
         if (!targetTile) break;
 
         const targetSpace = targetTile.spaces.find(
@@ -50,12 +54,12 @@ export class MotherRaptor extends Piece {
         if (targetSpace.hasMountain) break;
 
         // Stop if another piece is there
-        const isOccupied = board.pieces.some(
+        const isOccupied = pieces.some(
           (p) =>
             p.id !== this.id &&
             p.tileId === localPos.tileId &&
-            p.localX === localPos.localX &&
-            p.localY === localPos.localY,
+            p.x === localPos.localX &&
+            p.y === localPos.localY,
         );
         if (isOccupied) break;
 

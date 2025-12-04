@@ -42,13 +42,6 @@ export interface LTile extends BaseTile {
 
 export type Tile = SquareTile | LTile;
 
-import type { Piece } from "../pieces/Piece.ts";
-
-export interface Board {
-  tiles: Tile[];
-  pieces: Piece[];
-}
-
 // Mountain patterns for square tiles (3x3 grid, coordinates 0-2)
 // Pattern represents which spaces have mountains (x,y coordinates)
 type MountainPattern = Array<{ x: number; y: number }>;
@@ -114,7 +107,7 @@ export function createLShapedTile(
   return { id, shape: "L", side, exitPosition, spaces };
 }
 
-export function createBoard(): Board {
+export function createBoard(): Tile[] {
   const leftExitAtTop = Math.random() < 0.5;
   const leftBottom = leftExitAtTop ? "bottom" : "top";
   const rightTop = leftExitAtTop ? "bottom" : "top";
@@ -125,7 +118,7 @@ export function createBoard(): Board {
     () => Math.random() - 0.5,
   );
 
-  const tiles: Tile[] = [
+  return [
     createLShapedTile(0, "left", leftExitAtTop ? "top" : "bottom"),
     createSquareTile(1, shuffledPatterns[0]),
     createSquareTile(2, shuffledPatterns[1]),
@@ -137,66 +130,4 @@ export function createBoard(): Board {
     createSquareTile(8, shuffledPatterns[5]),
     createLShapedTile(9, "right", rightBottom),
   ];
-
-  return { tiles, pieces: [] };
-}
-
-export function addPiece(board: Board, piece: Piece): Board {
-  return {
-    ...board,
-    pieces: [...board.pieces, piece],
-  };
-}
-
-export function movePiece(
-  board: Board,
-  pieceId: string,
-  tileId: number,
-  localX: number,
-  localY: number,
-): Board | null {
-  // Find the piece being moved
-  const piece = board.pieces.find((p) => p.id === pieceId);
-  if (!piece) return null;
-
-  // Check if the target position is valid for this piece type
-  if (!piece.isValidMove(board, tileId, localX, localY)) {
-    return null;
-  }
-
-  // Find the target tile
-  const targetTile = board.tiles.find((t) => t.id === tileId);
-  if (!targetTile) return null;
-
-  // Find the target space
-  const targetSpace = targetTile.spaces.find(
-    (s) => s.coordinate.x === localX && s.coordinate.y === localY,
-  );
-  if (!targetSpace) return null;
-
-  // Check if target space has a mountain
-  if (targetSpace.hasMountain) return null;
-
-  // Check if another piece already occupies this space
-  const isOccupied = board.pieces.some(
-    (p) =>
-      p.id !== pieceId &&
-      p.tileId === tileId &&
-      p.localX === localX &&
-      p.localY === localY,
-  );
-  if (isOccupied) return null;
-
-  // Move is valid - update piece position and return updated board
-  return {
-    ...board,
-    pieces: board.pieces.map((p) => {
-      if (p.id === pieceId) {
-        p.tileId = tileId;
-        p.localX = localX;
-        p.localY = localY;
-      }
-      return p;
-    }),
-  };
 }

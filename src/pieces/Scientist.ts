@@ -1,5 +1,6 @@
 import { Piece } from "./Piece.ts";
-import type { Board } from "../types/board.ts";
+import type { Tile } from "../types/board.ts";
+import type { PieceState } from "../types/gameState.ts";
 import {
   localToGlobal,
   globalToLocal,
@@ -17,17 +18,20 @@ export class Scientist extends Piece {
     this.jeepMode = !this.jeepMode;
   }
 
-  getValidMoves(board: Board): Array<{ tileId: number; x: number; y: number }> {
+  getValidMoves(
+    tiles: Tile[],
+    pieces: PieceState[],
+  ): Array<{ tileId: number; x: number; y: number }> {
     if (this.jeepMode) {
-      return this.getJeepMoves(board);
+      return this.getJeepMoves(tiles, pieces);
     } else {
-      return this.getNormalMoves(board);
+      return this.getNormalMoves(tiles);
     }
   }
 
   // Normal mode: move one space orthogonally (like baby raptor)
   private getNormalMoves(
-    board: Board,
+    tiles: Tile[],
   ): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
@@ -38,7 +42,7 @@ export class Scientist extends Piece {
     );
 
     for (const adjPos of adjacentPositions) {
-      const localPos = globalToLocal(board, adjPos.globalX, adjPos.globalY);
+      const localPos = globalToLocal(tiles, adjPos.globalX, adjPos.globalY);
       if (localPos) {
         moves.push({
           tileId: localPos.tileId,
@@ -53,7 +57,8 @@ export class Scientist extends Piece {
 
   // Jeep mode: move in straight lines like mother raptor
   private getJeepMoves(
-    board: Board,
+    tiles: Tile[],
+    pieces: PieceState[],
   ): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
@@ -73,10 +78,10 @@ export class Scientist extends Piece {
         const targetGlobalX = globalPos.globalX + dir.dx * distance;
         const targetGlobalY = globalPos.globalY + dir.dy * distance;
 
-        const localPos = globalToLocal(board, targetGlobalX, targetGlobalY);
+        const localPos = globalToLocal(tiles, targetGlobalX, targetGlobalY);
         if (!localPos) break;
 
-        const targetTile = board.tiles.find((t) => t.id === localPos.tileId);
+        const targetTile = tiles.find((t) => t.id === localPos.tileId);
         if (!targetTile) break;
 
         const targetSpace = targetTile.spaces.find(
@@ -90,12 +95,12 @@ export class Scientist extends Piece {
         if (targetSpace.hasMountain) break;
 
         // Stop if another piece is there
-        const isOccupied = board.pieces.some(
+        const isOccupied = pieces.some(
           (p) =>
             p.id !== this.id &&
             p.tileId === localPos.tileId &&
-            p.localX === localPos.localX &&
-            p.localY === localPos.localY,
+            p.x === localPos.localX &&
+            p.y === localPos.localY,
         );
         if (isOccupied) break;
 

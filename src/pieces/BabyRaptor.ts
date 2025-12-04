@@ -1,5 +1,6 @@
 import { Piece } from "./Piece.ts";
-import type { Board } from "../types/board.ts";
+import type { Tile } from "../types/board.ts";
+import type { PieceState } from "../types/gameState.ts";
 import {
   localToGlobal,
   globalToLocal,
@@ -11,7 +12,10 @@ export class BabyRaptor extends Piece {
     return "🦎";
   }
 
-  getValidMoves(board: Board): Array<{ tileId: number; x: number; y: number }> {
+  getValidMoves(
+    tiles: Tile[],
+    _pieces: PieceState[],
+  ): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
     // Convert current position to global coordinates
@@ -25,7 +29,7 @@ export class BabyRaptor extends Piece {
 
     // Convert each adjacent position back to local coordinates
     for (const adjPos of adjacentPositions) {
-      const localPos = globalToLocal(board, adjPos.globalX, adjPos.globalY);
+      const localPos = globalToLocal(tiles, adjPos.globalX, adjPos.globalY);
       if (localPos) {
         moves.push({
           tileId: localPos.tileId,

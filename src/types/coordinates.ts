@@ -1,4 +1,4 @@
-import type { Board } from "./board.ts";
+import type { Tile } from "./board.ts";
 
 // Global coordinate system for the entire board
 // Each tile has a position, and spaces within tiles have local coordinates
@@ -64,11 +64,11 @@ export function localToGlobal(
 // Convert global coordinates to local coordinates
 // Returns null if the global coordinate is not on any tile
 export function globalToLocal(
-  board: Board,
+  tiles: Tile[],
   globalX: number,
   globalY: number,
 ): LocalCoordinate | null {
-  for (const tile of board.tiles) {
+  for (const tile of tiles) {
     const { offsetX, offsetY } = getTileOffset(tile.id);
 
     // Check if global coordinate falls within this tile's bounds

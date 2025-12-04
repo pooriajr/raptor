@@ -40,10 +40,9 @@ export function createInitialHoldingPen(): HoldingPen {
 
 // Create initial game state
 export function createInitialGameState(): GameState {
-  const board = createBoard();
   return {
     phase: "SETUP",
-    tiles: board.tiles,
+    tiles: createBoard(),
     pieces: [],
     holdingPen: createInitialHoldingPen(),
   };

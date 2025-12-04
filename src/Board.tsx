@@ -187,24 +187,13 @@ function Board() {
     return validSpaces;
   };
 
-  // Build a board-like object for piece movement logic
-  const boardForMovement = {
-    tiles: state.tiles,
-    pieces: state.pieces.map((p) => ({
-      id: p.id,
-      tileId: p.tileId,
-      localX: p.x,
-      localY: p.y,
-    })),
-  };
-
   // Calculate valid moves
   const validMoves = activePiece
     ? // Piece on board - use movement rules
       (() => {
         const pieceInstance = createPieceFromState(activePiece);
         return pieceInstance
-          .getValidMoves(boardForMovement as never)
+          .getValidMoves(state.tiles, state.pieces)
           .filter((move) => {
             const targetTile = state.tiles.find((t) => t.id === move.tileId);
             if (!targetTile) return false;

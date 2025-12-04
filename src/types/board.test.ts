@@ -1,12 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  createBoard,
-  createLShapedTile,
-  createSquareTile,
-  addPiece,
-  movePiece,
-} from "./board";
-import { BabyRaptor } from "../pieces/BabyRaptor";
+import { createBoard, createLShapedTile, createSquareTile } from "./board";
 
 describe("Board Generation", () => {
   describe("createSquareTile", () => {
@@ -155,48 +148,48 @@ describe("Board Generation", () => {
 
   describe("createBoard", () => {
     it("creates exactly 10 tiles", () => {
-      const board = createBoard();
-      expect(board.tiles).toHaveLength(10);
+      const tiles = createBoard();
+      expect(tiles).toHaveLength(10);
     });
 
     it("creates tiles with IDs 0-9", () => {
-      const board = createBoard();
-      const ids = board.tiles.map((t) => t.id);
+      const tiles = createBoard();
+      const ids = tiles.map((t) => t.id);
       expect(ids).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
 
     it("creates 6 square tiles and 4 L-tiles", () => {
-      const board = createBoard();
-      const squareTiles = board.tiles.filter((t) => t.shape === "square");
-      const lTiles = board.tiles.filter((t) => t.shape === "L");
+      const tiles = createBoard();
+      const squareTiles = tiles.filter((t) => t.shape === "square");
+      const lTiles = tiles.filter((t) => t.shape === "L");
 
       expect(squareTiles).toHaveLength(6);
       expect(lTiles).toHaveLength(4);
     });
 
     it("creates L-tiles at positions 0, 4, 5, and 9", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      expect(board.tiles[0].shape).toBe("L");
-      expect(board.tiles[4].shape).toBe("L");
-      expect(board.tiles[5].shape).toBe("L");
-      expect(board.tiles[9].shape).toBe("L");
+      expect(tiles[0].shape).toBe("L");
+      expect(tiles[4].shape).toBe("L");
+      expect(tiles[5].shape).toBe("L");
+      expect(tiles[9].shape).toBe("L");
     });
 
     it("creates square tiles at positions 1, 2, 3, 6, 7, 8", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      expect(board.tiles[1].shape).toBe("square");
-      expect(board.tiles[2].shape).toBe("square");
-      expect(board.tiles[3].shape).toBe("square");
-      expect(board.tiles[6].shape).toBe("square");
-      expect(board.tiles[7].shape).toBe("square");
-      expect(board.tiles[8].shape).toBe("square");
+      expect(tiles[1].shape).toBe("square");
+      expect(tiles[2].shape).toBe("square");
+      expect(tiles[3].shape).toBe("square");
+      expect(tiles[6].shape).toBe("square");
+      expect(tiles[7].shape).toBe("square");
+      expect(tiles[8].shape).toBe("square");
     });
 
     it("creates 2 left-side and 2 right-side L-tiles", () => {
-      const board = createBoard();
-      const lTiles = board.tiles.filter((t) => t.shape === "L");
+      const tiles = createBoard();
+      const lTiles = tiles.filter((t) => t.shape === "L");
 
       const leftTiles = lTiles.filter(
         (t) => t.shape === "L" && t.side === "left",
@@ -210,10 +203,10 @@ describe("Board Generation", () => {
     });
 
     it("left-side tiles are at positions 0 and 5", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      const tile0 = board.tiles[0];
-      const tile5 = board.tiles[5];
+      const tile0 = tiles[0];
+      const tile5 = tiles[5];
 
       expect(tile0.shape).toBe("L");
       expect(tile5.shape).toBe("L");
@@ -225,10 +218,10 @@ describe("Board Generation", () => {
     });
 
     it("right-side tiles are at positions 4 and 9", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      const tile4 = board.tiles[4];
-      const tile9 = board.tiles[9];
+      const tile4 = tiles[4];
+      const tile9 = tiles[9];
 
       expect(tile4.shape).toBe("L");
       expect(tile9.shape).toBe("L");
@@ -240,10 +233,10 @@ describe("Board Generation", () => {
     });
 
     it("left-side tiles have opposite exit positions", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      const tile0 = board.tiles[0];
-      const tile5 = board.tiles[5];
+      const tile0 = tiles[0];
+      const tile5 = tiles[5];
 
       if (tile0.shape === "L" && tile5.shape === "L") {
         // One should be top, one should be bottom
@@ -253,10 +246,10 @@ describe("Board Generation", () => {
     });
 
     it("right-side tiles have opposite exit positions", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      const tile4 = board.tiles[4];
-      const tile9 = board.tiles[9];
+      const tile4 = tiles[4];
+      const tile9 = tiles[9];
 
       if (tile4.shape === "L" && tile9.shape === "L") {
         // One should be top, one should be bottom
@@ -266,12 +259,12 @@ describe("Board Generation", () => {
     });
 
     it("enforces asymmetric exit configuration (one side spread, one clustered)", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
-      const tile0 = board.tiles[0];
-      const tile5 = board.tiles[5];
-      const tile4 = board.tiles[4];
-      const tile9 = board.tiles[9];
+      const tile0 = tiles[0];
+      const tile5 = tiles[5];
+      const tile4 = tiles[4];
+      const tile9 = tiles[9];
 
       if (
         tile0.shape === "L" &&
@@ -300,11 +293,11 @@ describe("Board Generation", () => {
     });
 
     it("all exits point away from the board center", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
       // Left-side tiles (0, 5) should have exits at x=0
-      const tile0 = board.tiles[0];
-      const tile5 = board.tiles[5];
+      const tile0 = tiles[0];
+      const tile5 = tiles[5];
 
       if (tile0.shape === "L") {
         const exitSpace = tile0.spaces.find((s) => s.isExit);
@@ -317,8 +310,8 @@ describe("Board Generation", () => {
       }
 
       // Right-side tiles (4, 9) should have exits at x=1
-      const tile4 = board.tiles[4];
-      const tile9 = board.tiles[9];
+      const tile4 = tiles[4];
+      const tile9 = tiles[9];
 
       if (tile4.shape === "L") {
         const exitSpace = tile4.spaces.find((s) => s.isExit);
@@ -332,8 +325,8 @@ describe("Board Generation", () => {
     });
 
     it("distributes mountains across square tiles", () => {
-      const board = createBoard();
-      const squareTiles = board.tiles.filter((t) => t.shape === "square");
+      const tiles = createBoard();
+      const squareTiles = tiles.filter((t) => t.shape === "square");
 
       // Count total mountains across all square tiles
       const totalMountains = squareTiles.reduce((count, tile) => {
@@ -345,8 +338,8 @@ describe("Board Generation", () => {
     });
 
     it("has correct mountain distribution: one tile with 0, two with 1, two with 2, one with 3", () => {
-      const board = createBoard();
-      const squareTiles = board.tiles.filter((t) => t.shape === "square");
+      const tiles = createBoard();
+      const squareTiles = tiles.filter((t) => t.shape === "square");
 
       const mountainCounts = squareTiles.map(
         (tile) => tile.spaces.filter((s) => s.hasMountain).length,
@@ -357,115 +350,13 @@ describe("Board Generation", () => {
     });
 
     it("L-tiles never have mountains", () => {
-      const board = createBoard();
-      const lTiles = board.tiles.filter((t) => t.shape === "L");
+      const tiles = createBoard();
+      const lTiles = tiles.filter((t) => t.shape === "L");
 
       lTiles.forEach((tile) => {
         const mountainsCount = tile.spaces.filter((s) => s.hasMountain).length;
         expect(mountainsCount).toBe(0);
       });
-    });
-  });
-
-  describe("Piece Management", () => {
-    it("creates board with empty pieces array", () => {
-      const board = createBoard();
-      expect(board.pieces).toBeDefined();
-      expect(board.pieces).toHaveLength(0);
-    });
-
-    it("adds a piece to the board", () => {
-      const board = createBoard();
-      const piece = new BabyRaptor("piece-1", 1, 1, 1);
-      const updatedBoard = addPiece(board, piece);
-
-      expect(updatedBoard.pieces).toHaveLength(1);
-      expect(updatedBoard.pieces[0].id).toBe("piece-1");
-      expect(updatedBoard.pieces[0].tileId).toBe(1);
-      expect(updatedBoard.pieces[0].localX).toBe(1);
-      expect(updatedBoard.pieces[0].localY).toBe(1);
-    });
-
-    it("adds multiple pieces to the board", () => {
-      let board = createBoard();
-      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
-      board = addPiece(board, new BabyRaptor("piece-2", 2, 1, 1));
-      board = addPiece(board, new BabyRaptor("piece-3", 3, 2, 2));
-
-      expect(board.pieces).toHaveLength(3);
-      expect(board.pieces[0].id).toBe("piece-1");
-      expect(board.pieces[1].id).toBe("piece-2");
-      expect(board.pieces[2].id).toBe("piece-3");
-    });
-
-    it("does not mutate original board when adding piece", () => {
-      const board = createBoard();
-      const piece = new BabyRaptor("piece-1", 1, 1, 1);
-      const updatedBoard = addPiece(board, piece);
-
-      expect(board.pieces).toHaveLength(0);
-      expect(updatedBoard.pieces).toHaveLength(1);
-    });
-
-    it("allows pieces on different tiles at same local coordinates", () => {
-      let board = createBoard();
-      board = addPiece(board, new BabyRaptor("piece-1", 1, 1, 1));
-      board = addPiece(board, new BabyRaptor("piece-2", 2, 1, 1));
-
-      expect(board.pieces).toHaveLength(2);
-      expect(board.pieces[0].tileId).toBe(1);
-      expect(board.pieces[1].tileId).toBe(2);
-      expect(board.pieces[0].localX).toBe(1);
-      expect(board.pieces[1].localX).toBe(1);
-    });
-  });
-
-  describe("movePiece", () => {
-    it("prevents piece from moving onto a mountain space", () => {
-      let board = createBoard();
-      // Add piece to tile 1, position (0, 0) - no mountain
-      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
-
-      // Find a tile with a mountain and try to move there
-      const tileWithMountain = board.tiles.find((t) =>
-        t.spaces.some((s) => s.hasMountain),
-      );
-      const mountainSpace = tileWithMountain!.spaces.find(
-        (s) => s.hasMountain,
-      )!;
-
-      // Try to move to mountain space - should return null or unchanged board
-      const result = movePiece(
-        board,
-        "piece-1",
-        tileWithMountain!.id,
-        mountainSpace.coordinate.x,
-        mountainSpace.coordinate.y,
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it("prevents piece from moving onto space occupied by another piece", () => {
-      let board = createBoard();
-      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
-      board = addPiece(board, new BabyRaptor("piece-2", 1, 1, 1));
-
-      // Try to move piece-1 to the same space as piece-2
-      const result = movePiece(board, "piece-1", 1, 1, 1);
-
-      expect(result).toBeNull();
-    });
-
-    it("allows piece to move to valid empty space", () => {
-      let board = createBoard();
-      board = addPiece(board, new BabyRaptor("piece-1", 1, 0, 0));
-
-      const result = movePiece(board, "piece-1", 1, 1, 0);
-
-      expect(result).not.toBeNull();
-      expect(result!.pieces[0].localX).toBe(1);
-      expect(result!.pieces[0].localY).toBe(0);
     });
   });
 });

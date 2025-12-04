@@ -79,8 +79,8 @@ describe("Coordinate System", () => {
 
   describe("globalToLocal", () => {
     it("converts global coordinate on L-tile 0 to correct local coordinate", () => {
-      const board = createBoard();
-      const tile0 = board.tiles.find((t) => t.id === 0)!;
+      const tiles = createBoard();
+      const tile0 = tiles.find((t) => t.id === 0)!;
 
       // Find a usable space on L-tile 0 (not unusable, not exit)
       const usableSpace = tile0.spaces.find((s) => !s.isUnusable && !s.isExit)!;
@@ -90,7 +90,7 @@ describe("Coordinate System", () => {
         usableSpace.coordinate.x,
         usableSpace.coordinate.y,
       );
-      const local = globalToLocal(board, global.globalX, global.globalY);
+      const local = globalToLocal(tiles, global.globalX, global.globalY);
 
       expect(local).not.toBeNull();
       expect(local?.tileId).toBe(0);
@@ -99,8 +99,8 @@ describe("Coordinate System", () => {
     });
 
     it("converts global (2,0) to square tile 1 local (0,0)", () => {
-      const board = createBoard();
-      const local = globalToLocal(board, 2, 0);
+      const tiles = createBoard();
+      const local = globalToLocal(tiles, 2, 0);
       expect(local).not.toBeNull();
       expect(local?.tileId).toBe(1);
       expect(local?.localX).toBe(0);
@@ -108,8 +108,8 @@ describe("Coordinate System", () => {
     });
 
     it("converts global (4,2) to square tile 1 local (2,2)", () => {
-      const board = createBoard();
-      const local = globalToLocal(board, 4, 2);
+      const tiles = createBoard();
+      const local = globalToLocal(tiles, 4, 2);
       expect(local).not.toBeNull();
       expect(local?.tileId).toBe(1);
       expect(local?.localX).toBe(2);
@@ -117,16 +117,16 @@ describe("Coordinate System", () => {
     });
 
     it("returns null for out-of-bounds coordinates", () => {
-      const board = createBoard();
-      const local = globalToLocal(board, 100, 100);
+      const tiles = createBoard();
+      const local = globalToLocal(tiles, 100, 100);
       expect(local).toBeNull();
     });
 
     it("returns null for unusable L-tile spaces", () => {
-      const board = createBoard();
+      const tiles = createBoard();
       // L-tile 0 has unusable spaces in one column
       // Try to convert a coordinate that would be unusable
-      const tile0 = board.tiles[0];
+      const tile0 = tiles[0];
       const unusableSpace = tile0.spaces.find((s) => s.isUnusable);
       if (unusableSpace) {
         const global = localToGlobal(
@@ -134,7 +134,7 @@ describe("Coordinate System", () => {
           unusableSpace.coordinate.x,
           unusableSpace.coordinate.y,
         );
-        const local = globalToLocal(board, global.globalX, global.globalY);
+        const local = globalToLocal(tiles, global.globalX, global.globalY);
         expect(local).toBeNull();
       }
     });
@@ -162,7 +162,7 @@ describe("Coordinate System", () => {
 
   describe("cross-tile adjacency", () => {
     it("detects adjacency between L-tile 0 and square tile 1", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
       // L-tile 0 rightmost column is at localX=1, which is globalX=1
       // Square tile 1 leftmost column is at localX=0, which is globalX=2
@@ -180,7 +180,7 @@ describe("Coordinate System", () => {
       expect(rightNeighbor).toBeDefined();
 
       const local = globalToLocal(
-        board,
+        tiles,
         rightNeighbor!.globalX,
         rightNeighbor!.globalY,
       );
@@ -189,7 +189,7 @@ describe("Coordinate System", () => {
     });
 
     it("detects adjacency between top and bottom rows", () => {
-      const board = createBoard();
+      const tiles = createBoard();
 
       // Square tile 1 bottom edge (localY=2, globalY=2)
       // Square tile 6 top edge (localY=0, globalY=3)
@@ -207,7 +207,7 @@ describe("Coordinate System", () => {
       expect(bottomNeighbor).toBeDefined();
 
       const local = globalToLocal(
-        board,
+        tiles,
         bottomNeighbor!.globalX,
         bottomNeighbor!.globalY,
       );
