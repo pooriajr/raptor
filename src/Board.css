@@ -1,16 +1,58 @@
-.board-area {
+.game-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 20px auto;
+}
+
+.player-area {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 2rem;
-  margin: 20px auto;
+  width: 100%;
+  max-width: 900px;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.deck-area {
+.raptor-area {
+  border: 2px solid #3d6a37;
+}
+
+.scientist-area {
+  border: 2px solid #2a4a6c;
+}
+
+.deck-section {
+  flex: 0 0 auto;
+}
+
+.hand-section {
+  flex: 1;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.discard-section {
+  flex: 0 0 auto;
+  min-width: 100px;
+}
+
+.discard-placeholder {
+  width: 80px;
+  height: 112px;
+  border: 2px dashed #555;
+  border-radius: 8px;
+  display: flex;
   align-items: center;
-  padding: 1rem;
+  justify-content: center;
+  color: #666;
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 .Board {

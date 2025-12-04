@@ -286,10 +286,22 @@ function Board({ showCoordinates = false }: BoardProps) {
         onDragStart={handleHoldingPenDragStart}
         onDragEnd={handleDragEnd}
       />
-      <div className="board-area">
-        <div className="deck-area left">
-          <CardDeck player="raptor" cardCount={state.raptorCards.deck.length} />
+      <div className="game-layout">
+        {/* Raptor player area (top) */}
+        <div className="player-area raptor-area">
+          <div className="deck-section">
+            <CardDeck
+              player="raptor"
+              cardCount={state.raptorCards.deck.length}
+            />
+          </div>
+          <div className="hand-section">{/* Raptor hand will go here */}</div>
+          <div className="discard-section">
+            {/* Raptor discard will go here */}
+          </div>
         </div>
+
+        {/* Game board */}
         <div className="Board">
           {state.tiles.map((tile) => {
             const piecesOnTile = adaptedPieces.filter(
@@ -314,21 +326,29 @@ function Board({ showCoordinates = false }: BoardProps) {
             );
           })}
         </div>
-        <div className="deck-area right" ref={scientistDeckRef}>
-          <CardDeck
-            player="scientist"
-            cardCount={state.scientistCards.deck.length}
-          />
-          {state.phase === "SCIENTIST_CARD_SELECTION" && (
-            <Hand
-              cards={state.scientistCards.hand}
+
+        {/* Scientist player area (bottom) */}
+        <div className="player-area scientist-area" ref={scientistDeckRef}>
+          <div className="deck-section">
+            <CardDeck
               player="scientist"
-              isNewDraw={isNewDraw}
-              deckPosition={
-                scientistDeckRef.current ? { x: 0, y: -200 } : undefined
-              }
+              cardCount={state.scientistCards.deck.length}
             />
-          )}
+          </div>
+          <div className="hand-section">
+            {state.phase === "SCIENTIST_CARD_SELECTION" && (
+              <Hand
+                cards={state.scientistCards.hand}
+                player="scientist"
+                isNewDraw={isNewDraw}
+                deckPosition={{ x: -300, y: 0 }}
+              />
+            )}
+          </div>
+          <div className="discard-section">
+            {/* Scientist discard will go here */}
+            <div className="discard-placeholder">Discard</div>
+          </div>
         </div>
       </div>
     </>
