@@ -1,6 +1,6 @@
 .Card {
-  width: 80px;
-  height: 112px;
+  width: 100px;
+  height: 140px;
   position: relative;
   cursor: default;
   transform-style: preserve-3d;

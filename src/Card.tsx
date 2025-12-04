@@ -29,13 +29,19 @@ function Card({
       onClick={onClick}
       initial={
         initialPosition
-          ? { x: initialPosition.x, y: initialPosition.y, rotateY: 180 }
-          : { rotateY: faceUp ? 0 : 180 }
+          ? {
+              x: initialPosition.x,
+              y: initialPosition.y,
+              rotateY: 180,
+              scale: 0.5,
+            }
+          : { rotateY: faceUp ? 0 : 180, scale: 1 }
       }
       animate={{
         x: 0,
         y: 0,
         rotateY: faceUp ? 0 : 180,
+        scale: 1,
       }}
       transition={{
         duration: 0.6,
