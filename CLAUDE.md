@@ -139,31 +139,39 @@ npm run preview
 
 See **ARCHITECTURE.md** for detailed state management design.
 
-### State Management (Planned)
+### State Management
 
 - Single `GameState` object at App level via `useReducer`
-- React Context provides state and dispatch to all components
+- React Context (`GameContext`) provides state and dispatch to all components
 - Phase-based state machine controls game flow
-- Piece data stored as plain objects; piece classes used for logic only
+- Piece data stored as plain objects (`PieceState`); piece classes used for logic only
 
 ### Components
 
-- **App.tsx**: Root component, will hold game state and provide context
-- **Board.tsx**: Game board container, manages piece placement from holding pen, validates setup rules
+- **App.tsx**: Root component, holds game state via `useReducer`, provides `GameContext`
+- **Board.tsx**: Game board container, uses `useGame()` hook, dispatches actions for piece placement
 - **Tile.tsx**: Individual tile component with data attributes for styling
 - **HoldingPen.tsx**: Displays pieces available for placement during setup (draggable)
 
+### State (`src/state/`)
+
+- **gameReducer.ts**: Handles all state changes via actions (PLACE_SCIENTIST, PLACE_MOTHER, PLACE_BABY, MOVE_PIECE)
+- **GameContext.tsx**: React Context and `useGame()` hook for accessing state/dispatch
+
 ### Types (`src/types/`)
 
-- **board.ts**: Coordinate, Space, SquareTile, LTile, Board types + creation functions
+- **gameState.ts**: GameState, PieceState, HoldingPen types + `createInitialGameState()`
+- **board.ts**: Coordinate, Space, SquareTile, LTile types + `createBoard()` returns `Tile[]`
 - **coordinates.ts**: Global coordinate system (localToGlobal, globalToLocal, adjacency)
 
 ### Pieces (`src/pieces/`)
 
-- **Piece.ts**: Abstract base class with id, tileId, localX, localY, getValidMoves(), clone()
-- **MotherRaptor.ts**: Mother raptor piece (emoji: 🦖)
-- **BabyRaptor.ts**: Baby raptor piece (emoji: 🦎)
-- **Scientist.ts**: Scientist piece with jeep mode support (emoji: 🧑‍🔬 or 🚙)
+Logic classes instantiated from `PieceState` for computing valid moves and actions.
+
+- **Piece.ts**: Abstract base class with `getValidMoves(tiles, pieces)`, `clone()`
+- **MotherRaptor.ts**: Mother raptor logic (emoji: 🦖)
+- **BabyRaptor.ts**: Baby raptor logic (emoji: 🦎)
+- **Scientist.ts**: Scientist logic with jeep mode support (emoji: 🧑‍🔬 or 🚙)
 
 ### Board Generation Logic
 
@@ -188,7 +196,7 @@ See **ARCHITECTURE.md** for detailed state management design.
 - ✅ Board structure (tiles, spaces, coordinates)
 - ✅ Mountain placement on square tiles (random patterns)
 - ✅ Piece positions (mother, babies, scientists)
-- 📐 Game state (current round, active player, phase) - designed in ARCHITECTURE.md
+- ✅ Game state type with phase - implemented in gameState.ts
 - 📐 Card state (decks, hands, played cards) - designed in ARCHITECTURE.md
 - ⬜ Win condition tracking
 
@@ -196,7 +204,9 @@ See **ARCHITECTURE.md** for detailed state management design.
 
 - ✅ Tile/space coordinate system
 - ✅ Global coordinate system (converting tile-local to board-global)
-- ✅ Setup validation (piece placement rules)
+- ✅ Setup validation (piece placement rules) - via gameReducer
+- ✅ GameState and gameReducer - implemented
+- ✅ GameContext for state/dispatch access - implemented
 - 📐 State machine phases - designed in ARCHITECTURE.md
 - ⬜ Card selection UI (sequential: scientist then raptor)
 - ⬜ Action point system and action validation
@@ -220,7 +230,7 @@ See **ARCHITECTURE.md** for detailed state management design.
 
 ### Completed
 
-- ✅ Board type system with Coordinate, Space, SquareTile, LTile, Board
+- ✅ Board type system with Coordinate, Space, SquareTile, LTile (Board interface removed)
 - ✅ Board generation with asymmetric L-tile exit configuration
 - ✅ Visual board rendering with 10 tiles in correct positions
 - ✅ L-tile CSS for all 4 orientations (left/right × top/bottom)
@@ -229,15 +239,18 @@ See **ARCHITECTURE.md** for detailed state management design.
 - ✅ HoldingPen component for setup piece placement
 - ✅ Setup validation with placement rules (scientists on L-tiles, raptors on squares, etc.)
 - ✅ Mountain patterns randomly assigned to square tiles
-- ✅ Comprehensive test suite (82 tests, all passing)
+- ✅ GameState type with PieceState (plain objects for state)
+- ✅ gameReducer with PLACE_SCIENTIST, PLACE_MOTHER, PLACE_BABY, MOVE_PIECE actions
+- ✅ GameContext and useGame() hook for state/dispatch access
+- ✅ App.tsx holds state via useReducer, provides context
+- ✅ Board.tsx uses context, dispatches actions
+- ✅ Comprehensive test suite (74 tests, all passing)
 
 ### Next Steps
 
-1. **Implement GameState type and reducer** - Based on ARCHITECTURE.md design
-2. **Add GameContext provider** - Wrap App with context for state/dispatch access
-3. **Card selection UI** - Sequential picking (scientist first, then raptor)
-4. **Action point system** - Track and spend action points
-5. **Line of sight** - Calculate shooting paths for scientists
+1. **Card selection UI** - Sequential picking (scientist first, then raptor)
+2. **Action point system** - Track and spend action points
+3. **Line of sight** - Calculate shooting paths for scientists
 
 ### Technical Notes
 
