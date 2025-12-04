@@ -5,7 +5,13 @@ export type GameAction =
   | { type: "PLACE_SCIENTIST"; tileId: number; x: number; y: number }
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
-  | { type: "MOVE_PIECE"; pieceId: string; tileId: number; x: number; y: number };
+  | {
+      type: "MOVE_PIECE";
+      pieceId: string;
+      tileId: number;
+      x: number;
+      y: number;
+    };
 
 // Helper to check if a space is occupied
 function isSpaceOccupied(
@@ -13,14 +19,11 @@ function isSpaceOccupied(
   tileId: number,
   x: number,
   y: number,
-  excludePieceId?: string
+  excludePieceId?: string,
 ): boolean {
   return pieces.some(
     (p) =>
-      p.tileId === tileId &&
-      p.x === x &&
-      p.y === y &&
-      p.id !== excludePieceId
+      p.tileId === tileId && p.x === x && p.y === y && p.id !== excludePieceId,
   );
 }
 
@@ -29,12 +32,12 @@ function spaceHasMountain(
   state: GameState,
   tileId: number,
   x: number,
-  y: number
+  y: number,
 ): boolean {
   const tile = state.tiles.find((t) => t.id === tileId);
   if (!tile) return true; // Invalid tile, treat as blocked
   const space = tile.spaces.find(
-    (s) => s.coordinate.x === x && s.coordinate.y === y
+    (s) => s.coordinate.x === x && s.coordinate.y === y,
   );
   if (!space) return true; // Invalid space, treat as blocked
   return space.hasMountain;
@@ -43,7 +46,7 @@ function spaceHasMountain(
 // Helper to check if tile already has a raptor
 function tileHasRaptor(pieces: PieceState[], tileId: number): boolean {
   return pieces.some(
-    (p) => (p.type === "mother" || p.type === "baby") && p.tileId === tileId
+    (p) => (p.type === "mother" || p.type === "baby") && p.tileId === tileId,
   );
 }
 
@@ -58,9 +61,19 @@ function generatePieceId(type: string, pieces: PieceState[]): string {
   return `${type}-${existingOfType.length}`;
 }
 
+// Check if raptor setup is complete (mother + 5 babies placed)
+function isRaptorSetupComplete(state: GameState): boolean {
+  const mother = state.pieces.find((p) => p.type === "mother");
+  const babies = state.pieces.filter((p) => p.type === "baby");
+  return mother !== undefined && babies.length === 5;
+}
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "PLACE_SCIENTIST": {
+      // Validate: must be in scientist setup phase
+      if (state.phase !== "SCIENTIST_SETUP") return state;
+
       // Validate: must have scientists in holding pen
       if (state.holdingPen.scientists <= 0) return state;
 
@@ -70,7 +83,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate: not on exit or unusable space
       const space = tile.spaces.find(
-        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y
+        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
       );
       if (!space || space.isExit || space.isUnusable) return state;
 
@@ -103,13 +116,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "PLACE_MOTHER": {
+      // Validate: must be in raptor setup phase
+      if (state.phase !== "RAPTOR_SETUP") return state;
+
       // Validate: must have mother in holding pen
       if (state.holdingPen.mother <= 0) return state;
 
       // Validate: must be a central square tile (2 or 7)
       const centralTiles = [2, 7];
       const tile = state.tiles.find((t) => t.id === action.tileId);
-      if (!tile || tile.shape !== "square" || !centralTiles.includes(action.tileId))
+      if (
+        !tile ||
+        tile.shape !== "square" ||
+        !centralTiles.includes(action.tileId)
+      )
         return state;
 
       // Validate: no mountain
@@ -131,7 +151,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         y: action.y,
       };
 
-      return {
+      const newState = {
         ...state,
         pieces: [...state.pieces, newPiece],
         holdingPen: {
@@ -139,9 +159,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           mother: 0,
         },
       };
+
+      // Transition to scientist setup if raptor setup is complete
+      if (isRaptorSetupComplete(newState)) {
+        return { ...newState, phase: "SCIENTIST_SETUP" as const };
+      }
+
+      return newState;
     }
 
     case "PLACE_BABY": {
+      // Validate: must be in raptor setup phase
+      if (state.phase !== "RAPTOR_SETUP") return state;
+
       // Validate: must have babies in holding pen
       if (state.holdingPen.babies <= 0) return state;
 
@@ -156,16 +186,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Validate: no raptor already on this tile
       if (tileHasRaptor(state.pieces, action.tileId)) return state;
 
-      // Validate: must leave at least one central tile free for mother
+      // Validate: must leave at least one central tile free for mother (if mother not yet placed)
       const centralTiles = [2, 7];
-      if (centralTiles.includes(action.tileId)) {
-        const occupiedCentralTiles = state.pieces.filter(
-          (p) =>
-            (p.type === "mother" || p.type === "baby") &&
-            centralTiles.includes(p.tileId)
+      const motherPlaced = state.pieces.some((p) => p.type === "mother");
+      if (centralTiles.includes(action.tileId) && !motherPlaced) {
+        const babiesOnCentralTiles = state.pieces.filter(
+          (p) => p.type === "baby" && centralTiles.includes(p.tileId),
         );
-        // If one central tile is already occupied, can't place on the other
-        if (occupiedCentralTiles.length >= 1) return state;
+        // If one central tile already has a baby, can't place on the other (must leave one for mother)
+        if (babiesOnCentralTiles.length >= 1) return state;
       }
 
       // Validate: space not occupied
@@ -180,7 +209,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         y: action.y,
       };
 
-      return {
+      const newState = {
         ...state,
         pieces: [...state.pieces, newPiece],
         holdingPen: {
@@ -188,6 +217,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           babies: state.holdingPen.babies - 1,
         },
       };
+
+      // Transition to scientist setup if raptor setup is complete
+      if (isRaptorSetupComplete(newState)) {
+        return { ...newState, phase: "SCIENTIST_SETUP" as const };
+      }
+
+      return newState;
     }
 
     case "MOVE_PIECE": {
@@ -201,14 +237,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate: target space exists and has no mountain
       const targetSpace = targetTile.spaces.find(
-        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y
+        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
       );
       if (!targetSpace || targetSpace.hasMountain || targetSpace.isUnusable)
         return state;
 
       // Validate: space not occupied
       if (
-        isSpaceOccupied(state.pieces, action.tileId, action.x, action.y, action.pieceId)
+        isSpaceOccupied(
+          state.pieces,
+          action.tileId,
+          action.x,
+          action.y,
+          action.pieceId,
+        )
       )
         return state;
 
@@ -221,7 +263,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         pieces: state.pieces.map((p) =>
           p.id === action.pieceId
             ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
-            : p
+            : p,
         ),
       };
     }

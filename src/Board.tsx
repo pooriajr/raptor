@@ -257,6 +257,7 @@ function Board() {
     <>
       <HoldingPen
         holdingPen={state.holdingPen}
+        phase={state.phase}
         onDragStart={handleHoldingPenDragStart}
         onDragEnd={handleDragEnd}
       />

@@ -1,0 +1,53 @@
+.SetupIndicator {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  max-width: 400px;
+}
+
+.SetupIndicator.raptor {
+  background-color: #2d4a2d;
+  border: 2px solid #4a7c4a;
+}
+
+.SetupIndicator.scientist {
+  background-color: #2d3a4a;
+  border: 2px solid #4a6a8a;
+}
+
+.SetupIndicator h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.SetupIndicator.raptor h2 {
+  color: #8fbc8f;
+}
+
+.SetupIndicator.scientist h2 {
+  color: #87ceeb;
+}
+
+.SetupIndicator .instructions p {
+  margin: 0.5rem 0;
+}
+
+.SetupIndicator ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.SetupIndicator li {
+  margin: 0.25rem 0;
+}
+
+.SetupIndicator li.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.SetupIndicator .hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-style: italic;
+}

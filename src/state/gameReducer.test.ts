@@ -1,11 +1,81 @@
 import { describe, it, expect } from "vitest";
 import { gameReducer } from "./gameReducer";
-import { createInitialGameState } from "../types/gameState";
+import { createInitialGameState, GameState } from "../types/gameState";
+
+// Helper to complete raptor setup and transition to scientist setup phase
+function completeRaptorSetup(initialState: GameState): GameState {
+  let state = initialState;
+  const squareTiles = state.tiles.filter((t) => t.shape === "square");
+
+  // Place mother on tile 2
+  const centralTile = squareTiles.find((t) => t.id === 2)!;
+  const motherSpace = centralTile.spaces.find((s) => !s.hasMountain)!;
+  state = gameReducer(state, {
+    type: "PLACE_MOTHER",
+    tileId: 2,
+    x: motherSpace.coordinate.x,
+    y: motherSpace.coordinate.y,
+  });
+
+  // Place 5 babies on the remaining 5 square tiles (1, 3, 6, 7, 8)
+  // Note: We can place on tile 7 since mother is on tile 2
+  const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
+  for (let i = 0; i < 5; i++) {
+    const tile = tilesForBabies[i];
+    const space = tile.spaces.find((s) => !s.hasMountain)!;
+    state = gameReducer(state, {
+      type: "PLACE_BABY",
+      tileId: tile.id,
+      x: space.coordinate.x,
+      y: space.coordinate.y,
+    });
+  }
+
+  return state;
+}
 
 describe("Game Reducer - Setup Rules", () => {
   describe("Scientist Placement", () => {
+    it("transitions to SCIENTIST_SETUP after raptor setup is complete", () => {
+      let state = createInitialGameState();
+      expect(state.phase).toBe("RAPTOR_SETUP");
+
+      const squareTiles = state.tiles.filter((t) => t.shape === "square");
+      const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
+
+      // Place mother on tile 2
+      const centralTile = squareTiles.find((t) => t.id === 2)!;
+      const motherSpace = centralTile.spaces.find((s) => !s.hasMountain)!;
+      state = gameReducer(state, {
+        type: "PLACE_MOTHER",
+        tileId: 2,
+        x: motherSpace.coordinate.x,
+        y: motherSpace.coordinate.y,
+      });
+      expect(state.pieces).toHaveLength(1);
+      expect(state.phase).toBe("RAPTOR_SETUP"); // Still raptor setup
+
+      // Place 5 babies
+      for (let i = 0; i < 5; i++) {
+        const tile = tilesForBabies[i];
+        const space = tile.spaces.find((s) => !s.hasMountain)!;
+        state = gameReducer(state, {
+          type: "PLACE_BABY",
+          tileId: tile.id,
+          x: space.coordinate.x,
+          y: space.coordinate.y,
+        });
+      }
+
+      expect(state.pieces).toHaveLength(6); // 1 mother + 5 babies
+      expect(state.phase).toBe("SCIENTIST_SETUP"); // Should transition
+    });
+
     it("allows scientist placement on L-tile at non-exit space", () => {
-      const state = createInitialGameState();
+      const initialState = createInitialGameState();
+      const state = completeRaptorSetup(initialState);
+      expect(state.phase).toBe("SCIENTIST_SETUP");
+
       const lTile = state.tiles.find((t) => t.shape === "L")!;
       const validSpace = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
 
@@ -16,13 +86,15 @@ describe("Game Reducer - Setup Rules", () => {
         y: validSpace.coordinate.y,
       });
 
-      expect(newState.pieces).toHaveLength(1);
-      expect(newState.pieces[0].type).toBe("scientist");
+      expect(
+        newState.pieces.filter((p) => p.type === "scientist"),
+      ).toHaveLength(1);
       expect(newState.holdingPen.scientists).toBe(9);
     });
 
     it("rejects scientist placement on square tile", () => {
-      const state = createInitialGameState();
+      const initialState = createInitialGameState();
+      const state = completeRaptorSetup(initialState);
       const squareTile = state.tiles.find((t) => t.shape === "square")!;
       const space = squareTile.spaces.find((s) => !s.hasMountain)!;
 
@@ -33,13 +105,16 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      // State unchanged - placement rejected
-      expect(newState.pieces).toHaveLength(0);
+      // State unchanged - placement rejected (still has only raptor pieces)
+      expect(
+        newState.pieces.filter((p) => p.type === "scientist"),
+      ).toHaveLength(0);
       expect(newState.holdingPen.scientists).toBe(10);
     });
 
     it("rejects scientist placement on L-tile exit space", () => {
-      const state = createInitialGameState();
+      const initialState = createInitialGameState();
+      const state = completeRaptorSetup(initialState);
       const lTile = state.tiles.find((t) => t.shape === "L")!;
       const exitSpace = lTile.spaces.find((s) => s.isExit)!;
 
@@ -50,17 +125,20 @@ describe("Game Reducer - Setup Rules", () => {
         y: exitSpace.coordinate.y,
       });
 
-      expect(newState.pieces).toHaveLength(0);
+      expect(
+        newState.pieces.filter((p) => p.type === "scientist"),
+      ).toHaveLength(0);
       expect(newState.holdingPen.scientists).toBe(10);
     });
 
     it("rejects scientist placement on L-tile that already has a scientist", () => {
-      const state = createInitialGameState();
+      const initialState = createInitialGameState();
+      let state = completeRaptorSetup(initialState);
       const lTile = state.tiles.find((t) => t.shape === "L")!;
       const spaces = lTile.spaces.filter((s) => !s.isExit && !s.isUnusable);
 
       // Place first scientist
-      const state1 = gameReducer(state, {
+      state = gameReducer(state, {
         type: "PLACE_SCIENTIST",
         tileId: lTile.id,
         x: spaces[0].coordinate.x,
@@ -68,24 +146,27 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       // Try to place second scientist on same tile
-      const state2 = gameReducer(state1, {
+      const state2 = gameReducer(state, {
         type: "PLACE_SCIENTIST",
         tileId: lTile.id,
         x: spaces[1].coordinate.x,
         y: spaces[1].coordinate.y,
       });
 
-      expect(state2.pieces).toHaveLength(1);
+      expect(state2.pieces.filter((p) => p.type === "scientist")).toHaveLength(
+        1,
+      );
       expect(state2.holdingPen.scientists).toBe(9);
     });
 
     it("allows scientist placement on different L-tiles", () => {
-      const state = createInitialGameState();
+      const initialState = createInitialGameState();
+      let state = completeRaptorSetup(initialState);
       const lTiles = state.tiles.filter((t) => t.shape === "L");
 
       // Place on first L-tile
       const space1 = lTiles[0].spaces.find((s) => !s.isExit && !s.isUnusable)!;
-      const state1 = gameReducer(state, {
+      state = gameReducer(state, {
         type: "PLACE_SCIENTIST",
         tileId: lTiles[0].id,
         x: space1.coordinate.x,
@@ -94,19 +175,22 @@ describe("Game Reducer - Setup Rules", () => {
 
       // Place on second L-tile
       const space2 = lTiles[1].spaces.find((s) => !s.isExit && !s.isUnusable)!;
-      const state2 = gameReducer(state1, {
+      const state2 = gameReducer(state, {
         type: "PLACE_SCIENTIST",
         tileId: lTiles[1].id,
         x: space2.coordinate.x,
         y: space2.coordinate.y,
       });
 
-      expect(state2.pieces).toHaveLength(2);
+      expect(state2.pieces.filter((p) => p.type === "scientist")).toHaveLength(
+        2,
+      );
       expect(state2.holdingPen.scientists).toBe(8);
     });
 
     it("allows exactly 4 scientists to be placed (one per L-tile)", () => {
-      let state = createInitialGameState();
+      const initialState = createInitialGameState();
+      let state = completeRaptorSetup(initialState);
       const lTiles = state.tiles.filter((t) => t.shape === "L");
 
       expect(lTiles).toHaveLength(4);
@@ -122,8 +206,9 @@ describe("Game Reducer - Setup Rules", () => {
         });
       }
 
-      expect(state.pieces).toHaveLength(4);
-      expect(state.pieces.filter((p) => p.type === "scientist")).toHaveLength(4);
+      expect(state.pieces.filter((p) => p.type === "scientist")).toHaveLength(
+        4,
+      );
     });
 
     it("board has exactly 4 L-tiles for scientist placement", () => {
@@ -131,7 +216,9 @@ describe("Game Reducer - Setup Rules", () => {
       const lTiles = state.tiles.filter((t) => t.shape === "L");
 
       expect(lTiles).toHaveLength(4);
-      expect(lTiles.map((t) => t.id).sort((a, b) => a - b)).toEqual([0, 4, 5, 9]);
+      expect(lTiles.map((t) => t.id).sort((a, b) => a - b)).toEqual([
+        0, 4, 5, 9,
+      ]);
     });
 
     it("each L-tile has at least one valid placement space for scientists", () => {
@@ -244,7 +331,9 @@ describe("Game Reducer - Setup Rules", () => {
   describe("Baby Raptor Placement", () => {
     it("allows baby raptor placement on square tiles", () => {
       const state = createInitialGameState();
-      const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
+      const squareTile = state.tiles.find(
+        (t) => t.shape === "square" && t.id !== 2 && t.id !== 7,
+      )!;
       const space = squareTile.spaces.find((s) => !s.hasMountain)!;
 
       const newState = gameReducer(state, {
@@ -276,7 +365,9 @@ describe("Game Reducer - Setup Rules", () => {
 
     it("rejects baby raptor placement on tile that already has a raptor", () => {
       const state = createInitialGameState();
-      const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
+      const squareTile = state.tiles.find(
+        (t) => t.shape === "square" && t.id !== 2 && t.id !== 7,
+      )!;
       const spaces = squareTile.spaces.filter((s) => !s.hasMountain);
 
       // Place first baby
@@ -300,7 +391,9 @@ describe("Game Reducer - Setup Rules", () => {
 
     it("allows baby placement on different square tiles (one per tile)", () => {
       const state = createInitialGameState();
-      const squareTiles = state.tiles.filter((t) => t.shape === "square" && t.id !== 2 && t.id !== 7);
+      const squareTiles = state.tiles.filter(
+        (t) => t.shape === "square" && t.id !== 2 && t.id !== 7,
+      );
 
       // Place on first tile
       const space1 = squareTiles[0].spaces.find((s) => !s.hasMountain)!;
@@ -384,7 +477,9 @@ describe("Game Reducer - Setup Rules", () => {
       const squareTiles = state.tiles.filter((t) => t.shape === "square");
 
       expect(squareTiles).toHaveLength(6);
-      expect(squareTiles.map((t) => t.id).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 7, 8]);
+      expect(squareTiles.map((t) => t.id).sort((a, b) => a - b)).toEqual([
+        1, 2, 3, 6, 7, 8,
+      ]);
     });
   });
 
@@ -404,7 +499,9 @@ describe("Game Reducer - Setup Rules", () => {
 
       // Try to place on same exact space (on a different L-tile to avoid one-per-tile rule)
       // Actually, let's test with a different piece type - place baby on same space as another baby
-      const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
+      const squareTile = state.tiles.find(
+        (t) => t.shape === "square" && t.id !== 2 && t.id !== 7,
+      )!;
       const squareSpace = squareTile.spaces.find((s) => !s.hasMountain)!;
 
       const state2 = gameReducer(state1, {
@@ -417,11 +514,14 @@ describe("Game Reducer - Setup Rules", () => {
       // This would try to place another baby on exact same space
       // But it will fail due to one-raptor-per-tile rule first
       // Let's just verify the piece is there
-      expect(state2.pieces.find(p =>
-        p.tileId === squareTile.id &&
-        p.x === squareSpace.coordinate.x &&
-        p.y === squareSpace.coordinate.y
-      )).toBeTruthy();
+      expect(
+        state2.pieces.find(
+          (p) =>
+            p.tileId === squareTile.id &&
+            p.x === squareSpace.coordinate.x &&
+            p.y === squareSpace.coordinate.y,
+        ),
+      ).toBeTruthy();
     });
 
     it("rejects placement on mountain spaces", () => {
@@ -433,7 +533,9 @@ describe("Game Reducer - Setup Rules", () => {
       );
 
       if (tileWithMountain) {
-        const mountainSpace = tileWithMountain.spaces.find((s) => s.hasMountain)!;
+        const mountainSpace = tileWithMountain.spaces.find(
+          (s) => s.hasMountain,
+        )!;
 
         const newState = gameReducer(state, {
           type: "PLACE_BABY",

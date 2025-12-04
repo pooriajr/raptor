@@ -53,3 +53,20 @@
 .holding-piece:active {
   cursor: grabbing;
 }
+
+.holding-piece.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.holding-piece.disabled:hover {
+  transform: none;
+}
+
+.pen-section.inactive {
+  opacity: 0.6;
+}
+
+.pen-section.active h4 {
+  color: #8fbc8f;
+}

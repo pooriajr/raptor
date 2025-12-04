@@ -1,8 +1,8 @@
 import type { Tile } from "./board.ts";
 import { createBoard } from "./board.ts";
 
-// Game phases - only SETUP for now, more will be added later
-export type GamePhase = "SETUP";
+// Game phases - raptor sets up first, then scientist
+export type GamePhase = "RAPTOR_SETUP" | "SCIENTIST_SETUP";
 
 // Piece types as plain data (not class instances)
 export type PieceType = "mother" | "baby" | "scientist";
@@ -38,10 +38,10 @@ export function createInitialHoldingPen(): HoldingPen {
   };
 }
 
-// Create initial game state
+// Create initial game state - raptor sets up first
 export function createInitialGameState(): GameState {
   return {
-    phase: "SETUP",
+    phase: "RAPTOR_SETUP",
     tiles: createBoard(),
     pieces: [],
     holdingPen: createInitialHoldingPen(),
