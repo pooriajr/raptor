@@ -1,0 +1,63 @@
+.CardDeck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.CardDeck .deck-label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.CardDeck.raptor .deck-label {
+  color: #8fbc8f;
+}
+
+.CardDeck.scientist .deck-label {
+  color: #87ceeb;
+}
+
+.CardDeck .deck-stack {
+  position: relative;
+  width: 70px;
+  height: 100px;
+}
+
+.CardDeck .card {
+  position: absolute;
+  width: 70px;
+  height: 100px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.CardDeck .card-back {
+  background: linear-gradient(135deg, #2a2a3a 0%, #1a1a2a 100%);
+  border: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.CardDeck.raptor .card-back {
+  background: linear-gradient(135deg, #2d4a2d 0%, #1a2a1a 100%);
+  border-color: #4a7c4a;
+}
+
+.CardDeck.scientist .card-back {
+  background: linear-gradient(135deg, #2d3a4a 0%, #1a2a3a 100%);
+  border-color: #4a6a8a;
+}
+
+.CardDeck .card-pattern {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
+
+.CardDeck .card-count {
+  font-size: 0.8rem;
+  color: #888;
+}

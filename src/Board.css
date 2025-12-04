@@ -1,3 +1,18 @@
+.board-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin: 20px auto;
+}
+
+.deck-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
 .Board {
   display: grid;
   /* 5 columns: L-tile + 3 square tiles + L-tile */
@@ -9,7 +24,6 @@
   background-color: #2a2a2a;
   border-radius: 8px;
   width: fit-content;
-  margin: 20px auto;
 
   /* 3D perspective effect */
   transform: perspective(1200px) rotateX(15deg);

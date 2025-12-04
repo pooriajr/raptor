@@ -1,6 +1,7 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
 import SetupPanel from "./SetupPanel.tsx";
+import CardDeck from "./CardDeck.tsx";
 import { useState } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
@@ -265,29 +266,37 @@ function Board({ showCoordinates = false }: BoardProps) {
         onDragStart={handleHoldingPenDragStart}
         onDragEnd={handleDragEnd}
       />
-      <div className="Board">
-        {state.tiles.map((tile) => {
-          const piecesOnTile = adaptedPieces.filter(
-            (p) => p.tileId === tile.id,
-          );
-          const validMovesOnTile = validMoves.filter(
-            (move) => move.tileId === tile.id,
-          );
-          return (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              pieces={piecesOnTile}
-              validMoves={validMovesOnTile}
-              showCoordinates={showCoordinates}
-              onMouseDown={handleMouseDown}
-              onMouseUp={handleMouseUp}
-              onDragStart={handleDragStart}
-              onDrop={handleDrop}
-              onPieceClick={handlePieceClick}
-            />
-          );
-        })}
+      <div className="board-area">
+        <div className="deck-area left">
+          <CardDeck player="raptor" cardCount={9} />
+        </div>
+        <div className="Board">
+          {state.tiles.map((tile) => {
+            const piecesOnTile = adaptedPieces.filter(
+              (p) => p.tileId === tile.id,
+            );
+            const validMovesOnTile = validMoves.filter(
+              (move) => move.tileId === tile.id,
+            );
+            return (
+              <Tile
+                key={tile.id}
+                tile={tile}
+                pieces={piecesOnTile}
+                validMoves={validMovesOnTile}
+                showCoordinates={showCoordinates}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+                onDragStart={handleDragStart}
+                onDrop={handleDrop}
+                onPieceClick={handlePieceClick}
+              />
+            );
+          })}
+        </div>
+        <div className="deck-area right">
+          <CardDeck player="scientist" cardCount={9} />
+        </div>
       </div>
     </>
   );
