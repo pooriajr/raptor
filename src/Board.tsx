@@ -1,6 +1,6 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import HoldingPen from "./HoldingPen.tsx";
+import SetupPanel from "./SetupPanel.tsx";
 import { useState } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
@@ -255,9 +255,7 @@ function Board() {
 
   return (
     <>
-      <HoldingPen
-        holdingPen={state.holdingPen}
-        phase={state.phase}
+      <SetupPanel
         onDragStart={handleHoldingPenDragStart}
         onDragEnd={handleDragEnd}
       />

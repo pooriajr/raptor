@@ -1,0 +1,81 @@
+.SetupPanel {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  max-width: 400px;
+  color: #f0f0f0;
+}
+
+.SetupPanel.raptor {
+  background-color: #2d4a2d;
+  border: 2px solid #4a7c4a;
+}
+
+.SetupPanel.scientist {
+  background-color: #2d3a4a;
+  border: 2px solid #4a6a8a;
+}
+
+.SetupPanel h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.2rem;
+}
+
+.SetupPanel.raptor h2 {
+  color: #8fbc8f;
+}
+
+.SetupPanel.scientist h2 {
+  color: #87ceeb;
+}
+
+.SetupPanel .instructions p {
+  margin: 0.5rem 0;
+}
+
+.SetupPanel ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.SetupPanel li {
+  margin: 0.25rem 0;
+}
+
+.SetupPanel li.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.SetupPanel .pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  min-height: 60px;
+  margin: 0.75rem 0;
+}
+
+.SetupPanel .piece {
+  font-size: 36px;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.2s;
+}
+
+.SetupPanel .piece:hover {
+  transform: scale(1.1);
+}
+
+.SetupPanel .piece:active {
+  cursor: grabbing;
+}
+
+.SetupPanel .hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+}
