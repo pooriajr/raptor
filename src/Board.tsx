@@ -142,11 +142,11 @@ function Board() {
     } else if (pieceType === "baby") {
       const squareTiles = state.tiles.filter((t) => t.shape === "square");
       const centralTiles = [2, 7];
+      const motherPlaced = state.pieces.some((p) => p.type === "mother");
 
-      const occupiedCentralTiles = state.pieces.filter(
-        (p) =>
-          (p.type === "mother" || p.type === "baby") &&
-          centralTiles.includes(p.tileId),
+      // Only restrict central tiles if mother hasn't been placed yet
+      const babiesOnCentralTiles = state.pieces.filter(
+        (p) => p.type === "baby" && centralTiles.includes(p.tileId),
       );
 
       for (const tile of squareTiles) {
@@ -156,9 +156,11 @@ function Board() {
         );
         if (hasRaptor) continue;
 
+        // If mother not placed and one central tile has a baby, skip the other central tile
         if (
           centralTiles.includes(tile.id) &&
-          occupiedCentralTiles.length >= 1
+          !motherPlaced &&
+          babiesOnCentralTiles.length >= 1
         ) {
           continue;
         }

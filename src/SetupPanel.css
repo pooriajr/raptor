@@ -1,7 +1,7 @@
 .SetupPanel {
   padding: 1rem;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin: 0 auto 1rem auto;
   max-width: 400px;
   color: #f0f0f0;
 }
@@ -35,7 +35,8 @@
 
 .SetupPanel ul {
   margin: 0.5rem 0;
-  padding-left: 1.5rem;
+  padding-left: 0;
+  list-style: none;
 }
 
 .SetupPanel li {
