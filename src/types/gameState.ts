@@ -1,8 +1,11 @@
 import type { Tile } from "./board.ts";
 import { createBoard } from "./board.ts";
 
-// Game phases - raptor sets up first, then scientist
-export type GamePhase = "RAPTOR_SETUP" | "SCIENTIST_SETUP";
+// Game phases - raptor sets up first, then scientist, then card selection begins
+export type GamePhase =
+  | "RAPTOR_SETUP"
+  | "SCIENTIST_SETUP"
+  | "SCIENTIST_CARD_SELECTION";
 
 // Piece types as plain data (not class instances)
 export type PieceType = "mother" | "baby" | "scientist";

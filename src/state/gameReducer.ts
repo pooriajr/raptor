@@ -11,7 +11,8 @@ export type GameAction =
       tileId: number;
       x: number;
       y: number;
-    };
+    }
+  | { type: "START_GAME" };
 
 // Helper to check if a space is occupied
 function isSpaceOccupied(
@@ -265,6 +266,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
             : p,
         ),
+      };
+    }
+
+    case "START_GAME": {
+      // Validate: must be in scientist setup phase with 4 scientists placed
+      if (state.phase !== "SCIENTIST_SETUP") return state;
+      const scientistsPlaced = state.pieces.filter(
+        (p) => p.type === "scientist",
+      ).length;
+      if (scientistsPlaced !== 4) return state;
+
+      return {
+        ...state,
+        phase: "SCIENTIST_CARD_SELECTION",
       };
     }
 

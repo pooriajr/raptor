@@ -9,7 +9,7 @@ interface SetupPanelProps {
 }
 
 function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
 
   if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") {
     return null;
@@ -18,12 +18,18 @@ function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
   const isRaptorSetup = state.phase === "RAPTOR_SETUP";
   const motherPlaced = state.pieces.some((p) => p.type === "mother");
   const babiesPlaced = state.pieces.filter((p) => p.type === "baby").length;
-  const scientistsPlaced = state.pieces.filter((p) => p.type === "scientist").length;
+  const scientistsPlaced = state.pieces.filter(
+    (p) => p.type === "scientist",
+  ).length;
 
   // Create arrays of draggable items based on holding pen counts
-  const motherItems = Array(state.holdingPen.mother).fill("mother" as PieceType);
+  const motherItems = Array(state.holdingPen.mother).fill(
+    "mother" as PieceType,
+  );
   const babyItems = Array(state.holdingPen.babies).fill("baby" as PieceType);
-  const scientistItems = Array(state.holdingPen.scientists).fill("scientist" as PieceType);
+  const scientistItems = Array(state.holdingPen.scientists).fill(
+    "scientist" as PieceType,
+  );
 
   return (
     <div className={`SetupPanel ${isRaptorSetup ? "raptor" : "scientist"}`}>
@@ -66,7 +72,9 @@ function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
               </span>
             ))}
           </div>
-          <p className="hint">One raptor per tile. Babies cannot share a tile with the mother.</p>
+          <p className="hint">
+            One raptor per tile. Babies cannot share a tile with the mother.
+          </p>
         </>
       ) : (
         <>
@@ -78,21 +86,34 @@ function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
               </li>
             </ul>
           </div>
-          <div className="pieces">
-            {scientistItems.slice(0, 4 - scientistsPlaced).map((type, index) => (
-              <span
-                key={`scientist-${index}`}
-                className="piece"
-                draggable
-                onDragStart={() => onDragStart(type)}
-                onDragEnd={onDragEnd}
-              >
-                {getPieceEmoji(type)}
-              </span>
-            ))}
-          </div>
-          {scientistsPlaced < 4 && (
-            <p className="hint">{10 - 4} scientists will remain in reserve after setup.</p>
+          {scientistsPlaced < 4 ? (
+            <>
+              <div className="pieces">
+                {scientistItems
+                  .slice(0, 4 - scientistsPlaced)
+                  .map((type, index) => (
+                    <span
+                      key={`scientist-${index}`}
+                      className="piece"
+                      draggable
+                      onDragStart={() => onDragStart(type)}
+                      onDragEnd={onDragEnd}
+                    >
+                      {getPieceEmoji(type)}
+                    </span>
+                  ))}
+              </div>
+              <p className="hint">
+                6 scientists will remain in reserve after setup.
+              </p>
+            </>
+          ) : (
+            <button
+              className="start-button"
+              onClick={() => dispatch({ type: "START_GAME" })}
+            >
+              Start Game
+            </button>
           )}
         </>
       )}

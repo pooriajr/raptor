@@ -80,3 +80,26 @@
   font-style: italic;
   margin: 0.5rem 0 0 0;
 }
+
+.SetupPanel .start-button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #fff;
+  background-color: #4a7c4a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.SetupPanel .start-button:hover {
+  background-color: #5a9a5a;
+}
+
+.SetupPanel .start-button:active {
+  background-color: #3a6a3a;
+}
