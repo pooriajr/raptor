@@ -1,11 +1,19 @@
 import "./Tile.css";
 import { useState } from "react";
 import type { Tile as TileType } from "./types/board.ts";
-import type { Piece } from "./pieces/Piece.ts";
+
+// Adapted piece interface - works with plain data
+interface AdaptedPiece {
+  id: string;
+  tileId: number;
+  localX: number;
+  localY: number;
+  getEmoji: () => string;
+}
 
 interface TileProps {
   tile: TileType;
-  pieces: Piece[];
+  pieces: AdaptedPiece[];
   validMoves: Array<{ tileId: number; x: number; y: number }>;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;

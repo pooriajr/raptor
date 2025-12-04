@@ -2,32 +2,42 @@ import "./Board.css";
 import Tile from "./Tile.tsx";
 import HoldingPen from "./HoldingPen.tsx";
 import { useState } from "react";
-import { createBoard, movePiece } from "./types/board.ts";
-import { BabyRaptor } from "./pieces/BabyRaptor.ts";
+import { useGame } from "./state/GameContext.tsx";
+import type { PieceState, PieceType } from "./types/gameState.ts";
+import { getPieceEmoji } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
+import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
-import type { Piece } from "./pieces/Piece.ts";
+
+// Adapter: create a piece class instance from plain state for movement logic
+function createPieceFromState(piece: PieceState) {
+  switch (piece.type) {
+    case "mother":
+      return new MotherRaptor(piece.id, piece.tileId, piece.x, piece.y);
+    case "baby":
+      return new BabyRaptor(piece.id, piece.tileId, piece.x, piece.y);
+    case "scientist":
+      return new Scientist(piece.id, piece.tileId, piece.x, piece.y);
+  }
+}
+
+// Adapter to make PieceState compatible with components expecting Piece interface
+function adaptPieceForRender(piece: PieceState) {
+  return {
+    id: piece.id,
+    tileId: piece.tileId,
+    localX: piece.x,
+    localY: piece.y,
+    getEmoji: () => getPieceEmoji(piece.type),
+  };
+}
 
 function Board() {
-  const [board, setBoard] = useState(() => createBoard());
-
-  // Holding pen pieces (not yet on board)
-  const [holdingPenPieces, setHoldingPenPieces] = useState<Piece[]>(() => {
-    const pieces: Piece[] = [];
-    // Add 1 mother raptor
-    pieces.push(new MotherRaptor("mother", -1, 0, 0));
-    // Add 5 baby raptors
-    for (let i = 0; i < 5; i++) {
-      pieces.push(new BabyRaptor(`baby-${i}`, -1, 0, 0));
-    }
-    // Add 10 scientists
-    for (let i = 0; i < 10; i++) {
-      pieces.push(new Scientist(`scientist-${i}`, -1, 0, 0));
-    }
-    return pieces;
-  });
+  const { state, dispatch } = useGame();
 
   const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
+  const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
+    useState<PieceType | null>(null);
   const [hoveredPieceId, setHoveredPieceId] = useState<string | null>(null);
 
   const handleMouseDown = (pieceId: string) => {
@@ -40,53 +50,53 @@ function Board() {
 
   const handleDragStart = (pieceId: string) => {
     setDraggedPieceId(pieceId);
-    setHoveredPieceId(null); // Clear hover when drag starts
+    setHoveredPieceId(null);
+  };
+
+  const handleHoldingPenDragStart = (pieceType: PieceType) => {
+    setDraggedHoldingPieceType(pieceType);
   };
 
   const handleDragEnd = () => {
     setDraggedPieceId(null);
+    setDraggedHoldingPieceType(null);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handlePieceClick = (pieceId: string) => {
+  const handlePieceClick = (_pieceId: string) => {
     // TODO: Piece click handler (select piece, show info, toggle jeep mode)
   };
 
-  // Get the valid moves for the currently dragged or hovered piece
+  // Get the valid moves for the currently dragged or hovered piece on the board
   const activePieceId = draggedPieceId || hoveredPieceId;
   const activePiece = activePieceId
-    ? board.pieces.find((p) => p.id === activePieceId) ||
-      holdingPenPieces.find((p) => p.id === activePieceId)
+    ? state.pieces.find((p) => p.id === activePieceId)
     : null;
 
   // Calculate valid placement spaces for pieces from holding pen
   const getValidPlacementSpaces = (
-    piece: Piece,
+    pieceType: PieceType,
   ): Array<{ tileId: number; x: number; y: number }> => {
     const validSpaces: Array<{ tileId: number; x: number; y: number }> = [];
 
-    if (piece instanceof Scientist) {
-      // Scientists can only go on L-tiles, not on exit spaces, one per tile
-      const lTiles = board.tiles.filter((t) => t.shape === "L");
+    if (pieceType === "scientist") {
+      const lTiles = state.tiles.filter((t) => t.shape === "L");
 
       for (const tile of lTiles) {
-        // Check if this tile already has a scientist
-        const hasScientist = board.pieces.some(
-          (p) => p instanceof Scientist && p.tileId === tile.id,
+        const hasScientist = state.pieces.some(
+          (p) => p.type === "scientist" && p.tileId === tile.id,
         );
         if (hasScientist) continue;
 
-        // Add all valid spaces on this L-tile
         for (const space of tile.spaces) {
           if (
             !space.isExit &&
             !space.isUnusable &&
             !space.hasMountain &&
-            !board.pieces.some(
+            !state.pieces.some(
               (p) =>
                 p.tileId === tile.id &&
-                p.localX === space.coordinate.x &&
-                p.localY === space.coordinate.y,
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
             )
           ) {
             validSpaces.push({
@@ -97,32 +107,28 @@ function Board() {
           }
         }
       }
-    } else if (piece instanceof MotherRaptor) {
-      // Mother raptor can only go on central square tiles (2 or 7)
+    } else if (pieceType === "mother") {
       const centralTiles = [2, 7];
-      const squareTiles = board.tiles.filter(
+      const squareTiles = state.tiles.filter(
         (t) => t.shape === "square" && centralTiles.includes(t.id),
       );
 
       for (const tile of squareTiles) {
-        // Check if this tile already has a raptor (mother or baby)
-        const hasRaptor = board.pieces.some(
+        const hasRaptor = state.pieces.some(
           (p) =>
-            (p instanceof MotherRaptor || p instanceof BabyRaptor) &&
-            p.tileId === tile.id,
+            (p.type === "mother" || p.type === "baby") && p.tileId === tile.id,
         );
         if (hasRaptor) continue;
 
-        // Add all valid spaces on this central tile
         for (const space of tile.spaces) {
           if (
             !space.isUnusable &&
             !space.hasMountain &&
-            !board.pieces.some(
+            !state.pieces.some(
               (p) =>
                 p.tileId === tile.id &&
-                p.localX === space.coordinate.x &&
-                p.localY === space.coordinate.y,
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
             )
           ) {
             validSpaces.push({
@@ -133,30 +139,23 @@ function Board() {
           }
         }
       }
-    } else if (piece instanceof BabyRaptor) {
-      // Baby raptors can go on any square tiles, one raptor per tile
-      // BUT: must leave at least one central tile (2 or 7) available for mother
-      const squareTiles = board.tiles.filter((t) => t.shape === "square");
+    } else if (pieceType === "baby") {
+      const squareTiles = state.tiles.filter((t) => t.shape === "square");
       const centralTiles = [2, 7];
 
-      // Check which central tiles are already occupied by raptors
-      const occupiedCentralTiles = board.pieces.filter(
+      const occupiedCentralTiles = state.pieces.filter(
         (p) =>
-          (p instanceof MotherRaptor || p instanceof BabyRaptor) &&
+          (p.type === "mother" || p.type === "baby") &&
           centralTiles.includes(p.tileId),
       );
 
       for (const tile of squareTiles) {
-        // Check if this tile already has a raptor (mother or baby)
-        const hasRaptor = board.pieces.some(
+        const hasRaptor = state.pieces.some(
           (p) =>
-            (p instanceof MotherRaptor || p instanceof BabyRaptor) &&
-            p.tileId === tile.id,
+            (p.type === "mother" || p.type === "baby") && p.tileId === tile.id,
         );
         if (hasRaptor) continue;
 
-        // If this is a central tile and one central tile is already occupied,
-        // don't allow placement (must leave one central tile for mother)
         if (
           centralTiles.includes(tile.id) &&
           occupiedCentralTiles.length >= 1
@@ -164,16 +163,15 @@ function Board() {
           continue;
         }
 
-        // Add all valid spaces on this square tile
         for (const space of tile.spaces) {
           if (
             !space.isUnusable &&
             !space.hasMountain &&
-            !board.pieces.some(
+            !state.pieces.some(
               (p) =>
                 p.tileId === tile.id &&
-                p.localX === space.coordinate.x &&
-                p.localY === space.coordinate.y,
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
             )
           ) {
             validSpaces.push({
@@ -189,167 +187,95 @@ function Board() {
     return validSpaces;
   };
 
-  // Filter valid moves to exclude mountains and occupied spaces
-  const validMoves =
-    activePiece && activePiece.tileId !== -1
-      ? // Piece already on board - use movement rules
-        activePiece.getValidMoves(board).filter((move) => {
-          // Find the target tile
-          const targetTile = board.tiles.find((t) => t.id === move.tileId);
-          if (!targetTile) return false;
+  // Build a board-like object for piece movement logic
+  const boardForMovement = {
+    tiles: state.tiles,
+    pieces: state.pieces.map((p) => ({
+      id: p.id,
+      tileId: p.tileId,
+      localX: p.x,
+      localY: p.y,
+    })),
+  };
 
-          // Find the target space
-          const targetSpace = targetTile.spaces.find(
-            (s) => s.coordinate.x === move.x && s.coordinate.y === move.y,
-          );
-          if (!targetSpace) return false;
+  // Calculate valid moves
+  const validMoves = activePiece
+    ? // Piece on board - use movement rules
+      (() => {
+        const pieceInstance = createPieceFromState(activePiece);
+        return pieceInstance
+          .getValidMoves(boardForMovement as never)
+          .filter((move) => {
+            const targetTile = state.tiles.find((t) => t.id === move.tileId);
+            if (!targetTile) return false;
 
-          // Exclude mountains
-          if (targetSpace.hasMountain) return false;
+            const targetSpace = targetTile.spaces.find(
+              (s) => s.coordinate.x === move.x && s.coordinate.y === move.y,
+            );
+            if (!targetSpace) return false;
 
-          // Exclude occupied spaces
-          const isOccupied = board.pieces.some(
-            (p) =>
-              p.id !== activePieceId &&
-              p.tileId === move.tileId &&
-              p.localX === move.x &&
-              p.localY === move.y,
-          );
-          if (isOccupied) return false;
+            if (targetSpace.hasMountain) return false;
 
-          return true;
-        })
-      : activePiece && activePiece.tileId === -1
-        ? // Piece in holding pen - use placement rules
-          getValidPlacementSpaces(activePiece)
-        : [];
+            const isOccupied = state.pieces.some(
+              (p) =>
+                p.id !== activePieceId &&
+                p.tileId === move.tileId &&
+                p.x === move.x &&
+                p.y === move.y,
+            );
+            if (isOccupied) return false;
+
+            return true;
+          });
+      })()
+    : draggedHoldingPieceType
+      ? // Piece from holding pen - use placement rules
+        getValidPlacementSpaces(draggedHoldingPieceType)
+      : [];
 
   const handleDrop = (tileId: number, localX: number, localY: number) => {
-    if (draggedPieceId) {
-      // Check if piece is from holding pen
-      const holdingPieceIndex = holdingPenPieces.findIndex(
-        (p) => p.id === draggedPieceId,
-      );
-
-      if (holdingPieceIndex !== -1) {
-        // Placing piece from holding pen onto board
-        const piece = holdingPenPieces[holdingPieceIndex];
-
-        // Find the target tile and space
-        const targetTile = board.tiles.find((t) => t.id === tileId);
-        if (!targetTile) return;
-
-        const targetSpace = targetTile.spaces.find(
-          (s) => s.coordinate.x === localX && s.coordinate.y === localY,
-        );
-        if (!targetSpace) return;
-
-        // Check if target space is valid (not mountain, not unusable, not occupied)
-        const isOccupied = board.pieces.some(
-          (p) =>
-            p.tileId === tileId && p.localX === localX && p.localY === localY,
-        );
-
-        // Setup rules for piece placement
-        if (piece instanceof Scientist) {
-          // Scientists can only be placed on L-tiles (not on exit spaces)
-          // and only one scientist per L-tile
-
-          // Must be an L-tile
-          if (targetTile.shape !== "L") return;
-
-          // Cannot be on exit space
-          if (targetSpace.isExit) return;
-
-          // Check if there's already a scientist on this L-tile
-          const scientistOnTile = board.pieces.some(
-            (p) => p instanceof Scientist && p.tileId === tileId,
-          );
-          if (scientistOnTile) return;
-        } else if (piece instanceof MotherRaptor) {
-          // Mother raptor can only be placed on central square tiles (2 or 7)
-          // and only one raptor per tile
-
-          // Must be a square tile
-          if (targetTile.shape !== "square") return;
-
-          // Must be a central tile (2 or 7)
-          const centralTiles = [2, 7];
-          if (!centralTiles.includes(tileId)) return;
-
-          // Check if there's already a raptor on this tile
-          const raptorOnTile = board.pieces.some(
-            (p) =>
-              (p instanceof MotherRaptor || p instanceof BabyRaptor) &&
-              p.tileId === tileId,
-          );
-          if (raptorOnTile) return;
-        } else if (piece instanceof BabyRaptor) {
-          // Baby raptors can be placed on any square tiles
-          // and only one raptor per tile
-          // BUT: must leave at least one central tile (2 or 7) for mother
-
-          // Must be a square tile
-          if (targetTile.shape !== "square") return;
-
-          // Check if there's already a raptor on this tile
-          const raptorOnTile = board.pieces.some(
-            (p) =>
-              (p instanceof MotherRaptor || p instanceof BabyRaptor) &&
-              p.tileId === tileId,
-          );
-          if (raptorOnTile) return;
-
-          // If placing on a central tile, check if the other central tile is occupied
-          const centralTiles = [2, 7];
-          if (centralTiles.includes(tileId)) {
-            const occupiedCentralTiles = board.pieces.filter(
-              (p) =>
-                (p instanceof MotherRaptor || p instanceof BabyRaptor) &&
-                centralTiles.includes(p.tileId),
-            );
-            // Don't allow if one central tile is already occupied
-            if (occupiedCentralTiles.length >= 1) return;
-          }
-        }
-
-        if (
-          !targetSpace.hasMountain &&
-          !targetSpace.isUnusable &&
-          !isOccupied
-        ) {
-          // Create a new piece instance with updated position (React immutability)
-          const updatedPiece = piece.clone(tileId, localX, localY);
-
-          // Add to board and remove from holding pen
-          setBoard({ ...board, pieces: [...board.pieces, updatedPiece] });
-          setHoldingPenPieces(
-            holdingPenPieces.filter((_, i) => i !== holdingPieceIndex),
-          );
-        }
-      } else {
-        // Moving piece already on board
-        const result = movePiece(board, draggedPieceId, tileId, localX, localY);
-        if (result) {
-          setBoard(result);
-        }
+    if (draggedHoldingPieceType) {
+      // Placing piece from holding pen
+      switch (draggedHoldingPieceType) {
+        case "scientist":
+          dispatch({ type: "PLACE_SCIENTIST", tileId, x: localX, y: localY });
+          break;
+        case "mother":
+          dispatch({ type: "PLACE_MOTHER", tileId, x: localX, y: localY });
+          break;
+        case "baby":
+          dispatch({ type: "PLACE_BABY", tileId, x: localX, y: localY });
+          break;
       }
+      setDraggedHoldingPieceType(null);
+    } else if (draggedPieceId) {
+      // Moving piece on board
+      dispatch({
+        type: "MOVE_PIECE",
+        pieceId: draggedPieceId,
+        tileId,
+        x: localX,
+        y: localY,
+      });
       setDraggedPieceId(null);
     }
   };
 
+  // Adapt pieces for Tile component
+  const adaptedPieces = state.pieces.map(adaptPieceForRender);
+
   return (
     <>
       <HoldingPen
-        pieces={holdingPenPieces}
-        onDragStart={handleDragStart}
+        holdingPen={state.holdingPen}
+        onDragStart={handleHoldingPenDragStart}
         onDragEnd={handleDragEnd}
-        onPieceClick={handlePieceClick}
       />
       <div className="Board">
-        {board.tiles.map((tile) => {
-          const piecesOnTile = board.pieces.filter((p) => p.tileId === tile.id);
-          // Filter valid moves for this tile
+        {state.tiles.map((tile) => {
+          const piecesOnTile = adaptedPieces.filter(
+            (p) => p.tileId === tile.id,
+          );
           const validMovesOnTile = validMoves.filter(
             (move) => move.tileId === tile.id,
           );
