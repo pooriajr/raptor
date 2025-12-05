@@ -7,10 +7,6 @@
   perspective: 1000px;
 }
 
-.Card.selected {
-  box-shadow: 0 0 0 3px #ffd700;
-}
-
 .card-face {
   position: absolute;
   width: 100%;
