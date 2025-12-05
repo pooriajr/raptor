@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import "./Card.css";
 import { playCardFlipSound } from "./utils/sound";
+import { getCardEffect } from "./utils/cardEffects";
 
 interface CardProps {
   value: number;
@@ -75,7 +76,7 @@ function Card({
       {/* Front face - shows the card value */}
       <div className="card-face card-front">
         <div className="card-value">{value}</div>
-        <div className="card-icon">{player === "raptor" ? "🦖" : "🔬"}</div>
+        <div className="card-effect">{getCardEffect(player, value)}</div>
       </div>
 
       {/* Back face - shows the card back pattern */}
