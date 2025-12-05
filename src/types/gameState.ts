@@ -8,7 +8,11 @@ export type GamePhase =
   | "SCIENTIST_READY"
   | "SCIENTIST_CARD_SELECTION"
   | "RAPTOR_READY"
-  | "RAPTOR_CARD_SELECTION";
+  | "RAPTOR_CARD_SELECTION"
+  | "CARD_REVEAL"
+  | "SCIENTIST_ACTION"
+  | "RAPTOR_ACTION"
+  | "ROUND_END";
 
 // Piece types as plain data (not class instances)
 export type PieceType = "mother" | "baby" | "scientist";

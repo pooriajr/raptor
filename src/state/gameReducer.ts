@@ -15,7 +15,8 @@ export type GameAction =
   | { type: "START_GAME" }
   | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
-  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number };
+  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number }
+  | { type: "CONFIRM_REVEAL" };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
 function drawCards(cardState: CardState): CardState {
@@ -367,10 +368,42 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             hand: newHand,
             played: action.card,
           },
-          // TODO: Transition to card reveal/resolution phase
-          phase: "SCIENTIST_READY",
+          phase: "CARD_REVEAL",
         };
       }
+      return state;
+    }
+
+    case "CONFIRM_REVEAL": {
+      if (state.phase !== "CARD_REVEAL") return state;
+
+      const scientistCard = state.scientistCards.played;
+      const raptorCard = state.raptorCards.played;
+
+      // If same cards, go to round end (nothing happens)
+      if (scientistCard === raptorCard) {
+        return {
+          ...state,
+          phase: "ROUND_END",
+        };
+      }
+
+      // Lower card gets special action, higher card gets action points
+      // Scientist goes first if they have the lower card
+      if (scientistCard !== null && raptorCard !== null) {
+        if (scientistCard < raptorCard) {
+          return {
+            ...state,
+            phase: "SCIENTIST_ACTION",
+          };
+        } else {
+          return {
+            ...state,
+            phase: "RAPTOR_ACTION",
+          };
+        }
+      }
+
       return state;
     }
 
