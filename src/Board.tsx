@@ -19,7 +19,12 @@ import {
 } from "./utils/pathfinding.ts";
 
 // Effect types for the current card
-type EffectType = "fear" | "sleeping_gas" | "mothers_call" | "none";
+type EffectType =
+  | "fear"
+  | "sleeping_gas"
+  | "mothers_call"
+  | "reinforcements"
+  | "none";
 
 // Adapter: create a piece class instance from plain state for movement logic
 function createPieceFromState(piece: PieceState) {
@@ -111,6 +116,10 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [selectedBabyPathResults, setSelectedBabyPathResults] = useState<
     PathResult[]
   >([]);
+  // For Reinforcements: track pending placements with stable IDs for animation
+  const [pendingReinforcementPlacements, setPendingReinforcementPlacements] =
+    useState<Array<{ id: number; tileId: number; x: number; y: number }>>([]);
+  const [reinforcementIdCounter, setReinforcementIdCounter] = useState(0);
 
   // Reset effect targets when leaving effect phase
   useEffect(() => {
@@ -119,6 +128,8 @@ function Board({ showCoordinates = false }: BoardProps) {
       setSelectedBabyForCall(null);
       setPendingMothersCallMoves([]);
       setSelectedBabyPathResults([]);
+      setPendingReinforcementPlacements([]);
+      setReinforcementIdCounter(0);
     }
   }, [state.phase]);
 
@@ -136,8 +147,9 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (raptorCard === 3 || raptorCard === 8) return "fear";
       return "none";
     } else {
-      // Scientist effects: 1=Sleeping Gas(1), 4=Sleeping Gas(2)
+      // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 4=Sleeping Gas(2), 6=Reinforcements(1-2)
       if (scientistCard === 1 || scientistCard === 4) return "sleeping_gas";
+      if (scientistCard === 2 || scientistCard === 6) return "reinforcements";
       return "none";
     }
   };
@@ -180,8 +192,9 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (raptorCard === 8) return 2;
       return 0;
     } else {
-      // Scientist cards: 1=1 baby, 4=2 babies
+      // Scientist cards: 1=1 baby, 2=2 scientists, 4=2 babies, 6=2 scientists
       if (scientistCard === 1) return 1;
+      if (scientistCard === 2 || scientistCard === 6) return 2; // Reinforcements
       if (scientistCard === 4) return 2;
       return 0;
     }
@@ -311,6 +324,12 @@ function Board({ showCoordinates = false }: BoardProps) {
       });
       setPendingMothersCallMoves([]);
       setSelectedBabyForCall(null);
+    } else if (effectType === "reinforcements") {
+      dispatch({
+        type: "REINFORCEMENTS",
+        placements: pendingReinforcementPlacements,
+      });
+      setPendingReinforcementPlacements([]);
     }
   };
 
@@ -319,35 +338,72 @@ function Board({ showCoordinates = false }: BoardProps) {
     setSelectedEffectTargets([]);
     setSelectedBabyForCall(null);
     setPendingMothersCallMoves([]);
+    setPendingReinforcementPlacements([]);
   };
 
-  // Handle space click for Mother's Call destination
+  // Handle space click for effect destinations (Mother's Call, Reinforcements)
   const handleSpaceClick = (tileId: number, x: number, y: number) => {
     if (state.phase !== "EFFECT_PHASE") return;
-    if (getCurrentEffectType() !== "mothers_call") return;
-    if (selectedBabyForCall === null) return;
 
-    // Find the path for this destination from cached results
-    const pathResult = selectedBabyPathResults.find(
-      (pr) =>
-        pr.position.tileId === tileId &&
-        pr.position.x === x &&
-        pr.position.y === y,
-    );
+    const effectType = getCurrentEffectType();
 
-    // Add to pending moves with path
-    setPendingMothersCallMoves((prev) => [
-      ...prev,
-      {
-        babyId: selectedBabyForCall,
-        destinationTileId: tileId,
-        destinationX: x,
-        destinationY: y,
-        path: pathResult?.path ?? [],
-      },
-    ]);
-    setSelectedBabyForCall(null);
-    setSelectedBabyPathResults([]);
+    if (effectType === "mothers_call") {
+      if (selectedBabyForCall === null) return;
+
+      // Find the path for this destination from cached results
+      const pathResult = selectedBabyPathResults.find(
+        (pr) =>
+          pr.position.tileId === tileId &&
+          pr.position.x === x &&
+          pr.position.y === y,
+      );
+
+      // Add to pending moves with path
+      setPendingMothersCallMoves((prev) => [
+        ...prev,
+        {
+          babyId: selectedBabyForCall,
+          destinationTileId: tileId,
+          destinationX: x,
+          destinationY: y,
+          path: pathResult?.path ?? [],
+        },
+      ]);
+      setSelectedBabyForCall(null);
+      setSelectedBabyPathResults([]);
+    } else if (effectType === "reinforcements") {
+      // Check if already selected (toggle off)
+      const alreadySelected = pendingReinforcementPlacements.some(
+        (p) => p.tileId === tileId && p.x === x && p.y === y,
+      );
+
+      if (alreadySelected) {
+        // Remove from pending
+        setPendingReinforcementPlacements((prev) =>
+          prev.filter((p) => !(p.tileId === tileId && p.x === x && p.y === y)),
+        );
+      } else {
+        const limit = getEffectLimit();
+        const atLimit = pendingReinforcementPlacements.length >= limit;
+
+        if (atLimit) {
+          // Reuse the ID of the oldest placement so Framer Motion animates the move
+          const oldestId = pendingReinforcementPlacements[0].id;
+          setPendingReinforcementPlacements((prev) => [
+            ...prev.slice(1),
+            { id: oldestId, tileId, x, y },
+          ]);
+        } else {
+          // New placement gets a fresh ID
+          const newId = reinforcementIdCounter;
+          setReinforcementIdCounter((c) => c + 1);
+          setPendingReinforcementPlacements((prev) => [
+            ...prev,
+            { id: newId, tileId, x, y },
+          ]);
+        }
+      }
+    }
   };
 
   const handleCardSelect = (value: number) => {
@@ -608,6 +664,58 @@ function Board({ showCoordinates = false }: BoardProps) {
     y: number;
   }> = selectedBabyPathResults.map((pr) => pr.position);
 
+  // Calculate valid destination spaces for Reinforcements (long edges of square tiles)
+  const reinforcementDestinations: Array<{
+    tileId: number;
+    x: number;
+    y: number;
+  }> = (() => {
+    if (state.phase !== "EFFECT_PHASE") return [];
+    if (getCurrentEffectType() !== "reinforcements") return [];
+    if (state.scientistReserve <= 0) return [];
+
+    const destinations: Array<{ tileId: number; x: number; y: number }> = [];
+
+    // Top row squares (1, 2, 3) have long edge at y=0
+    // Bottom row squares (6, 7, 8) have long edge at y=2
+    const topRowTiles = [1, 2, 3];
+    const bottomRowTiles = [6, 7, 8];
+
+    for (const tile of state.tiles) {
+      if (tile.shape !== "square") continue;
+
+      const isTopRow = topRowTiles.includes(tile.id);
+      const isBottomRow = bottomRowTiles.includes(tile.id);
+      if (!isTopRow && !isBottomRow) continue;
+
+      const edgeY = isTopRow ? 0 : 2;
+
+      // Check all 3 spaces on the long edge (x = 0, 1, 2)
+      for (let x = 0; x < 3; x++) {
+        const space = tile.spaces.find(
+          (s) => s.coordinate.x === x && s.coordinate.y === edgeY,
+        );
+        if (!space || space.hasMountain) continue;
+
+        // Check not occupied by a piece
+        const isOccupied = state.pieces.some(
+          (p) => p.tileId === tile.id && p.x === x && p.y === edgeY,
+        );
+        if (isOccupied) continue;
+
+        // Check not already in pending placements
+        const isPending = pendingReinforcementPlacements.some(
+          (p) => p.tileId === tile.id && p.x === x && p.y === edgeY,
+        );
+        if (isPending) continue;
+
+        destinations.push({ tileId: tile.id, x, y: edgeY });
+      }
+    }
+
+    return destinations;
+  })();
+
   // Calculate path trail positions for visualization
   // Includes paths from pending moves + baby start positions
   const pathTrailPositions: Array<{
@@ -646,6 +754,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           effectType={getCurrentEffectType()}
           selectedBabyForCall={selectedBabyForCall}
           pendingMothersCallCount={pendingMothersCallMoves.length}
+          pendingReinforcementCount={pendingReinforcementPlacements.length}
           onConfirm={handleEffectConfirm}
           onSkip={handleEffectSkip}
         />
@@ -710,7 +819,11 @@ function Board({ showCoordinates = false }: BoardProps) {
                       ]
                     : selectedEffectTargets
                 }
-                effectDestinations={mothersCallDestinations}
+                effectDestinations={[
+                  ...mothersCallDestinations,
+                  ...reinforcementDestinations,
+                ]}
+                pendingReinforcementPlacements={pendingReinforcementPlacements}
                 pendingMoves={pendingMothersCallMoves.map((m) => ({
                   babyId: m.babyId,
                   fromTileId:

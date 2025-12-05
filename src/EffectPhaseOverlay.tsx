@@ -2,7 +2,12 @@ import { useGame } from "./state/GameContext";
 import { getCardEffect } from "./utils/cardEffects";
 import "./EffectPhaseOverlay.css";
 
-type EffectType = "fear" | "sleeping_gas" | "mothers_call" | "none";
+type EffectType =
+  | "fear"
+  | "sleeping_gas"
+  | "mothers_call"
+  | "reinforcements"
+  | "none";
 
 interface EffectPhaseBannerProps {
   selectedTargets: string[];
@@ -10,6 +15,7 @@ interface EffectPhaseBannerProps {
   effectType: EffectType;
   selectedBabyForCall: string | null;
   pendingMothersCallCount: number;
+  pendingReinforcementCount: number;
   onConfirm: () => void;
   onSkip: () => void;
 }
@@ -20,6 +26,7 @@ function EffectPhaseBanner({
   effectType,
   selectedBabyForCall,
   pendingMothersCallCount,
+  pendingReinforcementCount,
   onConfirm,
   onSkip,
 }: EffectPhaseBannerProps) {
@@ -48,15 +55,18 @@ function EffectPhaseBanner({
       } else {
         return `Click a baby raptor to call to mother's tile (${pendingMothersCallCount}/${effectLimit})`;
       }
+    } else if (effectType === "reinforcements") {
+      return `Click spaces on outer edges to place scientists (${pendingReinforcementCount}/${effectLimit})`;
     }
     return "No effect";
   };
 
   // Determine if confirm button should be enabled
-  const hasSelections =
-    effectType === "mothers_call"
-      ? pendingMothersCallCount > 0
-      : selectionCount > 0;
+  const hasSelections = (() => {
+    if (effectType === "mothers_call") return pendingMothersCallCount > 0;
+    if (effectType === "reinforcements") return pendingReinforcementCount > 0;
+    return selectionCount > 0;
+  })();
 
   return (
     <div className={`EffectPhaseBanner ${activePlayer}`}>

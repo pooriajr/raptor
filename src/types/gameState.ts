@@ -46,6 +46,7 @@ export interface GameState {
   tiles: Tile[];
   pieces: PieceState[];
   holdingPen: HoldingPen;
+  scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
   raptorCards: CardState;
   scientistCards: CardState;
 }
@@ -86,6 +87,7 @@ export function createInitialGameState(): GameState {
     tiles: createBoard(),
     pieces: [],
     holdingPen: createInitialHoldingPen(),
+    scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     raptorCards: createInitialCardState(),
     scientistCards: createInitialCardState(),
   };

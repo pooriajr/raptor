@@ -174,6 +174,18 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
           >
             Sleep Gas (1)
           </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 5,
+                scientistCard: 2,
+              });
+            }}
+          >
+            Reinforcements
+          </button>
         </div>
       </div>
     </div>

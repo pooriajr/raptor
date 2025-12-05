@@ -29,6 +29,14 @@ export type GameAction =
         destinationY: number;
       }>;
     }
+  | {
+      type: "REINFORCEMENTS";
+      placements: Array<{
+        tileId: number;
+        x: number;
+        y: number;
+      }>;
+    }
   | { type: "END_EFFECT_PHASE" }
   | {
       type: "DEV_SKIP_TO_EFFECT";
@@ -522,6 +530,81 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         pieces: updatedPieces,
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "REINFORCEMENTS": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be scientist's effect (scientist had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (scientistCards.played >= raptorCards.played) return state;
+
+      // Check if we have scientists in reserve
+      if (state.scientistReserve <= 0) return state;
+
+      // Top row squares (1, 2, 3) have long edge at y=0
+      // Bottom row squares (6, 7, 8) have long edge at y=2
+      const topRowTiles = [1, 2, 3];
+      const bottomRowTiles = [6, 7, 8];
+
+      // Validate and place each scientist
+      let updatedPieces = [...state.pieces];
+      let remainingReserve = state.scientistReserve;
+      let placedCount = 0;
+
+      for (const placement of action.placements) {
+        if (remainingReserve <= 0) break;
+
+        const tile = state.tiles.find((t) => t.id === placement.tileId);
+        if (!tile || tile.shape !== "square") continue;
+
+        // Check if on long edge
+        const isTopRow = topRowTiles.includes(placement.tileId);
+        const isBottomRow = bottomRowTiles.includes(placement.tileId);
+        if (!isTopRow && !isBottomRow) continue;
+
+        const requiredY = isTopRow ? 0 : 2;
+        if (placement.y !== requiredY) continue;
+
+        // Check space is valid
+        const space = tile.spaces.find(
+          (s) =>
+            s.coordinate.x === placement.x && s.coordinate.y === placement.y,
+        );
+        if (!space || space.hasMountain) continue;
+
+        // Check space is not occupied
+        if (
+          isSpaceOccupied(
+            updatedPieces,
+            placement.tileId,
+            placement.x,
+            placement.y,
+          )
+        )
+          continue;
+
+        // Place the scientist
+        const newScientist: PieceState = {
+          id: generatePieceId("scientist", updatedPieces),
+          type: "scientist",
+          tileId: placement.tileId,
+          x: placement.x,
+          y: placement.y,
+        };
+        updatedPieces = [...updatedPieces, newScientist];
+        remainingReserve--;
+        placedCount++;
+      }
+
+      return {
+        ...state,
+        pieces: updatedPieces,
+        scientistReserve: remainingReserve,
         phase: "ACTION_PHASE",
       };
     }

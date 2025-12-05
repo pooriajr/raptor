@@ -1,5 +1,6 @@
 import "./Tile.css";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import type { Tile as TileType } from "./types/board.ts";
 
 // Adapted piece interface - works with plain data
@@ -31,6 +32,12 @@ interface TileProps {
   selectedEffectTargets?: string[];
   effectDestinations?: Array<{ tileId: number; x: number; y: number }>;
   pendingMoves?: PendingMove[];
+  pendingReinforcementPlacements?: Array<{
+    id: number;
+    tileId: number;
+    x: number;
+    y: number;
+  }>;
   pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
@@ -49,6 +56,7 @@ function Tile({
   selectedEffectTargets = [],
   effectDestinations = [],
   pendingMoves = [],
+  pendingReinforcementPlacements = [],
   pathTrailPositions = [],
   showCoordinates = false,
   onMouseDown,
@@ -149,6 +157,15 @@ function Tile({
               pos.y === space.coordinate.y,
           );
 
+          // Check if this space has a pending reinforcement placement
+          const pendingReinforcement = pendingReinforcementPlacements.find(
+            (p) =>
+              p.tileId === tile.id &&
+              p.x === space.coordinate.x &&
+              p.y === space.coordinate.y,
+          );
+          const isPendingReinforcement = !!pendingReinforcement;
+
           return (
             <div
               key={index}
@@ -159,7 +176,9 @@ function Tile({
               data-drag-over={isDragOver}
               data-valid-move={isValidMove}
               data-effect-destination={isEffectDestination}
-              data-pending-destination={isPendingDestination}
+              data-pending-destination={
+                isPendingDestination || isPendingReinforcement
+              }
               data-path-trail={isPathTrail}
               onDragOver={(e) =>
                 handleDragOver(
@@ -176,7 +195,10 @@ function Tile({
                 handleDrop(e, space.coordinate.x, space.coordinate.y)
               }
               onClick={() => {
-                if (isEffectDestination && onSpaceClick) {
+                if (
+                  (isEffectDestination || isPendingReinforcement) &&
+                  onSpaceClick
+                ) {
                   onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y);
                 }
               }}
@@ -206,6 +228,16 @@ function Tile({
                 >
                   🦎
                 </span>
+              )}
+              {/* Show scientist at pending reinforcement placement */}
+              {isPendingReinforcement && pendingReinforcement && (
+                <motion.span
+                  className="piece pending-piece"
+                  layoutId={`reinforcement-${pendingReinforcement.id}`}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                >
+                  🧑‍🔬
+                </motion.span>
               )}
               {/* Show piece normally, but hide if it has a pending move */}
               {pieceOnSpace && !pendingMoveFromHere && (
