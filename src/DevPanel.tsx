@@ -155,6 +155,18 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
             onClick={() => {
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 2,
+                scientistCard: 5,
+              });
+            }}
+          >
+            Disappearance
+          </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
                 raptorCard: 3,
                 scientistCard: 5,
               });
