@@ -5,7 +5,10 @@ import { createBoard } from "./board.ts";
 export type GamePhase =
   | "RAPTOR_SETUP"
   | "SCIENTIST_SETUP"
-  | "SCIENTIST_CARD_SELECTION";
+  | "SCIENTIST_READY"
+  | "SCIENTIST_CARD_SELECTION"
+  | "RAPTOR_READY"
+  | "RAPTOR_CARD_SELECTION";
 
 // Piece types as plain data (not class instances)
 export type PieceType = "mother" | "baby" | "scientist";

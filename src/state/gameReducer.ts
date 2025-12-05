@@ -13,6 +13,7 @@ export type GameAction =
       y: number;
     }
   | { type: "START_GAME" }
+  | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
@@ -296,10 +297,27 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       ).length;
       if (scientistsPlaced !== 4) return state;
 
+      // Go to scientist ready screen first (scientist picks first)
       return {
         ...state,
-        phase: "SCIENTIST_CARD_SELECTION",
+        phase: "SCIENTIST_READY",
       };
+    }
+
+    case "PLAYER_READY": {
+      if (action.player === "scientist" && state.phase === "SCIENTIST_READY") {
+        return {
+          ...state,
+          phase: "SCIENTIST_CARD_SELECTION",
+        };
+      }
+      if (action.player === "raptor" && state.phase === "RAPTOR_READY") {
+        return {
+          ...state,
+          phase: "RAPTOR_CARD_SELECTION",
+        };
+      }
+      return state;
     }
 
     case "DRAW_CARDS": {

@@ -42,21 +42,32 @@ function Board({ showCoordinates = false }: BoardProps) {
   const { state, dispatch } = useGame();
 
   const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
-  const [isNewDraw, setIsNewDraw] = useState(false);
+  const [isScientistNewDraw, setIsScientistNewDraw] = useState(false);
+  const [isRaptorNewDraw, setIsRaptorNewDraw] = useState(false);
   const scientistDeckRef = useRef<HTMLDivElement>(null);
+  const raptorDeckRef = useRef<HTMLDivElement>(null);
   const prevPhaseRef = useRef(state.phase);
 
-  // Draw cards when entering SCIENTIST_CARD_SELECTION phase
+  // Draw cards when entering card selection phases
   useEffect(() => {
     if (
       state.phase === "SCIENTIST_CARD_SELECTION" &&
       prevPhaseRef.current !== "SCIENTIST_CARD_SELECTION"
     ) {
-      // Trigger draw cards action
       dispatch({ type: "DRAW_CARDS", player: "scientist" });
-      setIsNewDraw(true);
-      // Reset new draw flag after animation completes
-      const timeout = setTimeout(() => setIsNewDraw(false), 1500);
+      setIsScientistNewDraw(true);
+      const timeout = setTimeout(() => setIsScientistNewDraw(false), 1500);
+      prevPhaseRef.current = state.phase;
+      return () => clearTimeout(timeout);
+    }
+    if (
+      state.phase === "RAPTOR_CARD_SELECTION" &&
+      prevPhaseRef.current !== "RAPTOR_CARD_SELECTION"
+    ) {
+      dispatch({ type: "DRAW_CARDS", player: "raptor" });
+      setIsRaptorNewDraw(true);
+      const timeout = setTimeout(() => setIsRaptorNewDraw(false), 1500);
+      prevPhaseRef.current = state.phase;
       return () => clearTimeout(timeout);
     }
     prevPhaseRef.current = state.phase;
@@ -288,16 +299,25 @@ function Board({ showCoordinates = false }: BoardProps) {
       />
       <div className="game-layout">
         {/* Raptor player area (top) */}
-        <div className="player-area raptor-area">
+        <div className="player-area raptor-area" ref={raptorDeckRef}>
           <div className="deck-section">
             <CardDeck
               player="raptor"
               cardCount={state.raptorCards.deck.length}
             />
           </div>
-          <div className="hand-section">{/* Raptor hand will go here */}</div>
+          <div className="hand-section">
+            {state.phase === "RAPTOR_CARD_SELECTION" && (
+              <Hand
+                cards={state.raptorCards.hand}
+                player="raptor"
+                isNewDraw={isRaptorNewDraw}
+                deckPosition={{ x: -300, y: 0 }}
+              />
+            )}
+          </div>
           <div className="discard-section">
-            {/* Raptor discard will go here */}
+            <div className="discard-placeholder">Discard</div>
           </div>
         </div>
 
@@ -340,7 +360,7 @@ function Board({ showCoordinates = false }: BoardProps) {
               <Hand
                 cards={state.scientistCards.hand}
                 player="scientist"
-                isNewDraw={isNewDraw}
+                isNewDraw={isScientistNewDraw}
                 deckPosition={{ x: -300, y: 0 }}
               />
             )}

@@ -3,6 +3,7 @@ import { useReducer, useState } from "react";
 
 import Board from "./Board.tsx";
 import DevPanel from "./DevPanel.tsx";
+import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
 import { GameContext } from "./state/GameContext.tsx";
 import { gameReducer } from "./state/gameReducer.ts";
 import { createInitialGameState } from "./types/gameState.ts";
@@ -15,6 +16,10 @@ function App() {
   );
   const [showCoordinates, setShowCoordinates] = useState(false);
 
+  const handlePlayerReady = (player: "raptor" | "scientist") => {
+    dispatch({ type: "PLAYER_READY", player });
+  };
+
   return (
     <GameContext.Provider value={{ state, dispatch }}>
       <h1>Raptor Game</h1>
@@ -23,6 +28,18 @@ function App() {
         showCoordinates={showCoordinates}
         onToggleCoordinates={setShowCoordinates}
       />
+      {state.phase === "SCIENTIST_READY" && (
+        <PlayerReadyScreen
+          player="scientist"
+          onReady={() => handlePlayerReady("scientist")}
+        />
+      )}
+      {state.phase === "RAPTOR_READY" && (
+        <PlayerReadyScreen
+          player="raptor"
+          onReady={() => handlePlayerReady("raptor")}
+        />
+      )}
     </GameContext.Provider>
   );
 }
