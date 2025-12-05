@@ -3,7 +3,7 @@ import Tile from "./Tile.tsx";
 import SetupPanel from "./SetupPanel.tsx";
 import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
-import EffectPhaseBanner from "./EffectPhaseOverlay.tsx";
+import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";

@@ -1,6 +1,6 @@
 import { useGame } from "./state/GameContext";
 import { getCardEffect } from "./utils/cardEffects";
-import "./EffectPhaseOverlay.css";
+import "./EffectPhaseBanner.css";
 
 type EffectType =
   | "fear"
