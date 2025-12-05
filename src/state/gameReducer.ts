@@ -62,6 +62,7 @@ export type GameAction =
         path: Array<{ tileId: number; x: number; y: number }>;
       }>;
     }
+  | { type: "DISAPPEARANCE" }
   | { type: "END_EFFECT_PHASE" }
   | {
       type: "DEV_SKIP_TO_EFFECT";
@@ -551,6 +552,29 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             : p,
         );
       }
+
+      return {
+        ...state,
+        pieces: updatedPieces,
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "DISAPPEARANCE": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be raptor's effect (raptor had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (raptorCards.played >= scientistCards.played) return state;
+
+      // Find mother and remove her from the board
+      const mother = state.pieces.find((p) => p.type === "mother");
+      if (!mother) return state;
+
+      // Remove mother from pieces (she'll be replaced after opponent acts)
+      const updatedPieces = state.pieces.filter((p) => p.type !== "mother");
 
       return {
         ...state,

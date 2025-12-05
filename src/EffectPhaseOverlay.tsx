@@ -6,6 +6,7 @@ type EffectType =
   | "fear"
   | "sleeping_gas"
   | "mothers_call"
+  | "disappearance"
   | "reinforcements"
   | "fire"
   | "jeep"
@@ -67,6 +68,8 @@ function EffectPhaseBanner({
       } else {
         return `Click a baby raptor to call to mother's tile (${pendingMothersCallCount}/${effectLimit})`;
       }
+    } else if (effectType === "disappearance") {
+      return "Click Confirm to remove mother from the board";
     } else if (effectType === "reinforcements") {
       return `Click spaces on outer edges to place scientists (${pendingReinforcementCount}/${effectLimit})`;
     } else if (effectType === "fire") {
@@ -84,6 +87,7 @@ function EffectPhaseBanner({
   // Determine if confirm button should be enabled
   const hasSelections = (() => {
     if (effectType === "mothers_call") return pendingMothersCallCount > 0;
+    if (effectType === "disappearance") return true; // Always enabled - just removes mother
     if (effectType === "reinforcements") return pendingReinforcementCount > 0;
     if (effectType === "fire") return pendingFireCount > 0;
     if (effectType === "jeep") return pendingJeepCount > 0;

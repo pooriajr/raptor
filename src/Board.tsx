@@ -29,6 +29,7 @@ type EffectType =
   | "fear"
   | "sleeping_gas"
   | "mothers_call"
+  | "disappearance"
   | "reinforcements"
   | "fire"
   | "jeep"
@@ -204,8 +205,9 @@ function Board({ showCoordinates = false }: BoardProps) {
     const raptorHasEffect = raptorCard < scientistCard;
 
     if (raptorHasEffect) {
-      // Raptor effects: 1=Mother's Call(1), 3=Fear(1), 4=Mother's Call(2), 8=Fear(2)
+      // Raptor effects: 1=Mother's Call(1), 2=Disappearance, 3=Fear(1), 4=Mother's Call(2), 6=Disappearance, 8=Fear(2)
       if (raptorCard === 1 || raptorCard === 4) return "mothers_call";
+      if (raptorCard === 2 || raptorCard === 6) return "disappearance";
       if (raptorCard === 3 || raptorCard === 8) return "fear";
       return "none";
     } else {
@@ -463,6 +465,8 @@ function Board({ showCoordinates = false }: BoardProps) {
       });
       setPendingMothersCallMoves([]);
       setSelectedBabyForCall(null);
+    } else if (effectType === "disappearance") {
+      dispatch({ type: "DISAPPEARANCE" });
     } else if (effectType === "reinforcements") {
       dispatch({
         type: "REINFORCEMENTS",
