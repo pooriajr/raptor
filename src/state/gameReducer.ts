@@ -1,5 +1,9 @@
 import type { CardState, GameState, PieceState } from "../types/gameState.ts";
 import { getReachableDestinationsOnMotherTile } from "../utils/pathfinding.ts";
+import {
+  localToGlobal,
+  getAdjacentGlobalCoordinates,
+} from "../types/coordinates.ts";
 
 // Action types
 export type GameAction =
@@ -31,6 +35,14 @@ export type GameAction =
     }
   | {
       type: "REINFORCEMENTS";
+      placements: Array<{
+        tileId: number;
+        x: number;
+        y: number;
+      }>;
+    }
+  | {
+      type: "PLACE_FIRE";
       placements: Array<{
         tileId: number;
         x: number;
@@ -605,6 +617,88 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         pieces: updatedPieces,
         scientistReserve: remainingReserve,
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "PLACE_FIRE": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be scientist's effect (scientist had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (scientistCards.played >= raptorCards.played) return state;
+
+      // Validate and place each fire token
+      let updatedFireTokens = [...state.fireTokens];
+
+      for (const placement of action.placements) {
+        const tile = state.tiles.find((t) => t.id === placement.tileId);
+        if (!tile) continue;
+
+        // Check space is valid (not mountain, not unusable, not exit)
+        const space = tile.spaces.find(
+          (s) =>
+            s.coordinate.x === placement.x && s.coordinate.y === placement.y,
+        );
+        if (!space || space.hasMountain || space.isUnusable || space.isExit)
+          continue;
+
+        // Check no fire already at this location
+        const hasFireAlready = updatedFireTokens.some(
+          (f) =>
+            f.tileId === placement.tileId &&
+            f.x === placement.x &&
+            f.y === placement.y,
+        );
+        if (hasFireAlready) continue;
+
+        // Check placement is adjacent to a scientist or existing fire (using global coords for cross-tile adjacency)
+        const placementGlobal = localToGlobal(
+          placement.tileId,
+          placement.x,
+          placement.y,
+        );
+        const adjacentGlobals = getAdjacentGlobalCoordinates(
+          placementGlobal.globalX,
+          placementGlobal.globalY,
+        );
+
+        const isAdjacentToScientist = state.pieces.some((p) => {
+          if (p.type !== "scientist") return false;
+          const pGlobal = localToGlobal(p.tileId, p.x, p.y);
+          return adjacentGlobals.some(
+            (adj) =>
+              adj.globalX === pGlobal.globalX &&
+              adj.globalY === pGlobal.globalY,
+          );
+        });
+
+        const isAdjacentToFire = updatedFireTokens.some((f) => {
+          const fGlobal = localToGlobal(f.tileId, f.x, f.y);
+          return adjacentGlobals.some(
+            (adj) =>
+              adj.globalX === fGlobal.globalX &&
+              adj.globalY === fGlobal.globalY,
+          );
+        });
+
+        if (!isAdjacentToScientist && !isAdjacentToFire) continue;
+
+        // Place the fire token
+        const newFire = {
+          id: `fire-${updatedFireTokens.length}`,
+          tileId: placement.tileId,
+          x: placement.x,
+          y: placement.y,
+        };
+        updatedFireTokens = [...updatedFireTokens, newFire];
+      }
+
+      return {
+        ...state,
+        fireTokens: updatedFireTokens,
         phase: "ACTION_PHASE",
       };
     }

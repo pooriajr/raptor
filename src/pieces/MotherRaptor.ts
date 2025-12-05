@@ -1,6 +1,6 @@
 import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
-import type { PieceState } from "../types/gameState.ts";
+import type { PieceState, FireToken } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal } from "../types/coordinates.ts";
 
 export class MotherRaptor extends Piece {
@@ -11,6 +11,7 @@ export class MotherRaptor extends Piece {
   getValidMoves(
     tiles: Tile[],
     pieces: PieceState[],
+    fireTokens: FireToken[] = [],
   ): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
@@ -62,6 +63,15 @@ export class MotherRaptor extends Piece {
             p.y === localPos.localY,
         );
         if (isOccupied) break;
+
+        // Stop if fire is there (mother can't pass through fire)
+        const hasFire = fireTokens.some(
+          (f) =>
+            f.tileId === localPos.tileId &&
+            f.x === localPos.localX &&
+            f.y === localPos.localY,
+        );
+        if (hasFire) break;
 
         // This space is valid
         moves.push({

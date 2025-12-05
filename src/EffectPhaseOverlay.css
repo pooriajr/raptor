@@ -92,6 +92,7 @@
 }
 
 .skip-button,
+.reset-button,
 .confirm-button {
   padding: 8px 20px;
   font-size: 1rem;
@@ -104,9 +105,20 @@
 }
 
 .skip-button:hover,
+.reset-button:hover,
 .confirm-button:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.5);
   border-color: rgba(255, 255, 255, 0.5);
+}
+
+.reset-button {
+  background: rgba(180, 120, 40, 0.5);
+  border-color: #c90;
+}
+
+.reset-button:hover {
+  background: rgba(200, 140, 60, 0.6);
+  border-color: #fa0;
 }
 
 .confirm-button:disabled {

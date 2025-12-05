@@ -1,6 +1,6 @@
 import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
-import type { PieceState } from "../types/gameState.ts";
+import type { PieceState, FireToken } from "../types/gameState.ts";
 import {
   localToGlobal,
   globalToLocal,
@@ -21,6 +21,7 @@ export class Scientist extends Piece {
   getValidMoves(
     tiles: Tile[],
     pieces: PieceState[],
+    _fireTokens?: FireToken[],
   ): Array<{ tileId: number; x: number; y: number }> {
     if (this.jeepMode) {
       return this.getJeepMoves(tiles, pieces);

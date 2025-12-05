@@ -17,6 +17,11 @@ import {
   type Position,
   type PathResult,
 } from "./utils/pathfinding.ts";
+import {
+  localToGlobal,
+  globalToLocal,
+  getAdjacentGlobalCoordinates,
+} from "./types/coordinates.ts";
 
 // Effect types for the current card
 type EffectType =
@@ -24,6 +29,7 @@ type EffectType =
   | "sleeping_gas"
   | "mothers_call"
   | "reinforcements"
+  | "fire"
   | "none";
 
 // Adapter: create a piece class instance from plain state for movement logic
@@ -120,6 +126,10 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [pendingReinforcementPlacements, setPendingReinforcementPlacements] =
     useState<Array<{ id: number; tileId: number; x: number; y: number }>>([]);
   const [reinforcementIdCounter, setReinforcementIdCounter] = useState(0);
+  // For Fire: track pending placements
+  const [pendingFirePlacements, setPendingFirePlacements] = useState<
+    Array<{ tileId: number; x: number; y: number }>
+  >([]);
 
   // Reset effect targets when leaving effect phase
   useEffect(() => {
@@ -130,6 +140,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       setSelectedBabyPathResults([]);
       setPendingReinforcementPlacements([]);
       setReinforcementIdCounter(0);
+      setPendingFirePlacements([]);
     }
   }, [state.phase]);
 
@@ -147,9 +158,10 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (raptorCard === 3 || raptorCard === 8) return "fear";
       return "none";
     } else {
-      // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 4=Sleeping Gas(2), 6=Reinforcements(1-2)
+      // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 4=Sleeping Gas(2), 5=Fire(2), 6=Reinforcements(1-2), 7=Fire(3)
       if (scientistCard === 1 || scientistCard === 4) return "sleeping_gas";
       if (scientistCard === 2 || scientistCard === 6) return "reinforcements";
+      if (scientistCard === 5 || scientistCard === 7) return "fire";
       return "none";
     }
   };
@@ -192,10 +204,12 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (raptorCard === 8) return 2;
       return 0;
     } else {
-      // Scientist cards: 1=1 baby, 2=2 scientists, 4=2 babies, 6=2 scientists
+      // Scientist cards: 1=1 baby, 2=2 scientists, 4=2 babies, 5=2 fire, 6=2 scientists, 7=3 fire
       if (scientistCard === 1) return 1;
       if (scientistCard === 2 || scientistCard === 6) return 2; // Reinforcements
       if (scientistCard === 4) return 2;
+      if (scientistCard === 5) return 2; // Fire x2
+      if (scientistCard === 7) return 3; // Fire x3
       return 0;
     }
   };
@@ -330,6 +344,12 @@ function Board({ showCoordinates = false }: BoardProps) {
         placements: pendingReinforcementPlacements,
       });
       setPendingReinforcementPlacements([]);
+    } else if (effectType === "fire") {
+      dispatch({
+        type: "PLACE_FIRE",
+        placements: pendingFirePlacements,
+      });
+      setPendingFirePlacements([]);
     }
   };
 
@@ -339,6 +359,11 @@ function Board({ showCoordinates = false }: BoardProps) {
     setSelectedBabyForCall(null);
     setPendingMothersCallMoves([]);
     setPendingReinforcementPlacements([]);
+    setPendingFirePlacements([]);
+  };
+
+  const handleFireReset = () => {
+    setPendingFirePlacements([]);
   };
 
   // Handle space click for effect destinations (Mother's Call, Reinforcements)
@@ -403,6 +428,16 @@ function Board({ showCoordinates = false }: BoardProps) {
           ]);
         }
       }
+    } else if (effectType === "fire") {
+      // Fire placement: no undo, no replace - just add until limit
+      const limit = getEffectLimit();
+      if (pendingFirePlacements.length >= limit) {
+        // At limit - do nothing, user must use Reset button
+        return;
+      }
+
+      // Add new fire placement
+      setPendingFirePlacements((prev) => [...prev, { tileId, x, y }]);
     }
   };
 
@@ -556,7 +591,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       (() => {
         const pieceInstance = createPieceFromState(activePiece);
         return pieceInstance
-          .getValidMoves(state.tiles, state.pieces)
+          .getValidMoves(state.tiles, state.pieces, state.fireTokens)
           .filter((move) => {
             const targetTile = state.tiles.find((t) => t.id === move.tileId);
             if (!targetTile) return false;
@@ -576,6 +611,18 @@ function Board({ showCoordinates = false }: BoardProps) {
                 p.y === move.y,
             );
             if (isOccupied) return false;
+
+            // Check for fire at destination
+            const hasFire = state.fireTokens.some(
+              (f) =>
+                f.tileId === move.tileId && f.x === move.x && f.y === move.y,
+            );
+            if (hasFire) {
+              // Raptors cannot move onto fire at all
+              // Scientists can pass through fire but cannot end on it
+              // (for now, both block since this is the final destination)
+              return false;
+            }
 
             return true;
           });
@@ -716,6 +763,94 @@ function Board({ showCoordinates = false }: BoardProps) {
     return destinations;
   })();
 
+  // Calculate valid fire placement destinations (adjacent to scientist or existing fire)
+  const fireDestinations: Array<{
+    tileId: number;
+    x: number;
+    y: number;
+  }> = (() => {
+    if (state.phase !== "EFFECT_PHASE") return [];
+    if (getCurrentEffectType() !== "fire") return [];
+
+    // Don't show destinations if already at limit
+    const limit = getEffectLimit();
+    if (pendingFirePlacements.length >= limit) return [];
+
+    const destinations: Array<{ tileId: number; x: number; y: number }> = [];
+
+    // Collect all global positions adjacent to scientists
+    const scientistAdjacents = new Set<string>();
+    for (const piece of state.pieces) {
+      if (piece.type !== "scientist") continue;
+      const pGlobal = localToGlobal(piece.tileId, piece.x, piece.y);
+      for (const adj of getAdjacentGlobalCoordinates(
+        pGlobal.globalX,
+        pGlobal.globalY,
+      )) {
+        scientistAdjacents.add(`${adj.globalX},${adj.globalY}`);
+      }
+    }
+
+    // Collect all global positions adjacent to existing fire (including pending)
+    const allFire = [...state.fireTokens, ...pendingFirePlacements];
+    const fireAdjacents = new Set<string>();
+    for (const fire of allFire) {
+      const fGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
+      for (const adj of getAdjacentGlobalCoordinates(
+        fGlobal.globalX,
+        fGlobal.globalY,
+      )) {
+        fireAdjacents.add(`${adj.globalX},${adj.globalY}`);
+      }
+    }
+
+    // Combine adjacent positions
+    const allAdjacents = new Set([...scientistAdjacents, ...fireAdjacents]);
+
+    // Convert to local coordinates and filter valid spaces
+    for (const key of allAdjacents) {
+      const [gx, gy] = key.split(",").map(Number);
+      const local = globalToLocal(state.tiles, gx, gy);
+      if (!local) continue;
+
+      const tile = state.tiles.find((t) => t.id === local.tileId);
+      if (!tile) continue;
+
+      const space = tile.spaces.find(
+        (s) =>
+          s.coordinate.x === local.localX && s.coordinate.y === local.localY,
+      );
+      if (!space || space.hasMountain || space.isUnusable || space.isExit)
+        continue;
+
+      // Check no piece at this location
+      const hasPiece = state.pieces.some(
+        (p) =>
+          p.tileId === local.tileId &&
+          p.x === local.localX &&
+          p.y === local.localY,
+      );
+      if (hasPiece) continue;
+
+      // Check no fire already at this location (including pending)
+      const hasFire = allFire.some(
+        (f) =>
+          f.tileId === local.tileId &&
+          f.x === local.localX &&
+          f.y === local.localY,
+      );
+      if (hasFire) continue;
+
+      destinations.push({
+        tileId: local.tileId,
+        x: local.localX,
+        y: local.localY,
+      });
+    }
+
+    return destinations;
+  })();
+
   // Calculate path trail positions for visualization
   // Includes paths from pending moves + baby start positions
   const pathTrailPositions: Array<{
@@ -755,8 +890,10 @@ function Board({ showCoordinates = false }: BoardProps) {
           selectedBabyForCall={selectedBabyForCall}
           pendingMothersCallCount={pendingMothersCallMoves.length}
           pendingReinforcementCount={pendingReinforcementPlacements.length}
+          pendingFireCount={pendingFirePlacements.length}
           onConfirm={handleEffectConfirm}
           onSkip={handleEffectSkip}
+          onFireReset={handleFireReset}
         />
       )}
       <div className="game-layout">
@@ -822,7 +959,10 @@ function Board({ showCoordinates = false }: BoardProps) {
                 effectDestinations={[
                   ...mothersCallDestinations,
                   ...reinforcementDestinations,
+                  ...fireDestinations,
                 ]}
+                pendingFirePlacements={pendingFirePlacements}
+                fireTokens={state.fireTokens}
                 pendingReinforcementPlacements={pendingReinforcementPlacements}
                 pendingMoves={pendingMothersCallMoves.map((m) => ({
                   babyId: m.babyId,

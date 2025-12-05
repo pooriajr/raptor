@@ -41,10 +41,19 @@ export interface CardState {
   played: number | null; // Card played this round
 }
 
+// Fire token - blocks raptor movement, scientists can pass through but not end on
+export interface FireToken {
+  id: string;
+  tileId: number;
+  x: number;
+  y: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   tiles: Tile[];
   pieces: PieceState[];
+  fireTokens: FireToken[];
   holdingPen: HoldingPen;
   scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
   raptorCards: CardState;
@@ -86,6 +95,7 @@ export function createInitialGameState(): GameState {
     phase: "RAPTOR_SETUP",
     tiles: createBoard(),
     pieces: [],
+    fireTokens: [],
     holdingPen: createInitialHoldingPen(),
     scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     raptorCards: createInitialCardState(),

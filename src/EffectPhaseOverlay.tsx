@@ -7,6 +7,7 @@ type EffectType =
   | "sleeping_gas"
   | "mothers_call"
   | "reinforcements"
+  | "fire"
   | "none";
 
 interface EffectPhaseBannerProps {
@@ -16,8 +17,10 @@ interface EffectPhaseBannerProps {
   selectedBabyForCall: string | null;
   pendingMothersCallCount: number;
   pendingReinforcementCount: number;
+  pendingFireCount: number;
   onConfirm: () => void;
   onSkip: () => void;
+  onFireReset: () => void;
 }
 
 function EffectPhaseBanner({
@@ -27,8 +30,10 @@ function EffectPhaseBanner({
   selectedBabyForCall,
   pendingMothersCallCount,
   pendingReinforcementCount,
+  pendingFireCount,
   onConfirm,
   onSkip,
+  onFireReset,
 }: EffectPhaseBannerProps) {
   const { state } = useGame();
 
@@ -57,6 +62,8 @@ function EffectPhaseBanner({
       }
     } else if (effectType === "reinforcements") {
       return `Click spaces on outer edges to place scientists (${pendingReinforcementCount}/${effectLimit})`;
+    } else if (effectType === "fire") {
+      return `Click spaces adjacent to scientists or fire (${pendingFireCount}/${effectLimit})`;
     }
     return "No effect";
   };
@@ -65,6 +72,7 @@ function EffectPhaseBanner({
   const hasSelections = (() => {
     if (effectType === "mothers_call") return pendingMothersCallCount > 0;
     if (effectType === "reinforcements") return pendingReinforcementCount > 0;
+    if (effectType === "fire") return pendingFireCount > 0;
     return selectionCount > 0;
   })();
 
@@ -87,6 +95,11 @@ function EffectPhaseBanner({
           <button className="skip-button" onClick={onSkip}>
             Skip
           </button>
+          {effectType === "fire" && pendingFireCount > 0 && (
+            <button className="reset-button" onClick={onFireReset}>
+              Reset
+            </button>
+          )}
           <button
             className={`confirm-button ${hasSelections ? "active" : ""}`}
             onClick={onConfirm}

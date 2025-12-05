@@ -1,5 +1,5 @@
 import type { Tile } from "../types/board.ts";
-import type { PieceState } from "../types/gameState.ts";
+import type { PieceState, FireToken } from "../types/gameState.ts";
 
 // Base class for all game pieces
 export abstract class Piece {
@@ -20,6 +20,7 @@ export abstract class Piece {
   abstract getValidMoves(
     tiles: Tile[],
     pieces: PieceState[],
+    fireTokens?: FireToken[],
   ): Array<{ tileId: number; x: number; y: number }>;
 
   // Common method to check if a move is valid

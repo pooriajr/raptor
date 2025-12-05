@@ -186,6 +186,30 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
           >
             Reinforcements
           </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 9,
+                scientistCard: 5,
+              });
+            }}
+          >
+            Fire (2)
+          </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 9,
+                scientistCard: 7,
+              });
+            }}
+          >
+            Fire (3)
+          </button>
         </div>
       </div>
     </div>

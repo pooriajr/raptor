@@ -24,6 +24,13 @@ interface PendingMove {
   toY: number;
 }
 
+interface FireToken {
+  id: string;
+  tileId: number;
+  x: number;
+  y: number;
+}
+
 interface TileProps {
   tile: TileType;
   pieces: AdaptedPiece[];
@@ -38,6 +45,8 @@ interface TileProps {
     x: number;
     y: number;
   }>;
+  pendingFirePlacements?: Array<{ tileId: number; x: number; y: number }>;
+  fireTokens?: FireToken[];
   pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
@@ -57,6 +66,8 @@ function Tile({
   effectDestinations = [],
   pendingMoves = [],
   pendingReinforcementPlacements = [],
+  pendingFirePlacements = [],
+  fireTokens = [],
   pathTrailPositions = [],
   showCoordinates = false,
   onMouseDown,
@@ -166,6 +177,22 @@ function Tile({
           );
           const isPendingReinforcement = !!pendingReinforcement;
 
+          // Check if this space has an existing fire token
+          const hasFireToken = fireTokens.some(
+            (f) =>
+              f.tileId === tile.id &&
+              f.x === space.coordinate.x &&
+              f.y === space.coordinate.y,
+          );
+
+          // Check if this space has a pending fire placement
+          const isPendingFire = pendingFirePlacements.some(
+            (p) =>
+              p.tileId === tile.id &&
+              p.x === space.coordinate.x &&
+              p.y === space.coordinate.y,
+          );
+
           return (
             <div
               key={index}
@@ -177,8 +204,9 @@ function Tile({
               data-valid-move={isValidMove}
               data-effect-destination={isEffectDestination}
               data-pending-destination={
-                isPendingDestination || isPendingReinforcement
+                isPendingDestination || isPendingReinforcement || isPendingFire
               }
+              data-has-fire={hasFireToken}
               data-path-trail={isPathTrail}
               onDragOver={(e) =>
                 handleDragOver(
@@ -196,7 +224,9 @@ function Tile({
               }
               onClick={() => {
                 if (
-                  (isEffectDestination || isPendingReinforcement) &&
+                  (isEffectDestination ||
+                    isPendingReinforcement ||
+                    isPendingFire) &&
                   onSpaceClick
                 ) {
                   onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y);
@@ -238,6 +268,12 @@ function Tile({
                 >
                   🧑‍🔬
                 </motion.span>
+              )}
+              {/* Show existing fire token */}
+              {hasFireToken && <span className="fire-token">🔥</span>}
+              {/* Show pending fire placement */}
+              {isPendingFire && (
+                <span className="fire-token pending-fire">🔥</span>
               )}
               {/* Show piece normally, but hide if it has a pending move */}
               {pieceOnSpace && !pendingMoveFromHere && (
