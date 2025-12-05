@@ -28,4 +28,45 @@
   display: flex;
   gap: 12px;
   perspective: 1000px;
+  position: relative;
+}
+
+.selection-area {
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: height 0.3s ease;
+}
+
+.selection-area.active {
+  height: 100px;
+}
+
+.selection-area .confirm-button {
+  position: absolute;
+  right: -140px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #4a9a4a, #3a7a3a);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(74, 154, 74, 0.3);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.selection-area .confirm-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(74, 154, 74, 0.4);
+}
+
+.selection-area .confirm-button:active {
+  transform: scale(0.98);
 }

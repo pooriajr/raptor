@@ -119,14 +119,6 @@ function Board({ showCoordinates = false }: BoardProps) {
     setSelectedCard(null);
   };
 
-  // Determine current player for card selection
-  const currentCardPlayer =
-    state.phase === "SCIENTIST_CARD_SELECTION"
-      ? "scientist"
-      : state.phase === "RAPTOR_CARD_SELECTION"
-        ? "raptor"
-        : null;
-
   // Get the valid moves for the currently dragged or hovered piece on the board
   const activePieceId = draggedPieceId || hoveredPieceId;
   const activePiece = activePieceId
@@ -339,6 +331,7 @@ function Board({ showCoordinates = false }: BoardProps) {
                 isNewDraw={isRaptorNewDraw}
                 deckPosition={{ x: -300, y: 0 }}
                 onCardSelect={handleCardSelect}
+                onConfirm={handleCardConfirm}
                 selectedCard={selectedCard}
               />
             )}
@@ -390,6 +383,7 @@ function Board({ showCoordinates = false }: BoardProps) {
                 isNewDraw={isScientistNewDraw}
                 deckPosition={{ x: -300, y: 0 }}
                 onCardSelect={handleCardSelect}
+                onConfirm={handleCardConfirm}
                 selectedCard={selectedCard}
               />
             )}
@@ -400,15 +394,6 @@ function Board({ showCoordinates = false }: BoardProps) {
           </div>
         </div>
       </div>
-
-      {/* Confirm button when card is selected */}
-      {currentCardPlayer && selectedCard !== null && (
-        <div className="confirm-selection">
-          <button className="confirm-button" onClick={handleCardConfirm}>
-            Confirm Choice
-          </button>
-        </div>
-      )}
     </>
   );
 }

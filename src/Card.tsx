@@ -8,6 +8,8 @@ interface CardProps {
   faceUp?: boolean;
   onClick?: () => void;
   selected?: boolean;
+  // X offset to center the selected card
+  selectedOffsetX?: number;
   // For animation - position to animate from
   initialPosition?: { x: number; y: number };
   // Delay before animation starts
@@ -20,6 +22,7 @@ function Card({
   faceUp = false,
   onClick,
   selected = false,
+  selectedOffsetX = 0,
   initialPosition,
   animationDelay = 0,
 }: CardProps) {
@@ -38,10 +41,11 @@ function Card({
           : { rotateY: faceUp ? 0 : 180, scale: 1 }
       }
       animate={{
-        x: 0,
-        y: selected ? -30 : 0,
+        x: selected ? selectedOffsetX : 0,
+        y: selected ? -80 : 0,
         rotateY: faceUp ? 0 : 180,
-        scale: selected ? 1.3 : 1,
+        scale: selected ? 1.2 : 1,
+        zIndex: selected ? 10 : 0,
       }}
       transition={{
         duration: 0.6,
