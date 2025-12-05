@@ -39,7 +39,8 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
       for (const tile of tilesForBabies) {
         if (babiesPlaced >= 5) break;
         const hasRaptor = state.pieces.some(
-          (p) => (p.type === "mother" || p.type === "baby") && p.tileId === tile.id
+          (p) =>
+            (p.type === "mother" || p.type === "baby") && p.tileId === tile.id,
         );
         if (hasRaptor) continue;
 
@@ -56,12 +57,14 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
 
     // Place scientists on L-tiles
     if (state.phase === "SCIENTIST_SETUP") {
-      let scientistsPlaced = state.pieces.filter((p) => p.type === "scientist").length;
+      let scientistsPlaced = state.pieces.filter(
+        (p) => p.type === "scientist",
+      ).length;
 
       for (const tile of lTiles) {
         if (scientistsPlaced >= 4) break;
         const hasScientist = state.pieces.some(
-          (p) => p.type === "scientist" && p.tileId === tile.id
+          (p) => p.type === "scientist" && p.tileId === tile.id,
         );
         if (hasScientist) continue;
 
@@ -85,13 +88,16 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
     );
   }
 
-  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
+  const isSetupPhase =
+    state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
 
   return (
     <div className="DevPanel">
       <div className="header">
         <span>Dev Panel</span>
-        <button className="collapse-btn" onClick={() => setCollapsed(true)}>-</button>
+        <button className="collapse-btn" onClick={() => setCollapsed(true)}>
+          -
+        </button>
       </div>
 
       <div className="section">
@@ -117,6 +123,47 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
           </button>
         </div>
       )}
+
+      <div className="section">
+        <div className="skip-buttons">
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 1,
+                scientistCard: 5,
+              });
+            }}
+          >
+            Mother's Call (1)
+          </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 3,
+                scientistCard: 5,
+              });
+            }}
+          >
+            Fear (1)
+          </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 5,
+                scientistCard: 1,
+              });
+            }}
+          >
+            Sleep Gas (1)
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

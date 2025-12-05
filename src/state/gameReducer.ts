@@ -27,7 +27,12 @@ export type GameAction =
       destinationX: number;
       destinationY: number;
     }
-  | { type: "END_EFFECT_PHASE" };
+  | { type: "END_EFFECT_PHASE" }
+  | {
+      type: "DEV_SKIP_TO_EFFECT";
+      raptorCard: number;
+      scientistCard: number;
+    };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
 function drawCards(cardState: CardState): CardState {
@@ -515,6 +520,83 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "END_EFFECT_PHASE": {
       if (state.phase !== "EFFECT_PHASE") return state;
       return { ...state, phase: "ACTION_PHASE" };
+    }
+
+    case "DEV_SKIP_TO_EFFECT": {
+      // Dev-only: Skip directly to effect phase with specified cards
+      // Auto-setup pieces if needed
+      let newState = { ...state };
+
+      // If no pieces placed, do auto-setup
+      if (newState.pieces.length === 0) {
+        const squareTiles = newState.tiles.filter((t) => t.shape === "square");
+        const lTiles = newState.tiles.filter((t) => t.shape === "L");
+
+        // Place mother on tile 2
+        const tile2 = squareTiles.find((t) => t.id === 2)!;
+        const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
+        newState.pieces.push({
+          id: "mother",
+          type: "mother",
+          tileId: 2,
+          x: motherSpace.coordinate.x,
+          y: motherSpace.coordinate.y,
+        });
+        newState.holdingPen.mother = 0;
+
+        // Place babies on other square tiles
+        const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
+        let babyIndex = 0;
+        for (const tile of tilesForBabies) {
+          if (babyIndex >= 5) break;
+          const space = tile.spaces.find((s) => !s.hasMountain)!;
+          newState.pieces.push({
+            id: `baby-${babyIndex}`,
+            type: "baby",
+            tileId: tile.id,
+            x: space.coordinate.x,
+            y: space.coordinate.y,
+          });
+          babyIndex++;
+        }
+        newState.holdingPen.babies = 0;
+
+        // Place scientists on L-tiles
+        let scientistIndex = 0;
+        for (const tile of lTiles) {
+          if (scientistIndex >= 4) break;
+          const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+          newState.pieces.push({
+            id: `scientist-${scientistIndex}`,
+            type: "scientist",
+            tileId: tile.id,
+            x: space.coordinate.x,
+            y: space.coordinate.y,
+          });
+          scientistIndex++;
+        }
+        newState.holdingPen.scientists = 0;
+      }
+
+      // Set cards and phase
+      return {
+        ...newState,
+        phase: "EFFECT_PHASE",
+        scientistCards: {
+          ...newState.scientistCards,
+          played: action.scientistCard,
+          hand: newState.scientistCards.hand.filter(
+            (c) => c !== action.scientistCard,
+          ),
+        },
+        raptorCards: {
+          ...newState.raptorCards,
+          played: action.raptorCard,
+          hand: newState.raptorCards.hand.filter(
+            (c) => c !== action.raptorCard,
+          ),
+        },
+      };
     }
 
     default:

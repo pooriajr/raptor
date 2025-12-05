@@ -92,3 +92,28 @@
 .DevPanel .auto-setup-btn:active {
   background-color: #3a4558;
 }
+
+.DevPanel .skip-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.DevPanel .skip-btn {
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  background-color: #2d4a3d;
+  border: none;
+  border-radius: 4px;
+  color: #9ed6b8;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.DevPanel .skip-btn:hover {
+  background-color: #3d5a4d;
+}
+
+.DevPanel .skip-btn:active {
+  background-color: #1d3a2d;
+}
