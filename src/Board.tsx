@@ -114,8 +114,18 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   const handleCardConfirm = () => {
-    // TODO: Dispatch action to play the selected card
-    console.log("Card confirmed:", selectedCard);
+    if (selectedCard === null) return;
+
+    const player =
+      state.phase === "SCIENTIST_CARD_SELECTION"
+        ? "scientist"
+        : state.phase === "RAPTOR_CARD_SELECTION"
+          ? "raptor"
+          : null;
+
+    if (player) {
+      dispatch({ type: "PLAY_CARD", player, card: selectedCard });
+    }
     setSelectedCard(null);
   };
 

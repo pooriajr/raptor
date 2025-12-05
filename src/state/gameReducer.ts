@@ -14,7 +14,8 @@ export type GameAction =
     }
   | { type: "START_GAME" }
   | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
-  | { type: "DRAW_CARDS"; player: "raptor" | "scientist" };
+  | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
+  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
 function drawCards(cardState: CardState): CardState {
@@ -332,6 +333,45 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           scientistCards: drawCards(state.scientistCards),
         };
       }
+    }
+
+    case "PLAY_CARD": {
+      if (
+        action.player === "scientist" &&
+        state.phase === "SCIENTIST_CARD_SELECTION"
+      ) {
+        // Remove card from hand and set as played
+        const newHand = state.scientistCards.hand.filter(
+          (c) => c !== action.card,
+        );
+        return {
+          ...state,
+          scientistCards: {
+            ...state.scientistCards,
+            hand: newHand,
+            played: action.card,
+          },
+          phase: "RAPTOR_READY",
+        };
+      }
+      if (
+        action.player === "raptor" &&
+        state.phase === "RAPTOR_CARD_SELECTION"
+      ) {
+        // Remove card from hand and set as played
+        const newHand = state.raptorCards.hand.filter((c) => c !== action.card);
+        return {
+          ...state,
+          raptorCards: {
+            ...state.raptorCards,
+            hand: newHand,
+            played: action.card,
+          },
+          // TODO: Transition to card reveal/resolution phase
+          phase: "SCIENTIST_READY",
+        };
+      }
+      return state;
     }
 
     default:
