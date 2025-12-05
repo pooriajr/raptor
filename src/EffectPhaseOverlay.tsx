@@ -8,6 +8,7 @@ type EffectType =
   | "mothers_call"
   | "reinforcements"
   | "fire"
+  | "jeep"
   | "none";
 
 interface EffectPhaseBannerProps {
@@ -15,12 +16,15 @@ interface EffectPhaseBannerProps {
   effectLimit: number;
   effectType: EffectType;
   selectedBabyForCall: string | null;
+  selectedScientistForJeep: string | null;
   pendingMothersCallCount: number;
   pendingReinforcementCount: number;
   pendingFireCount: number;
+  pendingJeepCount: number;
   onConfirm: () => void;
   onSkip: () => void;
   onFireReset: () => void;
+  onJeepReset: () => void;
 }
 
 function EffectPhaseBanner({
@@ -28,12 +32,15 @@ function EffectPhaseBanner({
   effectLimit,
   effectType,
   selectedBabyForCall,
+  selectedScientistForJeep,
   pendingMothersCallCount,
   pendingReinforcementCount,
   pendingFireCount,
+  pendingJeepCount,
   onConfirm,
   onSkip,
   onFireReset,
+  onJeepReset,
 }: EffectPhaseBannerProps) {
   const { state } = useGame();
 
@@ -64,6 +71,12 @@ function EffectPhaseBanner({
       return `Click spaces on outer edges to place scientists (${pendingReinforcementCount}/${effectLimit})`;
     } else if (effectType === "fire") {
       return `Click spaces adjacent to scientists or fire (${pendingFireCount}/${effectLimit})`;
+    } else if (effectType === "jeep") {
+      if (selectedScientistForJeep !== null) {
+        return `Click a destination for the jeep (${pendingJeepCount}/${effectLimit})`;
+      } else {
+        return `Click a scientist to move by jeep (${pendingJeepCount}/${effectLimit})`;
+      }
     }
     return "No effect";
   };
@@ -73,6 +86,7 @@ function EffectPhaseBanner({
     if (effectType === "mothers_call") return pendingMothersCallCount > 0;
     if (effectType === "reinforcements") return pendingReinforcementCount > 0;
     if (effectType === "fire") return pendingFireCount > 0;
+    if (effectType === "jeep") return pendingJeepCount > 0;
     return selectionCount > 0;
   })();
 
@@ -97,6 +111,11 @@ function EffectPhaseBanner({
           </button>
           {effectType === "fire" && pendingFireCount > 0 && (
             <button className="reset-button" onClick={onFireReset}>
+              Reset
+            </button>
+          )}
+          {effectType === "jeep" && pendingJeepCount > 0 && (
+            <button className="reset-button" onClick={onJeepReset}>
               Reset
             </button>
           )}

@@ -24,6 +24,17 @@ interface PendingMove {
   toY: number;
 }
 
+interface PendingJeepMove {
+  scientistId: string;
+  fromTileId: number;
+  fromX: number;
+  fromY: number;
+  toTileId: number;
+  toX: number;
+  toY: number;
+  path: Array<{ tileId: number; x: number; y: number }>;
+}
+
 interface FireToken {
   id: string;
   tileId: number;
@@ -47,6 +58,7 @@ interface TileProps {
   }>;
   pendingFirePlacements?: Array<{ tileId: number; x: number; y: number }>;
   fireTokens?: FireToken[];
+  pendingJeepMoves?: PendingJeepMove[];
   pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
@@ -68,6 +80,7 @@ function Tile({
   pendingReinforcementPlacements = [],
   pendingFirePlacements = [],
   fireTokens = [],
+  pendingJeepMoves = [],
   pathTrailPositions = [],
   showCoordinates = false,
   onMouseDown,
@@ -193,6 +206,53 @@ function Tile({
               p.y === space.coordinate.y,
           );
 
+          // Check if this space is a jeep destination (scientist moving here)
+          // Find ALL moves that end at this space
+          const jeepMovesToHere = pendingJeepMoves.filter(
+            (m) =>
+              m.toTileId === tile.id &&
+              m.toX === space.coordinate.x &&
+              m.toY === space.coordinate.y,
+          );
+
+          // Find the move that makes this a FINAL destination (if any)
+          // A move is final if no subsequent move starts from this position for that scientist
+          const finalJeepMoveHere = jeepMovesToHere.find(
+            (m) =>
+              !pendingJeepMoves.some(
+                (m2) =>
+                  m2.scientistId === m.scientistId &&
+                  m2.fromTileId === m.toTileId &&
+                  m2.fromX === m.toX &&
+                  m2.fromY === m.toY,
+              ),
+          );
+          const isFinalJeepDestination = !!finalJeepMoveHere;
+
+          // Intermediate destinations (where a scientist stopped but then moved again)
+          // Only show as intermediate if there's NO final destination here
+          const isIntermediateJeepStop =
+            jeepMovesToHere.length > 0 && !isFinalJeepDestination;
+
+          // Check if this space is where a scientist is moving FROM via jeep
+          const pendingJeepFromHere = pendingJeepMoves.find(
+            (m) =>
+              m.fromTileId === tile.id &&
+              m.fromX === space.coordinate.x &&
+              m.fromY === space.coordinate.y,
+          );
+          const isJeepOrigin = !!pendingJeepFromHere;
+
+          // Check if this space is part of a jeep path (smoke trail)
+          const isJeepPath = pendingJeepMoves.some((m) =>
+            m.path.some(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
+            ),
+          );
+
           return (
             <div
               key={index}
@@ -208,6 +268,14 @@ function Tile({
               }
               data-has-fire={hasFireToken}
               data-path-trail={isPathTrail}
+              data-has-effect-target={
+                (pieceOnSpace &&
+                  !isJeepOrigin &&
+                  effectTargetIds.includes(pieceOnSpace.id)) ||
+                (isFinalJeepDestination &&
+                  finalJeepMoveHere &&
+                  effectTargetIds.includes(finalJeepMoveHere.scientistId))
+              }
               onDragOver={(e) =>
                 handleDragOver(
                   e,
@@ -275,8 +343,33 @@ function Tile({
               {isPendingFire && (
                 <span className="fire-token pending-fire">🔥</span>
               )}
+              {/* Show smoke at jeep origin (where scientist is moving from), but not if a car is here */}
+              {isJeepOrigin &&
+                !isIntermediateJeepStop &&
+                !isFinalJeepDestination && (
+                  <span className="jeep-trail">💨</span>
+                )}
+              {/* Show smoke on jeep path or intermediate stops, but never if a car is here */}
+              {/* Note: intermediate stops are also origins (scientist moved on), so check specifically */}
+              {((isJeepPath && !pieceOnSpace && !isJeepOrigin) ||
+                isIntermediateJeepStop) &&
+                !isFinalJeepDestination && (
+                  <span className="jeep-trail">💨</span>
+                )}
+              {/* Show car at final jeep destination */}
+              {isFinalJeepDestination && finalJeepMoveHere && (
+                <span
+                  className="piece pending-piece jeep-car"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPieceClick(finalJeepMoveHere.scientistId);
+                  }}
+                >
+                  🚙
+                </span>
+              )}
               {/* Show piece normally, but hide if it has a pending move */}
-              {pieceOnSpace && !pendingMoveFromHere && (
+              {pieceOnSpace && !pendingMoveFromHere && !isJeepOrigin && (
                 <span
                   className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
                   draggable

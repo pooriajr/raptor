@@ -14,6 +14,7 @@ import { Scientist } from "./pieces/Scientist.ts";
 import {
   canBabyReachMotherTile,
   getReachableDestinationsOnMotherTileWithPaths,
+  getJeepDestinationsWithPaths,
   type Position,
   type PathResult,
 } from "./utils/pathfinding.ts";
@@ -30,6 +31,7 @@ type EffectType =
   | "mothers_call"
   | "reinforcements"
   | "fire"
+  | "jeep"
   | "none";
 
 // Adapter: create a piece class instance from plain state for movement logic
@@ -130,6 +132,34 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [pendingFirePlacements, setPendingFirePlacements] = useState<
     Array<{ tileId: number; x: number; y: number }>
   >([]);
+  // For Jeep: track selected scientist and pending moves
+  const [selectedScientistForJeep, setSelectedScientistForJeep] = useState<
+    string | null
+  >(null);
+  const [pendingJeepMoves, setPendingJeepMoves] = useState<
+    Array<{
+      scientistId: string;
+      fromTileId: number;
+      fromX: number;
+      fromY: number;
+      toTileId: number;
+      toX: number;
+      toY: number;
+      path: Array<{ tileId: number; x: number; y: number }>; // intermediate spaces for smoke trail
+    }>
+  >([]);
+  // Cache jeep destinations for the currently selected scientist
+  const [
+    selectedScientistJeepDestinations,
+    setSelectedScientistJeepDestinations,
+  ] = useState<
+    Array<{
+      tileId: number;
+      x: number;
+      y: number;
+      path: Array<{ tileId: number; x: number; y: number }>;
+    }>
+  >([]);
 
   // Reset effect targets when leaving effect phase
   useEffect(() => {
@@ -141,6 +171,9 @@ function Board({ showCoordinates = false }: BoardProps) {
       setPendingReinforcementPlacements([]);
       setReinforcementIdCounter(0);
       setPendingFirePlacements([]);
+      setSelectedScientistForJeep(null);
+      setPendingJeepMoves([]);
+      setSelectedScientistJeepDestinations([]);
     }
   }, [state.phase]);
 
@@ -158,9 +191,10 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (raptorCard === 3 || raptorCard === 8) return "fear";
       return "none";
     } else {
-      // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 4=Sleeping Gas(2), 5=Fire(2), 6=Reinforcements(1-2), 7=Fire(3)
+      // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 3=Jeep(2), 4=Sleeping Gas(2), 5=Fire(2), 6=Reinforcements(1-2), 7=Fire(3), 8=Jeep(4)
       if (scientistCard === 1 || scientistCard === 4) return "sleeping_gas";
       if (scientistCard === 2 || scientistCard === 6) return "reinforcements";
+      if (scientistCard === 3 || scientistCard === 8) return "jeep";
       if (scientistCard === 5 || scientistCard === 7) return "fire";
       return "none";
     }
@@ -204,12 +238,14 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (raptorCard === 8) return 2;
       return 0;
     } else {
-      // Scientist cards: 1=1 baby, 2=2 scientists, 4=2 babies, 5=2 fire, 6=2 scientists, 7=3 fire
+      // Scientist cards: 1=1 baby, 2=2 scientists, 3=2 jeep moves, 4=2 babies, 5=2 fire, 6=2 scientists, 7=3 fire, 8=4 jeep moves
       if (scientistCard === 1) return 1;
       if (scientistCard === 2 || scientistCard === 6) return 2; // Reinforcements
+      if (scientistCard === 3) return 2; // Jeep x2
       if (scientistCard === 4) return 2;
       if (scientistCard === 5) return 2; // Fire x2
       if (scientistCard === 7) return 3; // Fire x3
+      if (scientistCard === 8) return 4; // Jeep x4
       return 0;
     }
   };
@@ -309,6 +345,89 @@ function Board({ showCoordinates = false }: BoardProps) {
           setSelectedBabyForCall(pieceId);
           setSelectedBabyPathResults(availablePathResults);
         }
+      } else if (effectType === "jeep") {
+        // Jeep: two-step selection per move
+        // Step 1: Select a scientist
+        // Step 2: Select destination (straight line)
+        // Repeat for additional moves (if limit allows)
+        // Same scientist can move multiple times
+
+        if (piece.type === "scientist") {
+          // If clicking the currently selected scientist, deselect it
+          if (pieceId === selectedScientistForJeep) {
+            setSelectedScientistForJeep(null);
+            setSelectedScientistJeepDestinations([]);
+            return;
+          }
+
+          // Check if we're at the limit - can't add more moves
+          const limit = getEffectLimit();
+          if (pendingJeepMoves.length >= limit) return;
+
+          // Get the scientist's current position (considering pending moves)
+          // A scientist that already moved starts from their last pending position
+          const movesForThisScientist = pendingJeepMoves.filter(
+            (m) => m.scientistId === pieceId,
+          );
+          const currentPos =
+            movesForThisScientist.length > 0
+              ? {
+                  tileId:
+                    movesForThisScientist[movesForThisScientist.length - 1]
+                      .toTileId,
+                  x: movesForThisScientist[movesForThisScientist.length - 1]
+                    .toX,
+                  y: movesForThisScientist[movesForThisScientist.length - 1]
+                    .toY,
+                }
+              : { tileId: piece.tileId, x: piece.x, y: piece.y };
+
+          // Create a temporary piece state for pathfinding
+          const tempPiece = {
+            ...piece,
+            tileId: currentPos.tileId,
+            x: currentPos.x,
+            y: currentPos.y,
+          };
+
+          // Get jeep destinations with paths
+          const destinations = getJeepDestinationsWithPaths(
+            state.tiles,
+            state.pieces,
+            state.fireTokens,
+            tempPiece,
+            pendingJeepMoves,
+          );
+
+          // Filter out destinations that are already occupied by FINAL pending moves
+          // (intermediate stops are not occupied - the scientist moved on from there)
+          const availableDestinations = destinations.filter((d) => {
+            // Check if any scientist's FINAL position is at this destination
+            const isFinalDestination = pendingJeepMoves.some((m) => {
+              // Is this move's destination at d?
+              if (m.toTileId !== d.tileId || m.toX !== d.x || m.toY !== d.y) {
+                return false;
+              }
+              // Check if there's a subsequent move starting from this position
+              const hasSubsequentMove = pendingJeepMoves.some(
+                (m2) =>
+                  m2.scientistId === m.scientistId &&
+                  m2.fromTileId === m.toTileId &&
+                  m2.fromX === m.toX &&
+                  m2.fromY === m.toY,
+              );
+              // Only block if this is the final destination (no subsequent move)
+              return !hasSubsequentMove;
+            });
+            return !isFinalDestination;
+          });
+
+          if (availableDestinations.length === 0) return;
+
+          // Select this scientist and cache its destinations
+          setSelectedScientistForJeep(pieceId);
+          setSelectedScientistJeepDestinations(availableDestinations);
+        }
       }
       return;
     }
@@ -350,6 +469,14 @@ function Board({ showCoordinates = false }: BoardProps) {
         placements: pendingFirePlacements,
       });
       setPendingFirePlacements([]);
+    } else if (effectType === "jeep") {
+      dispatch({
+        type: "JEEP_MOVES",
+        moves: pendingJeepMoves,
+      });
+      setPendingJeepMoves([]);
+      setSelectedScientistForJeep(null);
+      setSelectedScientistJeepDestinations([]);
     }
   };
 
@@ -360,10 +487,19 @@ function Board({ showCoordinates = false }: BoardProps) {
     setPendingMothersCallMoves([]);
     setPendingReinforcementPlacements([]);
     setPendingFirePlacements([]);
+    setSelectedScientistForJeep(null);
+    setPendingJeepMoves([]);
+    setSelectedScientistJeepDestinations([]);
   };
 
   const handleFireReset = () => {
     setPendingFirePlacements([]);
+  };
+
+  const handleJeepReset = () => {
+    setPendingJeepMoves([]);
+    setSelectedScientistForJeep(null);
+    setSelectedScientistJeepDestinations([]);
   };
 
   // Handle space click for effect destinations (Mother's Call, Reinforcements)
@@ -438,6 +574,54 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Add new fire placement
       setPendingFirePlacements((prev) => [...prev, { tileId, x, y }]);
+    } else if (effectType === "jeep") {
+      // Jeep move: add move for selected scientist
+      if (selectedScientistForJeep === null) return;
+
+      // Find the destination with path from cached results
+      const destination = selectedScientistJeepDestinations.find(
+        (d) => d.tileId === tileId && d.x === x && d.y === y,
+      );
+      if (!destination) return;
+
+      // Get the scientist's current position (start of this move)
+      const scientist = state.pieces.find(
+        (p) => p.id === selectedScientistForJeep,
+      );
+      if (!scientist) return;
+
+      const movesForThisScientist = pendingJeepMoves.filter(
+        (m) => m.scientistId === selectedScientistForJeep,
+      );
+      const fromPos =
+        movesForThisScientist.length > 0
+          ? {
+              tileId:
+                movesForThisScientist[movesForThisScientist.length - 1]
+                  .toTileId,
+              x: movesForThisScientist[movesForThisScientist.length - 1].toX,
+              y: movesForThisScientist[movesForThisScientist.length - 1].toY,
+            }
+          : { tileId: scientist.tileId, x: scientist.x, y: scientist.y };
+
+      // Add the move
+      setPendingJeepMoves((prev) => [
+        ...prev,
+        {
+          scientistId: selectedScientistForJeep,
+          fromTileId: fromPos.tileId,
+          fromX: fromPos.x,
+          fromY: fromPos.y,
+          toTileId: tileId,
+          toX: x,
+          toY: y,
+          path: destination.path,
+        },
+      ]);
+
+      // Clear selection - user can select another scientist or same one again
+      setSelectedScientistForJeep(null);
+      setSelectedScientistJeepDestinations([]);
     }
   };
 
@@ -699,6 +883,16 @@ function Board({ showCoordinates = false }: BoardProps) {
             canBabyReachMotherTile(state.tiles, state.pieces, p, mother),
         )
         .map((p) => p.id);
+    } else if (effectType === "jeep") {
+      // Show all scientists as selectable (they can move multiple times)
+      const limit = getEffectLimit();
+      if (pendingJeepMoves.length >= limit && !selectedScientistForJeep) {
+        return [];
+      }
+
+      return state.pieces
+        .filter((p) => p.type === "scientist" && !p.isFrightened)
+        .map((p) => p.id);
     }
 
     return [];
@@ -888,12 +1082,15 @@ function Board({ showCoordinates = false }: BoardProps) {
           effectLimit={getEffectLimit()}
           effectType={getCurrentEffectType()}
           selectedBabyForCall={selectedBabyForCall}
+          selectedScientistForJeep={selectedScientistForJeep}
           pendingMothersCallCount={pendingMothersCallMoves.length}
           pendingReinforcementCount={pendingReinforcementPlacements.length}
           pendingFireCount={pendingFirePlacements.length}
+          pendingJeepCount={pendingJeepMoves.length}
           onConfirm={handleEffectConfirm}
           onSkip={handleEffectSkip}
           onFireReset={handleFireReset}
+          onJeepReset={handleJeepReset}
         />
       )}
       <div className="game-layout">
@@ -960,9 +1157,15 @@ function Board({ showCoordinates = false }: BoardProps) {
                   ...mothersCallDestinations,
                   ...reinforcementDestinations,
                   ...fireDestinations,
+                  ...selectedScientistJeepDestinations.map((d) => ({
+                    tileId: d.tileId,
+                    x: d.x,
+                    y: d.y,
+                  })),
                 ]}
                 pendingFirePlacements={pendingFirePlacements}
                 fireTokens={state.fireTokens}
+                pendingJeepMoves={pendingJeepMoves}
                 pendingReinforcementPlacements={pendingReinforcementPlacements}
                 pendingMoves={pendingMothersCallMoves.map((m) => ({
                   babyId: m.babyId,

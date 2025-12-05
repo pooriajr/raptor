@@ -49,6 +49,19 @@ export type GameAction =
         y: number;
       }>;
     }
+  | {
+      type: "JEEP_MOVES";
+      moves: Array<{
+        scientistId: string;
+        fromTileId: number;
+        fromX: number;
+        fromY: number;
+        toTileId: number;
+        toX: number;
+        toY: number;
+        path: Array<{ tileId: number; x: number; y: number }>;
+      }>;
+    }
   | { type: "END_EFFECT_PHASE" }
   | {
       type: "DEV_SKIP_TO_EFFECT";
@@ -698,6 +711,51 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
+        fireTokens: updatedFireTokens,
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "JEEP_MOVES": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be scientist's effect (scientist had lower card)
+      const { scientistCards: sc, raptorCards: rc } = state;
+      if (sc.played === null || rc.played === null) return state;
+      if (sc.played >= rc.played) return state;
+
+      let updatedPieces = [...state.pieces];
+      let updatedFireTokens = [...state.fireTokens];
+
+      for (const move of action.moves) {
+        // Find the scientist
+        const scientistIndex = updatedPieces.findIndex(
+          (p) => p.id === move.scientistId,
+        );
+        if (scientistIndex === -1) continue;
+
+        // Move the scientist to the destination
+        updatedPieces = updatedPieces.map((p, i) =>
+          i === scientistIndex
+            ? { ...p, tileId: move.toTileId, x: move.toX, y: move.toY }
+            : p,
+        );
+
+        // Extinguish fires along the path (including destination)
+        const allPositions = [
+          ...move.path,
+          { tileId: move.toTileId, x: move.toX, y: move.toY },
+        ];
+        for (const pos of allPositions) {
+          updatedFireTokens = updatedFireTokens.filter(
+            (f) => !(f.tileId === pos.tileId && f.x === pos.x && f.y === pos.y),
+          );
+        }
+      }
+
+      return {
+        ...state,
+        pieces: updatedPieces,
         fireTokens: updatedFireTokens,
         phase: "ACTION_PHASE",
       };

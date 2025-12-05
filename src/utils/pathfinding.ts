@@ -1,5 +1,5 @@
 import type { Tile } from "../types/board.ts";
-import type { PieceState } from "../types/gameState.ts";
+import type { PieceState, FireToken } from "../types/gameState.ts";
 import {
   localToGlobal,
   globalToLocal,
@@ -293,4 +293,126 @@ export function getReachableDestinationsOnMotherTileWithPaths(
     start,
     destinations,
   );
+}
+
+export interface JeepDestination {
+  tileId: number;
+  x: number;
+  y: number;
+  path: Position[]; // Intermediate positions (for smoke trail, excludes start and destination)
+}
+
+/**
+ * Get all valid jeep destinations for a scientist.
+ * Jeep moves in straight orthogonal lines, can pass through fire (extinguishing it),
+ * but stops at mountains, other pieces, or board edges.
+ * Returns destinations with the path (intermediate positions) to each.
+ */
+export function getJeepDestinationsWithPaths(
+  tiles: Tile[],
+  pieces: PieceState[],
+  _fireTokens: FireToken[],
+  scientist: PieceState,
+  pendingJeepMoves: Array<{
+    scientistId: string;
+    toTileId: number;
+    toX: number;
+    toY: number;
+  }> = [],
+): JeepDestination[] {
+  const destinations: JeepDestination[] = [];
+
+  // Build a map of effective piece positions considering pending jeep moves
+  // Scientists with pending moves are at their final pending destination, not original position
+  const effectivePiecePositions: Array<{
+    id: string;
+    tileId: number;
+    x: number;
+    y: number;
+  }> = pieces.map((p) => {
+    if (p.type === "scientist") {
+      // Find the last pending move for this scientist
+      const movesForThis = pendingJeepMoves.filter(
+        (m) => m.scientistId === p.id,
+      );
+      if (movesForThis.length > 0) {
+        const lastMove = movesForThis[movesForThis.length - 1];
+        return {
+          id: p.id,
+          tileId: lastMove.toTileId,
+          x: lastMove.toX,
+          y: lastMove.toY,
+        };
+      }
+    }
+    return { id: p.id, tileId: p.tileId, x: p.x, y: p.y };
+  });
+
+  // Convert scientist position to global coordinates
+  const startGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
+
+  // Four orthogonal directions
+  const directions = [
+    { dx: 0, dy: -1 }, // Up
+    { dx: 0, dy: 1 }, // Down
+    { dx: -1, dy: 0 }, // Left
+    { dx: 1, dy: 0 }, // Right
+  ];
+
+  for (const dir of directions) {
+    const pathPositions: Position[] = [];
+    let distance = 1;
+
+    while (true) {
+      const targetGlobalX = startGlobal.globalX + dir.dx * distance;
+      const targetGlobalY = startGlobal.globalY + dir.dy * distance;
+
+      // Convert to local coordinates
+      const local = globalToLocal(tiles, targetGlobalX, targetGlobalY);
+      if (!local) break; // Off the board
+
+      const tile = tiles.find((t) => t.id === local.tileId);
+      if (!tile) break;
+
+      const space = tile.spaces.find(
+        (s) =>
+          s.coordinate.x === local.localX && s.coordinate.y === local.localY,
+      );
+      if (!space) break;
+
+      // Stop if mountain, unusable, or exit (jeeps can't enter exits)
+      if (space.hasMountain || space.isUnusable || space.isExit) break;
+
+      // Stop if another piece is there (not the scientist itself)
+      // Use effective positions that account for pending jeep moves
+      const isOccupied = effectivePiecePositions.some(
+        (p) =>
+          p.id !== scientist.id &&
+          p.tileId === local.tileId &&
+          p.x === local.localX &&
+          p.y === local.localY,
+      );
+      if (isOccupied) break;
+
+      // This is a valid destination (jeep can pass through fire)
+      // Note: fire at destination is also valid - jeep will extinguish it
+      destinations.push({
+        tileId: local.tileId,
+        x: local.localX,
+        y: local.localY,
+        path: [...pathPositions], // Copy the path so far (excludes this destination)
+      });
+
+      // Add this position to the path for subsequent destinations
+      pathPositions.push({
+        tileId: local.tileId,
+        x: local.localX,
+        y: local.localY,
+      });
+
+      distance++;
+    }
+  }
+
+  return destinations;
 }
