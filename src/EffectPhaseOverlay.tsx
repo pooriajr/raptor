@@ -9,6 +9,7 @@ interface EffectPhaseBannerProps {
   effectLimit: number;
   effectType: EffectType;
   selectedBabyForCall: string | null;
+  pendingMothersCallCount: number;
   onConfirm: () => void;
   onSkip: () => void;
 }
@@ -18,6 +19,7 @@ function EffectPhaseBanner({
   effectLimit,
   effectType,
   selectedBabyForCall,
+  pendingMothersCallCount,
   onConfirm,
   onSkip,
 }: EffectPhaseBannerProps) {
@@ -32,7 +34,6 @@ function EffectPhaseBanner({
   const activePlayer = raptorHasEffect ? "raptor" : "scientist";
   const effectCard = raptorHasEffect ? raptorCard : scientistCard;
 
-  const hasSelections = selectedTargets.length > 0;
   const selectionCount = selectedTargets.length;
 
   // Determine instruction based on effect type
@@ -42,17 +43,20 @@ function EffectPhaseBanner({
     } else if (effectType === "sleeping_gas") {
       return `Click baby raptors to put to sleep (${selectionCount}/${effectLimit})`;
     } else if (effectType === "mothers_call") {
-      if (selectedBabyForCall === null) {
-        return `Click a baby raptor to call to mother's tile (0/${effectLimit})`;
+      if (selectedBabyForCall !== null) {
+        return `Click a destination space on mother's tile (${pendingMothersCallCount}/${effectLimit})`;
       } else {
-        return "Click a destination space on mother's tile";
+        return `Click a baby raptor to call to mother's tile (${pendingMothersCallCount}/${effectLimit})`;
       }
     }
     return "No effect";
   };
 
-  // For Mother's Call, don't show confirm button - it's instant on destination click
-  const showConfirmButton = effectType !== "mothers_call";
+  // Determine if confirm button should be enabled
+  const hasSelections =
+    effectType === "mothers_call"
+      ? pendingMothersCallCount > 0
+      : selectionCount > 0;
 
   return (
     <div className={`EffectPhaseBanner ${activePlayer}`}>
@@ -73,15 +77,13 @@ function EffectPhaseBanner({
           <button className="skip-button" onClick={onSkip}>
             Skip
           </button>
-          {showConfirmButton && (
-            <button
-              className={`confirm-button ${hasSelections ? "active" : ""}`}
-              onClick={onConfirm}
-              disabled={!hasSelections}
-            >
-              Confirm
-            </button>
-          )}
+          <button
+            className={`confirm-button ${hasSelections ? "active" : ""}`}
+            onClick={onConfirm}
+            disabled={!hasSelections}
+          >
+            Confirm
+          </button>
         </div>
       </div>
     </div>

@@ -22,10 +22,12 @@ export type GameAction =
   | { type: "PUT_BABIES_TO_SLEEP"; pieceIds: string[] }
   | {
       type: "MOTHERS_CALL";
-      babyId: string;
-      destinationTileId: number;
-      destinationX: number;
-      destinationY: number;
+      moves: Array<{
+        babyId: string;
+        destinationTileId: number;
+        destinationX: number;
+        destinationY: number;
+      }>;
     }
   | { type: "END_EFFECT_PHASE" }
   | {
@@ -470,49 +472,56 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       if (raptorCards.played >= scientistCards.played) return state;
 
-      // Validate the baby exists
-      const baby = state.pieces.find(
-        (p) => p.id === action.babyId && p.type === "baby",
-      );
-      if (!baby) return state;
-
       // Find mother
       const mother = state.pieces.find((p) => p.type === "mother");
       if (!mother) return state;
 
-      // Validate destination is on mother's tile
-      if (action.destinationTileId !== mother.tileId) return state;
+      // Process each move, updating pieces as we go
+      let updatedPieces = [...state.pieces];
 
-      // Validate the destination is reachable via pathfinding
-      const reachable = getReachableDestinationsOnMotherTile(
-        state.tiles,
-        state.pieces,
-        baby,
-        mother,
-      );
+      for (const move of action.moves) {
+        // Validate the baby exists
+        const baby = updatedPieces.find(
+          (p) => p.id === move.babyId && p.type === "baby",
+        );
+        if (!baby) continue;
 
-      const isValidDestination = reachable.some(
-        (pos) =>
-          pos.tileId === action.destinationTileId &&
-          pos.x === action.destinationX &&
-          pos.y === action.destinationY,
-      );
+        // Validate destination is on mother's tile
+        if (move.destinationTileId !== mother.tileId) continue;
 
-      if (!isValidDestination) return state;
+        // Validate the destination is reachable via pathfinding
+        const reachable = getReachableDestinationsOnMotherTile(
+          state.tiles,
+          updatedPieces,
+          baby,
+          mother,
+        );
 
-      // Move the baby
-      return {
-        ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.babyId
+        const isValidDestination = reachable.some(
+          (pos) =>
+            pos.tileId === move.destinationTileId &&
+            pos.x === move.destinationX &&
+            pos.y === move.destinationY,
+        );
+
+        if (!isValidDestination) continue;
+
+        // Move the baby
+        updatedPieces = updatedPieces.map((p) =>
+          p.id === move.babyId
             ? {
                 ...p,
-                tileId: action.destinationTileId,
-                x: action.destinationX,
-                y: action.destinationY,
+                tileId: move.destinationTileId,
+                x: move.destinationX,
+                y: move.destinationY,
               }
             : p,
-        ),
+        );
+      }
+
+      return {
+        ...state,
+        pieces: updatedPieces,
         phase: "ACTION_PHASE",
       };
     }

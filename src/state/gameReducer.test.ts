@@ -1432,16 +1432,69 @@ describe("Game Reducer - Card System", () => {
 
         state = gameReducer(state, {
           type: "MOTHERS_CALL",
-          babyId: baby.id,
-          destinationTileId: mother.tileId,
-          destinationX: emptySpace!.coordinate.x,
-          destinationY: emptySpace!.coordinate.y,
+          moves: [
+            {
+              babyId: baby.id,
+              destinationTileId: mother.tileId,
+              destinationX: emptySpace!.coordinate.x,
+              destinationY: emptySpace!.coordinate.y,
+            },
+          ],
         });
 
         const movedBaby = state.pieces.find((p) => p.id === baby.id)!;
         expect(movedBaby.tileId).toBe(mother.tileId);
         expect(movedBaby.x).toBe(emptySpace!.coordinate.x);
         expect(movedBaby.y).toBe(emptySpace!.coordinate.y);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("moves multiple babies with Mother's Call (2)", () => {
+        let state = getToEffectPhaseRaptorLower();
+        const mother = state.pieces.find((p) => p.type === "mother")!;
+        const babies = state.pieces.filter(
+          (p) => p.type === "baby" && p.tileId !== mother.tileId,
+        );
+        expect(babies.length).toBeGreaterThanOrEqual(2);
+
+        // Find two empty spaces on mother's tile
+        const motherTile = state.tiles.find((t) => t.id === mother.tileId)!;
+        const emptySpaces = motherTile.spaces.filter(
+          (s) =>
+            !s.isUnusable &&
+            !s.hasMountain &&
+            !s.isExit &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === mother.tileId &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+        expect(emptySpaces.length).toBeGreaterThanOrEqual(2);
+
+        state = gameReducer(state, {
+          type: "MOTHERS_CALL",
+          moves: [
+            {
+              babyId: babies[0].id,
+              destinationTileId: mother.tileId,
+              destinationX: emptySpaces[0].coordinate.x,
+              destinationY: emptySpaces[0].coordinate.y,
+            },
+            {
+              babyId: babies[1].id,
+              destinationTileId: mother.tileId,
+              destinationX: emptySpaces[1].coordinate.x,
+              destinationY: emptySpaces[1].coordinate.y,
+            },
+          ],
+        });
+
+        const movedBaby1 = state.pieces.find((p) => p.id === babies[0].id)!;
+        const movedBaby2 = state.pieces.find((p) => p.id === babies[1].id)!;
+        expect(movedBaby1.tileId).toBe(mother.tileId);
+        expect(movedBaby2.tileId).toBe(mother.tileId);
         expect(state.phase).toBe("ACTION_PHASE");
       });
 
@@ -1454,10 +1507,14 @@ describe("Game Reducer - Card System", () => {
 
         const newState = gameReducer(state, {
           type: "MOTHERS_CALL",
-          babyId: baby.id,
-          destinationTileId: mother.tileId,
-          destinationX: 0,
-          destinationY: 0,
+          moves: [
+            {
+              babyId: baby.id,
+              destinationTileId: mother.tileId,
+              destinationX: 0,
+              destinationY: 0,
+            },
+          ],
         });
 
         // Baby should not have moved
@@ -1466,28 +1523,53 @@ describe("Game Reducer - Card System", () => {
         expect(newState.phase).toBe("EFFECT_PHASE");
       });
 
-      it("is rejected when destination is not on mother's tile", () => {
+      it("skips invalid moves but processes valid ones", () => {
         let state = getToEffectPhaseRaptorLower();
         const mother = state.pieces.find((p) => p.type === "mother")!;
         const baby = state.pieces.find(
           (p) => p.type === "baby" && p.tileId !== mother.tileId,
         )!;
 
-        // Try to move to a different tile
+        // Find an empty space on mother's tile
+        const motherTile = state.tiles.find((t) => t.id === mother.tileId)!;
+        const emptySpace = motherTile.spaces.find(
+          (s) =>
+            !s.isUnusable &&
+            !s.hasMountain &&
+            !s.isExit &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === mother.tileId &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+
+        // Try to move to a different tile (invalid) and mother's tile (valid)
         const otherTileId = mother.tileId === 2 ? 3 : 2;
 
         const newState = gameReducer(state, {
           type: "MOTHERS_CALL",
-          babyId: baby.id,
-          destinationTileId: otherTileId,
-          destinationX: 0,
-          destinationY: 0,
+          moves: [
+            {
+              babyId: baby.id,
+              destinationTileId: otherTileId, // Invalid - wrong tile
+              destinationX: 0,
+              destinationY: 0,
+            },
+            {
+              babyId: baby.id,
+              destinationTileId: mother.tileId, // Valid
+              destinationX: emptySpace!.coordinate.x,
+              destinationY: emptySpace!.coordinate.y,
+            },
+          ],
         });
 
-        // Baby should not have moved
-        const unmoved = newState.pieces.find((p) => p.id === baby.id)!;
-        expect(unmoved.tileId).toBe(baby.tileId);
-        expect(newState.phase).toBe("EFFECT_PHASE");
+        // Baby should have moved (second move was valid)
+        const movedBaby = newState.pieces.find((p) => p.id === baby.id)!;
+        expect(movedBaby.tileId).toBe(mother.tileId);
+        expect(newState.phase).toBe("ACTION_PHASE");
       });
     });
 

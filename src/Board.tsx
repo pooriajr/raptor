@@ -92,16 +92,25 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>(
     [],
   );
-  // For Mother's Call: track selected baby for two-step selection
+  // For Mother's Call: track selected baby and pending moves
   const [selectedBabyForCall, setSelectedBabyForCall] = useState<string | null>(
     null,
   );
+  const [pendingMothersCallMoves, setPendingMothersCallMoves] = useState<
+    Array<{
+      babyId: string;
+      destinationTileId: number;
+      destinationX: number;
+      destinationY: number;
+    }>
+  >([]);
 
   // Reset effect targets when leaving effect phase
   useEffect(() => {
     if (state.phase !== "EFFECT_PHASE") {
       setSelectedEffectTargets([]);
       setSelectedBabyForCall(null);
+      setPendingMothersCallMoves([]);
     }
   }, [state.phase]);
 
@@ -208,25 +217,43 @@ function Board({ showCoordinates = false }: BoardProps) {
           }
         });
       } else if (effectType === "mothers_call") {
-        // Mother's Call: two-step selection
+        // Mother's Call: two-step selection per baby
         // Step 1: Select a baby that can reach mother's tile
         // Step 2: Select destination on mother's tile
+        // Repeat for additional babies (if limit allows)
         const mother = state.pieces.find((p) => p.type === "mother");
         if (!mother) return;
 
-        if (selectedBabyForCall === null) {
-          // Step 1: Select baby
-          if (piece.type !== "baby") return;
+        if (piece.type === "baby") {
+          // Check if this baby already has a pending move
+          const hasPendingMove = pendingMothersCallMoves.some(
+            (m) => m.babyId === pieceId,
+          );
+
+          if (hasPendingMove) {
+            // Remove the pending move (undo)
+            setPendingMothersCallMoves((prev) =>
+              prev.filter((m) => m.babyId !== pieceId),
+            );
+            return;
+          }
+
+          // If clicking the currently selected baby, deselect it
+          if (pieceId === selectedBabyForCall) {
+            setSelectedBabyForCall(null);
+            return;
+          }
+
+          // Check if we're at the limit
+          const limit = getEffectLimit();
+          if (pendingMothersCallMoves.length >= limit) return;
+
+          // Check if baby can reach mother's tile
           if (!canBabyReachMotherTile(state.tiles, state.pieces, piece, mother))
             return;
 
+          // Select this baby
           setSelectedBabyForCall(pieceId);
-        } else {
-          // If clicking the same baby, deselect it
-          if (pieceId === selectedBabyForCall) {
-            setSelectedBabyForCall(null);
-          }
-          // Otherwise ignore piece clicks - we need a space click for destination
         }
       }
       return;
@@ -236,30 +263,35 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   const handleEffectConfirm = () => {
-    const scientistCard = state.scientistCards.played;
-    const raptorCard = state.raptorCards.played;
-    if (scientistCard === null || raptorCard === null) return;
+    const effectType = getCurrentEffectType();
 
-    const raptorHasEffect = raptorCard < scientistCard;
-
-    if (raptorHasEffect) {
+    if (effectType === "fear") {
       dispatch({
         type: "FRIGHTEN_SCIENTISTS",
         pieceIds: selectedEffectTargets,
       });
-    } else {
+      setSelectedEffectTargets([]);
+    } else if (effectType === "sleeping_gas") {
       dispatch({
         type: "PUT_BABIES_TO_SLEEP",
         pieceIds: selectedEffectTargets,
       });
+      setSelectedEffectTargets([]);
+    } else if (effectType === "mothers_call") {
+      dispatch({
+        type: "MOTHERS_CALL",
+        moves: pendingMothersCallMoves,
+      });
+      setPendingMothersCallMoves([]);
+      setSelectedBabyForCall(null);
     }
-    setSelectedEffectTargets([]);
   };
 
   const handleEffectSkip = () => {
     dispatch({ type: "END_EFFECT_PHASE" });
     setSelectedEffectTargets([]);
     setSelectedBabyForCall(null);
+    setPendingMothersCallMoves([]);
   };
 
   // Handle space click for Mother's Call destination
@@ -268,14 +300,16 @@ function Board({ showCoordinates = false }: BoardProps) {
     if (getCurrentEffectType() !== "mothers_call") return;
     if (selectedBabyForCall === null) return;
 
-    // Dispatch the Mother's Call action
-    dispatch({
-      type: "MOTHERS_CALL",
-      babyId: selectedBabyForCall,
-      destinationTileId: tileId,
-      destinationX: x,
-      destinationY: y,
-    });
+    // Add to pending moves instead of dispatching immediately
+    setPendingMothersCallMoves((prev) => [
+      ...prev,
+      {
+        babyId: selectedBabyForCall,
+        destinationTileId: tileId,
+        destinationX: x,
+        destinationY: y,
+      },
+    ]);
     setSelectedBabyForCall(null);
   };
 
@@ -504,22 +538,27 @@ function Board({ showCoordinates = false }: BoardProps) {
         .filter((p) => p.type === "baby" && !p.isAsleep)
         .map((p) => p.id);
     } else if (effectType === "mothers_call") {
-      // If no baby selected yet, show babies that can reach mother
-      if (selectedBabyForCall === null) {
-        const mother = state.pieces.find((p) => p.type === "mother");
-        if (!mother) return [];
+      const mother = state.pieces.find((p) => p.type === "mother");
+      if (!mother) return [];
 
-        return state.pieces
-          .filter(
-            (p) =>
-              p.type === "baby" &&
-              canBabyReachMotherTile(state.tiles, state.pieces, p, mother),
-          )
-          .map((p) => p.id);
-      } else {
-        // Baby is selected - don't highlight any pieces
+      // Get IDs of babies that already have pending moves
+      const pendingBabyIds = pendingMothersCallMoves.map((m) => m.babyId);
+
+      // Show babies that can reach mother and don't already have pending moves
+      // (unless we're at the limit)
+      const limit = getEffectLimit();
+      if (pendingMothersCallMoves.length >= limit && !selectedBabyForCall) {
         return [];
       }
+
+      return state.pieces
+        .filter(
+          (p) =>
+            p.type === "baby" &&
+            !pendingBabyIds.includes(p.id) &&
+            canBabyReachMotherTile(state.tiles, state.pieces, p, mother),
+        )
+        .map((p) => p.id);
     }
 
     return [];
@@ -559,6 +598,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           effectLimit={getEffectLimit()}
           effectType={getCurrentEffectType()}
           selectedBabyForCall={selectedBabyForCall}
+          pendingMothersCallCount={pendingMothersCallMoves.length}
           onConfirm={handleEffectConfirm}
           onSkip={handleEffectSkip}
         />
@@ -617,9 +657,10 @@ function Board({ showCoordinates = false }: BoardProps) {
                 effectTargetIds={effectTargetIds}
                 selectedEffectTargets={
                   getCurrentEffectType() === "mothers_call"
-                    ? selectedBabyForCall
-                      ? [selectedBabyForCall]
-                      : []
+                    ? [
+                        ...pendingMothersCallMoves.map((m) => m.babyId),
+                        ...(selectedBabyForCall ? [selectedBabyForCall] : []),
+                      ]
                     : selectedEffectTargets
                 }
                 effectDestinations={mothersCallDestinations}
