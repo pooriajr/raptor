@@ -30,6 +30,7 @@ type EffectType =
   | "sleeping_gas"
   | "mothers_call"
   | "disappearance"
+  | "recovery"
   | "reinforcements"
   | "fire"
   | "jeep"
@@ -225,10 +226,11 @@ function Board({ showCoordinates = false }: BoardProps) {
     const raptorHasEffect = raptorCard < scientistCard;
 
     if (raptorHasEffect) {
-      // Raptor effects: 1=Mother's Call(1), 2=Disappearance, 3=Fear(1), 4=Mother's Call(2), 6=Disappearance, 8=Fear(2)
+      // Raptor effects: 1=Mother's Call(1), 2=Disappearance, 3=Fear(1), 4=Mother's Call(2), 5=Recovery(2), 6=Disappearance, 7=Recovery(3), 8=Fear(2)
       if (raptorCard === 1 || raptorCard === 4) return "mothers_call";
       if (raptorCard === 2 || raptorCard === 6) return "disappearance";
       if (raptorCard === 3 || raptorCard === 8) return "fear";
+      if (raptorCard === 5 || raptorCard === 7) return "recovery";
       return "none";
     } else {
       // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 3=Jeep(2), 4=Sleeping Gas(2), 5=Fire(2), 6=Reinforcements(1-2), 7=Fire(3), 8=Jeep(4)
@@ -271,10 +273,12 @@ function Board({ showCoordinates = false }: BoardProps) {
     const raptorHasEffect = raptorCard < scientistCard;
 
     if (raptorHasEffect) {
-      // Raptor cards: 1=1 baby, 3=1 scientist, 4=2 babies, 8=2 scientists
+      // Raptor cards: 1=1 baby, 3=1 scientist, 4=2 babies, 5=2 recovery, 7=3 recovery, 8=2 scientists
       if (raptorCard === 1) return 1;
       if (raptorCard === 3) return 1;
       if (raptorCard === 4) return 2;
+      if (raptorCard === 5) return 2; // Recovery x2
+      if (raptorCard === 7) return 3; // Recovery x3
       if (raptorCard === 8) return 2;
       return 0;
     } else {
@@ -315,6 +319,21 @@ function Board({ showCoordinates = false }: BoardProps) {
       } else if (effectType === "sleeping_gas") {
         // Sleeping Gas: select babies to put to sleep
         if (piece.type !== "baby" || piece.isAsleep) return;
+
+        setSelectedEffectTargets((prev) => {
+          if (prev.includes(pieceId)) {
+            return prev.filter((id) => id !== pieceId);
+          } else {
+            const limit = getEffectLimit();
+            if (prev.length >= limit) {
+              return [...prev.slice(1), pieceId];
+            }
+            return [...prev, pieceId];
+          }
+        });
+      } else if (effectType === "recovery") {
+        // Recovery: select sleeping babies to wake up
+        if (piece.type !== "baby" || !piece.isAsleep) return;
 
         setSelectedEffectTargets((prev) => {
           if (prev.includes(pieceId)) {
@@ -475,6 +494,12 @@ function Board({ showCoordinates = false }: BoardProps) {
     } else if (effectType === "sleeping_gas") {
       dispatch({
         type: "PUT_BABIES_TO_SLEEP",
+        pieceIds: selectedEffectTargets,
+      });
+      setSelectedEffectTargets([]);
+    } else if (effectType === "recovery") {
+      dispatch({
+        type: "WAKE_BABIES",
         pieceIds: selectedEffectTargets,
       });
       setSelectedEffectTargets([]);
@@ -881,6 +906,10 @@ function Board({ showCoordinates = false }: BoardProps) {
     } else if (effectType === "sleeping_gas") {
       return state.pieces
         .filter((p) => p.type === "baby" && !p.isAsleep)
+        .map((p) => p.id);
+    } else if (effectType === "recovery") {
+      return state.pieces
+        .filter((p) => p.type === "baby" && p.isAsleep)
         .map((p) => p.id);
     } else if (effectType === "mothers_call") {
       const mother = state.pieces.find((p) => p.type === "mother");

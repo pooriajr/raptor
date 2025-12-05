@@ -63,6 +63,7 @@ export type GameAction =
       }>;
     }
   | { type: "DISAPPEARANCE" }
+  | { type: "WAKE_BABIES"; pieceIds: string[] }
   | { type: "END_EFFECT_PHASE" }
   | {
       type: "DEV_SKIP_TO_EFFECT";
@@ -579,6 +580,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         pieces: updatedPieces,
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "WAKE_BABIES": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be raptor's effect (raptor had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (raptorCards.played >= scientistCards.played) return state;
+
+      // Validate all targets are sleeping babies
+      const validTargets = action.pieceIds.filter((id) => {
+        const baby = state.pieces.find((p) => p.id === id && p.type === "baby");
+        return baby && baby.isAsleep;
+      });
+
+      // Wake up the babies
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          validTargets.includes(p.id) ? { ...p, isAsleep: false } : p,
+        ),
         phase: "ACTION_PHASE",
       };
     }

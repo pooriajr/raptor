@@ -7,6 +7,7 @@ type EffectType =
   | "sleeping_gas"
   | "mothers_call"
   | "disappearance"
+  | "recovery"
   | "reinforcements"
   | "fire"
   | "jeep"
@@ -70,6 +71,8 @@ function EffectPhaseBanner({
       }
     } else if (effectType === "disappearance") {
       return "Click Confirm to remove mother from the board";
+    } else if (effectType === "recovery") {
+      return `Click sleeping babies to wake up (${selectionCount}/${effectLimit})`;
     } else if (effectType === "reinforcements") {
       return `Click spaces on outer edges to place scientists (${pendingReinforcementCount}/${effectLimit})`;
     } else if (effectType === "fire") {

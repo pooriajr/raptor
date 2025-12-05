@@ -180,6 +180,30 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
                 raptorCard: 5,
+                scientistCard: 9,
+              });
+            }}
+          >
+            Recovery (2)
+          </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 7,
+                scientistCard: 9,
+              });
+            }}
+          >
+            Recovery (3)
+          </button>
+          <button
+            className="skip-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: 5,
                 scientistCard: 1,
               });
             }}
