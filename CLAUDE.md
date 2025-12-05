@@ -132,12 +132,11 @@ npm run preview
 - **React 19** with TypeScript (strict mode)
 - **Vite 7** for build tooling with Fast Refresh
 - **Vitest** for testing
+- **Framer Motion** for animations
 - **Module Resolution**: ESNext with bundler mode
 - **Styling**: Component-scoped CSS files
 
 ## Current Architecture
-
-See **ARCHITECTURE.md** for detailed state management design.
 
 ### State Management
 
@@ -149,108 +148,113 @@ See **ARCHITECTURE.md** for detailed state management design.
 ### Components
 
 - **App.tsx**: Root component, holds game state via `useReducer`, provides `GameContext`
-- **Board.tsx**: Game board container, uses `useGame()` hook, dispatches actions for piece placement
+- **Board.tsx**: Game board container, manages effect phase UI state, dispatches actions
 - **Tile.tsx**: Individual tile component with data attributes for styling
-- **HoldingPen.tsx**: Displays pieces available for placement during setup (draggable)
+- **SetupPanel.tsx**: Displays pieces available for placement during setup (draggable)
+- **CardDeck.tsx**: Visual card deck display
+- **Hand.tsx**: Player's hand of cards with selection UI
+- **EffectPhaseBanner.tsx**: Banner showing current effect with instructions and confirm/skip buttons
+- **DevPanel.tsx**: Development tools for testing (auto-setup, skip to effects)
 
 ### State (`src/state/`)
 
-- **gameReducer.ts**: Handles all state changes via actions (PLACE_SCIENTIST, PLACE_MOTHER, PLACE_BABY, MOVE_PIECE)
+- **gameReducer.ts**: Handles all state changes via actions
 - **GameContext.tsx**: React Context and `useGame()` hook for accessing state/dispatch
 
 ### Types (`src/types/`)
 
-- **gameState.ts**: GameState, PieceState, HoldingPen types + `createInitialGameState()`
+- **gameState.ts**: GameState, PieceState, CardState, FireToken types + `createInitialGameState()`
 - **board.ts**: Coordinate, Space, SquareTile, LTile types + `createBoard()` returns `Tile[]`
 - **coordinates.ts**: Global coordinate system (localToGlobal, globalToLocal, adjacency)
+
+### Utilities (`src/utils/`)
+
+- **pathfinding.ts**: BFS pathfinding for Mother's Call, jeep destinations with paths
+- **cardEffects.ts**: Card effect name lookup
+- **pieceUtils.ts**: Piece emoji helpers
 
 ### Pieces (`src/pieces/`)
 
 Logic classes instantiated from `PieceState` for computing valid moves and actions.
 
-- **Piece.ts**: Abstract base class with `getValidMoves(tiles, pieces)`, `clone()`
+- **Piece.ts**: Abstract base class with `getValidMoves(tiles, pieces, fireTokens)`, `clone()`
 - **MotherRaptor.ts**: Mother raptor logic (emoji: 🦖)
 - **BabyRaptor.ts**: Baby raptor logic (emoji: 🦎)
 - **Scientist.ts**: Scientist logic with jeep mode support (emoji: 🧑‍🔬 or 🚙)
 
-### Board Generation Logic
+### Game Phases
 
-- 10 tiles total: 6 square tiles (IDs 1-3, 6-8) + 4 L-tiles (IDs 0, 4, 5, 9)
-- L-tiles positioned at corners: 0 (top-left), 4 (top-right), 5 (bottom-left), 9 (bottom-right)
-- Two asymmetric configurations:
-  - **Spread**: One side has exits at top and bottom (C-shape)
-  - **Clustered**: Other side has exits in middle rows
-- Exits always point away from board center
-- 21 passing tests validate all board generation rules
+```
+RAPTOR_SETUP → SCIENTIST_SETUP → SCIENTIST_READY → SCIENTIST_CARD_SELECTION →
+RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTION_PHASE
+```
 
-### Styling
+### Reducer Actions
 
-- **Board.css**: 5-column, 2-row grid layout
-- **Tile.css**: Square tiles (3×3 grid), L-tiles (3×2 grid with unusable spaces)
-- Data attributes for conditional styling (shape, side, exit-position)
+**Setup:**
 
-### Implementation Needs
+- `PLACE_SCIENTIST`, `PLACE_MOTHER`, `PLACE_BABY`, `MOVE_PIECE`, `START_GAME`
 
-**Core Data Models:**
+**Card Flow:**
 
-- ✅ Board structure (tiles, spaces, coordinates)
-- ✅ Mountain placement on square tiles (random patterns)
-- ✅ Piece positions (mother, babies, scientists)
-- ✅ Game state type with phase - implemented in gameState.ts
-- 📐 Card state (decks, hands, played cards) - designed in ARCHITECTURE.md
-- ⬜ Win condition tracking
+- `PLAYER_READY`, `DRAW_CARDS`, `PLAY_CARD`, `CONFIRM_REVEAL`
 
-**Key Systems to Build:**
+**Effect Phase (Raptor):**
 
-- ✅ Tile/space coordinate system
-- ✅ Global coordinate system (converting tile-local to board-global)
-- ✅ Setup validation (piece placement rules) - via gameReducer
-- ✅ GameState and gameReducer - implemented
-- ✅ GameContext for state/dispatch access - implemented
-- 📐 State machine phases - designed in ARCHITECTURE.md
-- ⬜ Card selection UI (sequential: scientist then raptor)
-- ⬜ Action point system and action validation
-- ⬜ Line of sight calculations (for shooting mother)
-- ⬜ Movement validation (orthogonal, obstacles)
-- ⬜ Win condition checking
-- ⬜ Turn/round management via reducer
+- `FRIGHTEN_SCIENTISTS` - Fear effect
+- `MOTHERS_CALL` - Move babies to mother's tile
+- `DISAPPEARANCE` - Remove mother from board
+- `WAKE_BABIES` - Recovery effect (wake sleeping babies)
 
-**UI Components Needed:**
+**Effect Phase (Scientist):**
 
-- ✅ Board grid rendering
-- ✅ Tile rendering with spaces
-- ✅ Piece rendering (mother, babies, scientists)
-- ✅ HoldingPen for setup piece placement
-- ⬜ Card hand display (hidden from opponent)
-- ⬜ Player aids (tracking captured babies, sleep tokens, reserves)
-- ⬜ Action point counter
-- ⬜ Turn indicator
+- `PUT_BABIES_TO_SLEEP` - Sleeping gas effect
+- `REINFORCEMENTS` - Place scientists from reserve
+- `PLACE_FIRE` - Fire effect
+- `JEEP_MOVES` - Jeep movement with fire extinguishing
+
+**Other:**
+
+- `END_EFFECT_PHASE`, `DEV_SKIP_TO_EFFECT`
 
 ## Current Progress
 
 ### Completed
 
-- ✅ Board type system with Coordinate, Space, SquareTile, LTile (Board interface removed)
+- ✅ Board type system with Coordinate, Space, SquareTile, LTile
 - ✅ Board generation with asymmetric L-tile exit configuration
 - ✅ Visual board rendering with 10 tiles in correct positions
 - ✅ L-tile CSS for all 4 orientations (left/right × top/bottom)
 - ✅ Global coordinate system (localToGlobal, globalToLocal, adjacency)
 - ✅ Piece classes (MotherRaptor, BabyRaptor, Scientist) with movement rules
-- ✅ HoldingPen component for setup piece placement
-- ✅ Setup validation with placement rules (scientists on L-tiles, raptors on squares, etc.)
+- ✅ Setup phase with piece placement and validation
 - ✅ Mountain patterns randomly assigned to square tiles
-- ✅ GameState type with PieceState (plain objects for state)
-- ✅ gameReducer with PLACE_SCIENTIST, PLACE_MOTHER, PLACE_BABY, MOVE_PIECE actions
-- ✅ GameContext and useGame() hook for state/dispatch access
-- ✅ App.tsx holds state via useReducer, provides context
-- ✅ Board.tsx uses context, dispatches actions
-- ✅ Comprehensive test suite (74 tests, all passing)
+- ✅ GameState with PieceState, CardState, FireToken
+- ✅ gameReducer with comprehensive action handling
+- ✅ GameContext and useGame() hook
+- ✅ Card selection UI (sequential: scientist picks, then raptor)
+- ✅ Card reveal animation with Framer Motion
+- ✅ **Effect Phase - All card effects implemented:**
+  - Fear (cards 3, 8) - frighten scientists
+  - Sleeping Gas (cards 1, 4) - put babies to sleep
+  - Mother's Call (cards 1, 4) - move babies to mother's tile with pathfinding
+  - Disappearance (cards 2, 6) - auto-removes mother from board
+  - Recovery (cards 5, 7) - wake sleeping babies
+  - Reinforcements (cards 2, 6) - place scientists on board edges
+  - Fire (cards 5, 7) - place fire tokens adjacent to scientists/fire
+  - Jeep (cards 3, 8) - straight-line movement, extinguishes fires
+- ✅ Effect phase UI with target highlighting (gold for pieces, teal for destinations)
+- ✅ Pending move visualization (footprints for babies, smoke trails for jeeps)
+- ✅ Dev panel for testing effects
+- ✅ Comprehensive test suite (130 tests, all passing)
 
 ### Next Steps
 
-1. **Card selection UI** - Sequential picking (scientist first, then raptor)
-2. **Action point system** - Track and spend action points
-3. **Line of sight** - Calculate shooting paths for scientists
+1. **Action phase** - Spend action points for movement and actions
+2. **Line of sight** - Calculate shooting paths for scientists
+3. **Win condition checking** - Track escaped babies, captured babies, sleep tokens
+4. **Disappearance completion** - Replace mother after opponent's action, observation mechanic
+5. **Recovery completion** - Remove sleep tokens from mother
 
 ### Technical Notes
 
@@ -260,5 +264,6 @@ Logic classes instantiated from `PieceState` for computing valid moves and actio
 - Exit spaces are only for baby raptor escapes
 - Setup rules: Scientists on L-tiles (1 per tile), Mother on central tiles (2 or 7), Babies on remaining squares
 - State lives in single GameState object at App level via useReducer
-- Pieces in state are plain objects; piece classes (MotherRaptor, BabyRaptor, Scientist) encapsulate all piece logic (movement, actions, validation)
-- Phase-based state machine controls valid actions at each point in the game
+- Pieces in state are plain objects; piece classes encapsulate movement/action logic
+- Phase-based state machine controls valid actions at each point
+- Effect phase uses pending state in Board.tsx for multi-step selections before dispatching
