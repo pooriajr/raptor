@@ -34,6 +34,33 @@ type EffectType =
   | "jeep"
   | "none";
 
+// Type for pending jeep moves
+interface PendingJeepMove {
+  scientistId: string;
+  fromTileId: number;
+  fromX: number;
+  fromY: number;
+  toTileId: number;
+  toX: number;
+  toY: number;
+  path: Array<{ tileId: number; x: number; y: number }>;
+}
+
+// Get a scientist's effective position considering pending jeep moves
+function getScientistEffectivePosition(
+  scientist: PieceState,
+  pendingMoves: PendingJeepMove[],
+): { tileId: number; x: number; y: number } {
+  const movesForThis = pendingMoves.filter(
+    (m) => m.scientistId === scientist.id,
+  );
+  if (movesForThis.length > 0) {
+    const last = movesForThis[movesForThis.length - 1];
+    return { tileId: last.toTileId, x: last.toX, y: last.toY };
+  }
+  return { tileId: scientist.tileId, x: scientist.x, y: scientist.y };
+}
+
 // Adapter: create a piece class instance from plain state for movement logic
 function createPieceFromState(piece: PieceState) {
   switch (piece.type) {
@@ -136,18 +163,9 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [selectedScientistForJeep, setSelectedScientistForJeep] = useState<
     string | null
   >(null);
-  const [pendingJeepMoves, setPendingJeepMoves] = useState<
-    Array<{
-      scientistId: string;
-      fromTileId: number;
-      fromX: number;
-      fromY: number;
-      toTileId: number;
-      toX: number;
-      toY: number;
-      path: Array<{ tileId: number; x: number; y: number }>; // intermediate spaces for smoke trail
-    }>
-  >([]);
+  const [pendingJeepMoves, setPendingJeepMoves] = useState<PendingJeepMove[]>(
+    [],
+  );
   // Cache jeep destinations for the currently selected scientist
   const [
     selectedScientistJeepDestinations,
@@ -364,23 +382,11 @@ function Board({ showCoordinates = false }: BoardProps) {
           const limit = getEffectLimit();
           if (pendingJeepMoves.length >= limit) return;
 
-          // Get the scientist's current position (considering pending moves)
-          // A scientist that already moved starts from their last pending position
-          const movesForThisScientist = pendingJeepMoves.filter(
-            (m) => m.scientistId === pieceId,
+          // Get the scientist's effective position (considering pending moves)
+          const currentPos = getScientistEffectivePosition(
+            piece,
+            pendingJeepMoves,
           );
-          const currentPos =
-            movesForThisScientist.length > 0
-              ? {
-                  tileId:
-                    movesForThisScientist[movesForThisScientist.length - 1]
-                      .toTileId,
-                  x: movesForThisScientist[movesForThisScientist.length - 1]
-                    .toX,
-                  y: movesForThisScientist[movesForThisScientist.length - 1]
-                    .toY,
-                }
-              : { tileId: piece.tileId, x: piece.x, y: piece.y };
 
           // Create a temporary piece state for pathfinding
           const tempPiece = {
@@ -584,25 +590,16 @@ function Board({ showCoordinates = false }: BoardProps) {
       );
       if (!destination) return;
 
-      // Get the scientist's current position (start of this move)
+      // Get the scientist's effective position (start of this move)
       const scientist = state.pieces.find(
         (p) => p.id === selectedScientistForJeep,
       );
       if (!scientist) return;
 
-      const movesForThisScientist = pendingJeepMoves.filter(
-        (m) => m.scientistId === selectedScientistForJeep,
+      const fromPos = getScientistEffectivePosition(
+        scientist,
+        pendingJeepMoves,
       );
-      const fromPos =
-        movesForThisScientist.length > 0
-          ? {
-              tileId:
-                movesForThisScientist[movesForThisScientist.length - 1]
-                  .toTileId,
-              x: movesForThisScientist[movesForThisScientist.length - 1].toX,
-              y: movesForThisScientist[movesForThisScientist.length - 1].toY,
-            }
-          : { tileId: scientist.tileId, x: scientist.x, y: scientist.y };
 
       // Add the move
       setPendingJeepMoves((prev) => [
