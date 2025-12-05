@@ -36,10 +36,11 @@
   position: relative;
 }
 
-.card-wrapper .confirm-button {
+.hand-cards > .confirm-button {
   position: absolute;
-  top: -115px;
-  left: 130px;
+  top: 45px;
+  left: 50%;
+  transform: translateX(70px);
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
   font-weight: bold;
@@ -56,11 +57,11 @@
   z-index: 20;
 }
 
-.card-wrapper .confirm-button:hover {
-  transform: scale(1.05);
+.hand-cards > .confirm-button:hover {
+  transform: translateX(70px) scale(1.05);
   box-shadow: 0 6px 20px rgba(74, 154, 74, 0.4);
 }
 
-.card-wrapper .confirm-button:active {
-  transform: scale(0.98);
+.hand-cards > .confirm-button:active {
+  transform: translateX(70px) scale(0.98);
 }

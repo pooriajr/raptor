@@ -87,13 +87,13 @@ function Hand({
               animationDelay={isNewDraw ? index * 0.15 : 0}
               onSelectionComplete={() => setShowConfirmButton(true)}
             />
-            {isSelected(value) && showConfirmButton && onConfirm && (
-              <button className="confirm-button" onClick={onConfirm}>
-                Confirm
-              </button>
-            )}
           </div>
         ))}
+        {showConfirmButton && selectedCard != null && onConfirm && (
+          <button className="confirm-button" onClick={onConfirm}>
+            Confirm
+          </button>
+        )}
       </div>
     </div>
   );
