@@ -3,6 +3,7 @@ import Tile from "./Tile.tsx";
 import SetupPanel from "./SetupPanel.tsx";
 import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
+import EffectPhaseBanner from "./EffectPhaseOverlay.tsx";
 import { useState, useEffect, useRef } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
@@ -31,6 +32,8 @@ function adaptPieceForRender(piece: PieceState) {
     localX: piece.x,
     localY: piece.y,
     getEmoji: () => getPieceEmoji(piece.type),
+    isAsleep: piece.isAsleep,
+    isFrightened: piece.isFrightened,
   };
 }
 
@@ -79,6 +82,16 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
     useState<PieceType | null>(null);
   const [hoveredPieceId, setHoveredPieceId] = useState<string | null>(null);
+  const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>(
+    [],
+  );
+
+  // Reset effect targets when leaving effect phase
+  useEffect(() => {
+    if (state.phase !== "EFFECT_PHASE") {
+      setSelectedEffectTargets([]);
+    }
+  }, [state.phase]);
 
   const handleMouseDown = (pieceId: string) => {
     setHoveredPieceId(pieceId);
@@ -102,8 +115,83 @@ function Board({ showCoordinates = false }: BoardProps) {
     setDraggedHoldingPieceType(null);
   };
 
-  const handlePieceClick = (_pieceId: string) => {
-    // TODO: Piece click handler (select piece, show info, toggle jeep mode)
+  // Get effect limit for current card
+  const getEffectLimit = (): number => {
+    const scientistCard = state.scientistCards.played;
+    const raptorCard = state.raptorCards.played;
+    if (scientistCard === null || raptorCard === null) return 0;
+
+    const raptorHasEffect = raptorCard < scientistCard;
+    // For now, hardcode Fear x2 and Sleeping Gas x2
+    // Later this will be determined by actual card effects
+    return raptorHasEffect ? 2 : 2;
+  };
+
+  const handlePieceClick = (pieceId: string) => {
+    // Handle effect phase targeting
+    if (state.phase === "EFFECT_PHASE") {
+      const scientistCard = state.scientistCards.played;
+      const raptorCard = state.raptorCards.played;
+      if (scientistCard === null || raptorCard === null) return;
+
+      const raptorHasEffect = raptorCard < scientistCard;
+      const piece = state.pieces.find((p) => p.id === pieceId);
+      if (!piece) return;
+
+      // Check if this is a valid target
+      const isValidTarget =
+        (raptorHasEffect &&
+          piece.type === "scientist" &&
+          !piece.isFrightened) ||
+        (!raptorHasEffect && piece.type === "baby" && !piece.isAsleep);
+
+      if (!isValidTarget) return;
+
+      // Toggle selection
+      setSelectedEffectTargets((prev) => {
+        if (prev.includes(pieceId)) {
+          // Deselect
+          return prev.filter((id) => id !== pieceId);
+        } else {
+          // Select (if under limit)
+          const limit = getEffectLimit();
+          if (prev.length >= limit) {
+            // At limit - replace oldest selection
+            return [...prev.slice(1), pieceId];
+          }
+          return [...prev, pieceId];
+        }
+      });
+      return;
+    }
+
+    // TODO: Other piece click handlers (select piece, show info, toggle jeep mode)
+  };
+
+  const handleEffectConfirm = () => {
+    const scientistCard = state.scientistCards.played;
+    const raptorCard = state.raptorCards.played;
+    if (scientistCard === null || raptorCard === null) return;
+
+    const raptorHasEffect = raptorCard < scientistCard;
+
+    if (raptorHasEffect) {
+      dispatch({
+        type: "FRIGHTEN_SCIENTISTS",
+        pieceIds: selectedEffectTargets,
+      });
+    } else {
+      dispatch({
+        type: "PUT_BABIES_TO_SLEEP",
+        pieceIds: selectedEffectTargets,
+      });
+    }
+    setSelectedEffectTargets([]);
+  };
+
+  const handleEffectSkip = () => {
+    dispatch({ type: "END_EFFECT_PHASE" });
+    setSelectedEffectTargets([]);
   };
 
   const handleCardSelect = (value: number) => {
@@ -316,12 +404,39 @@ function Board({ showCoordinates = false }: BoardProps) {
   // Adapt pieces for Tile component
   const adaptedPieces = state.pieces.map(adaptPieceForRender);
 
+  // Calculate valid effect targets during effect phase
+  const effectTargetIds: string[] = (() => {
+    if (state.phase !== "EFFECT_PHASE") return [];
+    const scientistCard = state.scientistCards.played;
+    const raptorCard = state.raptorCards.played;
+    if (scientistCard === null || raptorCard === null) return [];
+
+    const raptorHasEffect = raptorCard < scientistCard;
+    if (raptorHasEffect) {
+      return state.pieces
+        .filter((p) => p.type === "scientist" && !p.isFrightened)
+        .map((p) => p.id);
+    } else {
+      return state.pieces
+        .filter((p) => p.type === "baby" && !p.isAsleep)
+        .map((p) => p.id);
+    }
+  })();
+
   return (
     <>
       <SetupPanel
         onDragStart={handleHoldingPenDragStart}
         onDragEnd={handleDragEnd}
       />
+      {state.phase === "EFFECT_PHASE" && (
+        <EffectPhaseBanner
+          selectedTargets={selectedEffectTargets}
+          effectLimit={getEffectLimit()}
+          onConfirm={handleEffectConfirm}
+          onSkip={handleEffectSkip}
+        />
+      )}
       <div className="game-layout">
         {/* Raptor player area (top) */}
         <div className="player-area raptor-area" ref={raptorDeckRef}>
@@ -373,6 +488,8 @@ function Board({ showCoordinates = false }: BoardProps) {
                 tile={tile}
                 pieces={piecesOnTile}
                 validMoves={validMovesOnTile}
+                effectTargetIds={effectTargetIds}
+                selectedEffectTargets={selectedEffectTargets}
                 showCoordinates={showCoordinates}
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}

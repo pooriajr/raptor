@@ -978,7 +978,7 @@ describe("Game Reducer - Card System", () => {
       return state;
     }
 
-    it("transitions to SCIENTIST_ACTION when scientist has lower card", () => {
+    it("transitions to EFFECT_PHASE when scientist has lower card", () => {
       let state = getToRevealWithCards(3, 7);
       expect(state.phase).toBe("CARD_REVEAL");
       expect(state.scientistCards.played).toBe(3);
@@ -986,10 +986,10 @@ describe("Game Reducer - Card System", () => {
 
       state = gameReducer(state, { type: "CONFIRM_REVEAL" });
 
-      expect(state.phase).toBe("SCIENTIST_ACTION");
+      expect(state.phase).toBe("EFFECT_PHASE");
     });
 
-    it("transitions to RAPTOR_ACTION when raptor has lower card", () => {
+    it("transitions to EFFECT_PHASE when raptor has lower card", () => {
       let state = getToRevealWithCards(8, 2);
       expect(state.phase).toBe("CARD_REVEAL");
       expect(state.scientistCards.played).toBe(8);
@@ -997,7 +997,7 @@ describe("Game Reducer - Card System", () => {
 
       state = gameReducer(state, { type: "CONFIRM_REVEAL" });
 
-      expect(state.phase).toBe("RAPTOR_ACTION");
+      expect(state.phase).toBe("EFFECT_PHASE");
     });
 
     it("transitions to ROUND_END when cards are equal", () => {
@@ -1085,6 +1085,344 @@ describe("Game Reducer - Card System", () => {
 
       state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
       expect(state.scientistCards.hand).toEqual(expectedRemainingHand);
+    });
+  });
+
+  describe("Effect Phase Actions", () => {
+    // Helper to get to EFFECT_PHASE with raptor having lower card
+    function getToEffectPhaseRaptorLower(): GameState {
+      let state = createInitialGameState();
+
+      // Set up decks so raptor has lower card
+      state = {
+        ...state,
+        scientistCards: {
+          deck: [7, 2, 3, 4, 5, 6, 1, 8, 9],
+          hand: [],
+          played: null,
+        },
+        raptorCards: {
+          deck: [3, 2, 4, 5, 6, 1, 7, 8, 9],
+          hand: [],
+          played: null,
+        },
+      };
+
+      // Complete setup
+      state = completeRaptorSetup(state);
+      const lTiles = state.tiles.filter((t) => t.shape === "L");
+      for (const lTile of lTiles) {
+        const space = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+        state = gameReducer(state, {
+          type: "PLACE_SCIENTIST",
+          tileId: lTile.id,
+          x: space.coordinate.x,
+          y: space.coordinate.y,
+        });
+      }
+      state = gameReducer(state, { type: "START_GAME" });
+      state = gameReducer(state, { type: "PLAYER_READY", player: "scientist" });
+      state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
+      state = gameReducer(state, {
+        type: "PLAY_CARD",
+        player: "scientist",
+        card: 7,
+      });
+      state = gameReducer(state, { type: "PLAYER_READY", player: "raptor" });
+      state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
+      state = gameReducer(state, {
+        type: "PLAY_CARD",
+        player: "raptor",
+        card: 3,
+      });
+      state = gameReducer(state, { type: "CONFIRM_REVEAL" });
+
+      return state;
+    }
+
+    // Helper to get to EFFECT_PHASE with scientist having lower card
+    function getToEffectPhaseScientistLower(): GameState {
+      let state = createInitialGameState();
+
+      // Set up decks so scientist has lower card
+      state = {
+        ...state,
+        scientistCards: {
+          deck: [2, 3, 4, 5, 6, 1, 7, 8, 9],
+          hand: [],
+          played: null,
+        },
+        raptorCards: {
+          deck: [8, 2, 3, 4, 5, 6, 1, 7, 9],
+          hand: [],
+          played: null,
+        },
+      };
+
+      // Complete setup
+      state = completeRaptorSetup(state);
+      const lTiles = state.tiles.filter((t) => t.shape === "L");
+      for (const lTile of lTiles) {
+        const space = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+        state = gameReducer(state, {
+          type: "PLACE_SCIENTIST",
+          tileId: lTile.id,
+          x: space.coordinate.x,
+          y: space.coordinate.y,
+        });
+      }
+      state = gameReducer(state, { type: "START_GAME" });
+      state = gameReducer(state, { type: "PLAYER_READY", player: "scientist" });
+      state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
+      state = gameReducer(state, {
+        type: "PLAY_CARD",
+        player: "scientist",
+        card: 2,
+      });
+      state = gameReducer(state, { type: "PLAYER_READY", player: "raptor" });
+      state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
+      state = gameReducer(state, {
+        type: "PLAY_CARD",
+        player: "raptor",
+        card: 8,
+      });
+      state = gameReducer(state, { type: "CONFIRM_REVEAL" });
+
+      return state;
+    }
+
+    describe("FRIGHTEN_SCIENTISTS", () => {
+      it("frightens a scientist when raptor has lower card", () => {
+        let state = getToEffectPhaseRaptorLower();
+        expect(state.phase).toBe("EFFECT_PHASE");
+        expect(state.raptorCards.played).toBe(3);
+        expect(state.scientistCards.played).toBe(7);
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        expect(scientist.isFrightened).toBeFalsy();
+
+        state = gameReducer(state, {
+          type: "FRIGHTEN_SCIENTISTS",
+          pieceIds: [scientist.id],
+        });
+
+        const updatedScientist = state.pieces.find(
+          (p) => p.id === scientist.id,
+        )!;
+        expect(updatedScientist.isFrightened).toBe(true);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("frightens multiple scientists", () => {
+        let state = getToEffectPhaseRaptorLower();
+        const scientists = state.pieces.filter((p) => p.type === "scientist");
+        expect(scientists.length).toBeGreaterThanOrEqual(2);
+
+        state = gameReducer(state, {
+          type: "FRIGHTEN_SCIENTISTS",
+          pieceIds: [scientists[0].id, scientists[1].id],
+        });
+
+        expect(
+          state.pieces.find((p) => p.id === scientists[0].id)!.isFrightened,
+        ).toBe(true);
+        expect(
+          state.pieces.find((p) => p.id === scientists[1].id)!.isFrightened,
+        ).toBe(true);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("is rejected when scientist has lower card", () => {
+        let state = getToEffectPhaseScientistLower();
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+
+        const newState = gameReducer(state, {
+          type: "FRIGHTEN_SCIENTISTS",
+          pieceIds: [scientist.id],
+        });
+
+        expect(
+          newState.pieces.find((p) => p.id === scientist.id)!.isFrightened,
+        ).toBeFalsy();
+        expect(newState.phase).toBe("EFFECT_PHASE");
+      });
+
+      it("filters out invalid targets (non-scientists)", () => {
+        let state = getToEffectPhaseRaptorLower();
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        const baby = state.pieces.find((p) => p.type === "baby")!;
+
+        const newState = gameReducer(state, {
+          type: "FRIGHTEN_SCIENTISTS",
+          pieceIds: [scientist.id, baby.id],
+        });
+
+        // Scientist should be frightened, baby unchanged
+        expect(
+          newState.pieces.find((p) => p.id === scientist.id)!.isFrightened,
+        ).toBe(true);
+        expect(
+          newState.pieces.find((p) => p.id === baby.id)!.isAsleep,
+        ).toBeFalsy();
+        expect(newState.phase).toBe("ACTION_PHASE");
+      });
+
+      it("filters out already-frightened scientists", () => {
+        let state = getToEffectPhaseRaptorLower();
+        const scientists = state.pieces.filter((p) => p.type === "scientist");
+
+        // Frighten the first scientist
+        state = gameReducer(state, {
+          type: "FRIGHTEN_SCIENTISTS",
+          pieceIds: [scientists[0].id],
+        });
+        expect(state.phase).toBe("ACTION_PHASE");
+
+        // Manually set back to EFFECT_PHASE to test filtering
+        state = { ...state, phase: "EFFECT_PHASE" };
+
+        // Try to frighten both (first is already frightened)
+        const newState = gameReducer(state, {
+          type: "FRIGHTEN_SCIENTISTS",
+          pieceIds: [scientists[0].id, scientists[1].id],
+        });
+
+        // Both should now be frightened (first was already, second is new)
+        expect(
+          newState.pieces.find((p) => p.id === scientists[0].id)!.isFrightened,
+        ).toBe(true);
+        expect(
+          newState.pieces.find((p) => p.id === scientists[1].id)!.isFrightened,
+        ).toBe(true);
+        expect(newState.phase).toBe("ACTION_PHASE");
+      });
+    });
+
+    describe("PUT_BABIES_TO_SLEEP", () => {
+      it("puts a baby to sleep when scientist has lower card", () => {
+        let state = getToEffectPhaseScientistLower();
+        expect(state.phase).toBe("EFFECT_PHASE");
+        expect(state.scientistCards.played).toBe(2);
+        expect(state.raptorCards.played).toBe(8);
+
+        const baby = state.pieces.find((p) => p.type === "baby")!;
+        expect(baby.isAsleep).toBeFalsy();
+
+        state = gameReducer(state, {
+          type: "PUT_BABIES_TO_SLEEP",
+          pieceIds: [baby.id],
+        });
+
+        const updatedBaby = state.pieces.find((p) => p.id === baby.id)!;
+        expect(updatedBaby.isAsleep).toBe(true);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("puts multiple babies to sleep", () => {
+        let state = getToEffectPhaseScientistLower();
+        const babies = state.pieces.filter((p) => p.type === "baby");
+        expect(babies.length).toBeGreaterThanOrEqual(2);
+
+        state = gameReducer(state, {
+          type: "PUT_BABIES_TO_SLEEP",
+          pieceIds: [babies[0].id, babies[1].id],
+        });
+
+        expect(state.pieces.find((p) => p.id === babies[0].id)!.isAsleep).toBe(
+          true,
+        );
+        expect(state.pieces.find((p) => p.id === babies[1].id)!.isAsleep).toBe(
+          true,
+        );
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("is rejected when raptor has lower card", () => {
+        let state = getToEffectPhaseRaptorLower();
+        const baby = state.pieces.find((p) => p.type === "baby")!;
+
+        const newState = gameReducer(state, {
+          type: "PUT_BABIES_TO_SLEEP",
+          pieceIds: [baby.id],
+        });
+
+        expect(
+          newState.pieces.find((p) => p.id === baby.id)!.isAsleep,
+        ).toBeFalsy();
+        expect(newState.phase).toBe("EFFECT_PHASE");
+      });
+
+      it("filters out invalid targets (non-babies)", () => {
+        let state = getToEffectPhaseScientistLower();
+        const baby = state.pieces.find((p) => p.type === "baby")!;
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+
+        const newState = gameReducer(state, {
+          type: "PUT_BABIES_TO_SLEEP",
+          pieceIds: [baby.id, scientist.id],
+        });
+
+        // Baby should be asleep, scientist unchanged
+        expect(newState.pieces.find((p) => p.id === baby.id)!.isAsleep).toBe(
+          true,
+        );
+        expect(
+          newState.pieces.find((p) => p.id === scientist.id)!.isFrightened,
+        ).toBeFalsy();
+        expect(newState.phase).toBe("ACTION_PHASE");
+      });
+
+      it("filters out already-asleep babies", () => {
+        let state = getToEffectPhaseScientistLower();
+        const babies = state.pieces.filter((p) => p.type === "baby");
+
+        // Put the first baby to sleep
+        state = gameReducer(state, {
+          type: "PUT_BABIES_TO_SLEEP",
+          pieceIds: [babies[0].id],
+        });
+        expect(state.phase).toBe("ACTION_PHASE");
+
+        // Manually set back to EFFECT_PHASE to test filtering
+        state = { ...state, phase: "EFFECT_PHASE" };
+
+        // Try to put both to sleep (first is already asleep)
+        const newState = gameReducer(state, {
+          type: "PUT_BABIES_TO_SLEEP",
+          pieceIds: [babies[0].id, babies[1].id],
+        });
+
+        // Both should now be asleep
+        expect(
+          newState.pieces.find((p) => p.id === babies[0].id)!.isAsleep,
+        ).toBe(true);
+        expect(
+          newState.pieces.find((p) => p.id === babies[1].id)!.isAsleep,
+        ).toBe(true);
+        expect(newState.phase).toBe("ACTION_PHASE");
+      });
+    });
+
+    describe("END_EFFECT_PHASE", () => {
+      it("transitions from EFFECT_PHASE to ACTION_PHASE", () => {
+        let state = getToEffectPhaseRaptorLower();
+        expect(state.phase).toBe("EFFECT_PHASE");
+
+        state = gameReducer(state, { type: "END_EFFECT_PHASE" });
+
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("is ignored during non-EFFECT_PHASE", () => {
+        let state = getToCardSelectionPhase(
+          createInitialGameState(),
+          "scientist",
+        );
+
+        const newState = gameReducer(state, { type: "END_EFFECT_PHASE" });
+
+        expect(newState.phase).toBe("SCIENTIST_CARD_SELECTION");
+      });
     });
   });
 });

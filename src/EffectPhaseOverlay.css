@@ -1,0 +1,131 @@
+.EffectPhaseBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 12px 24px;
+}
+
+.EffectPhaseBanner.raptor {
+  background: linear-gradient(
+    to bottom,
+    rgba(40, 80, 40, 0.95),
+    rgba(40, 80, 40, 0.85)
+  );
+  border-bottom: 3px solid #4a7c4a;
+}
+
+.EffectPhaseBanner.scientist {
+  background: linear-gradient(
+    to bottom,
+    rgba(40, 40, 80, 0.95),
+    rgba(40, 40, 80, 0.85)
+  );
+  border-bottom: 3px solid #4a4a7c;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 24px;
+}
+
+.banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.effect-card-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.EffectPhaseBanner.raptor .effect-card-value {
+  color: #8f8;
+  border-color: #4a7c4a;
+}
+
+.EffectPhaseBanner.scientist .effect-card-value {
+  color: #88f;
+  border-color: #4a4a7c;
+}
+
+.effect-card-name {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.banner-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.banner-player {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.banner-instruction {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.banner-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.skip-button,
+.confirm-button {
+  padding: 8px 20px;
+  font-size: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skip-button:hover,
+.confirm-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.confirm-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.confirm-button.active {
+  background: rgba(80, 180, 80, 0.6);
+  border-color: #6c6;
+  animation: pulse-confirm 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-confirm {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(100, 200, 100, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(100, 200, 100, 0.8);
+  }
+}

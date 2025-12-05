@@ -9,12 +9,16 @@ interface AdaptedPiece {
   localX: number;
   localY: number;
   getEmoji: () => string;
+  isAsleep?: boolean;
+  isFrightened?: boolean;
 }
 
 interface TileProps {
   tile: TileType;
   pieces: AdaptedPiece[];
   validMoves: Array<{ tileId: number; x: number; y: number }>;
+  effectTargetIds?: string[];
+  selectedEffectTargets?: string[];
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;
@@ -27,6 +31,8 @@ function Tile({
   tile,
   pieces,
   validMoves,
+  effectTargetIds = [],
+  selectedEffectTargets = [],
   showCoordinates = false,
   onMouseDown,
   onMouseUp,
@@ -125,7 +131,7 @@ function Tile({
               {space.isExit && <span className="exit">🚪</span>}
               {pieceOnSpace && (
                 <span
-                  className="piece"
+                  className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
                   draggable
                   onMouseDown={() => onMouseDown(pieceOnSpace.id)}
                   onMouseUp={onMouseUp}
@@ -136,6 +142,12 @@ function Tile({
                   }}
                 >
                   {pieceOnSpace.getEmoji()}
+                  {pieceOnSpace.isAsleep && (
+                    <span className="status-icon">💤</span>
+                  )}
+                  {pieceOnSpace.isFrightened && (
+                    <span className="status-icon">😨</span>
+                  )}
                 </span>
               )}
             </div>

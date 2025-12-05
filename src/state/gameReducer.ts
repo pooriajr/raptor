@@ -16,7 +16,10 @@ export type GameAction =
   | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
   | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number }
-  | { type: "CONFIRM_REVEAL" };
+  | { type: "CONFIRM_REVEAL" }
+  | { type: "FRIGHTEN_SCIENTISTS"; pieceIds: string[] }
+  | { type: "PUT_BABIES_TO_SLEEP"; pieceIds: string[] }
+  | { type: "END_EFFECT_PHASE" };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
 function drawCards(cardState: CardState): CardState {
@@ -382,29 +385,72 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // If same cards, go to round end (nothing happens)
       if (scientistCard === raptorCard) {
-        return {
-          ...state,
-          phase: "ROUND_END",
-        };
+        return { ...state, phase: "ROUND_END" };
       }
 
-      // Lower card gets special action, higher card gets action points
-      // Scientist goes first if they have the lower card
+      // Lower card player uses their special effect first
       if (scientistCard !== null && raptorCard !== null) {
-        if (scientistCard < raptorCard) {
-          return {
-            ...state,
-            phase: "SCIENTIST_ACTION",
-          };
-        } else {
-          return {
-            ...state,
-            phase: "RAPTOR_ACTION",
-          };
-        }
+        return { ...state, phase: "EFFECT_PHASE" };
       }
 
       return state;
+    }
+
+    case "FRIGHTEN_SCIENTISTS": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be raptor's effect (raptor had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (raptorCards.played >= scientistCards.played) return state;
+
+      // Validate all targets are valid scientists
+      const validTargets = action.pieceIds.filter((id) => {
+        const scientist = state.pieces.find(
+          (p) => p.id === id && p.type === "scientist",
+        );
+        return scientist && !scientist.isFrightened;
+      });
+
+      // Frighten the scientists
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          validTargets.includes(p.id) ? { ...p, isFrightened: true } : p,
+        ),
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "PUT_BABIES_TO_SLEEP": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be scientist's effect (scientist had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (scientistCards.played >= raptorCards.played) return state;
+
+      // Validate all targets are valid babies
+      const validTargets = action.pieceIds.filter((id) => {
+        const baby = state.pieces.find((p) => p.id === id && p.type === "baby");
+        return baby && !baby.isAsleep;
+      });
+
+      // Put the babies to sleep
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          validTargets.includes(p.id) ? { ...p, isAsleep: true } : p,
+        ),
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "END_EFFECT_PHASE": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+      return { ...state, phase: "ACTION_PHASE" };
     }
 
     default:

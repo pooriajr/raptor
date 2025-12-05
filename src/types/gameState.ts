@@ -10,8 +10,8 @@ export type GamePhase =
   | "RAPTOR_READY"
   | "RAPTOR_CARD_SELECTION"
   | "CARD_REVEAL"
-  | "SCIENTIST_ACTION"
-  | "RAPTOR_ACTION"
+  | "EFFECT_PHASE" // Lower card player uses special effect
+  | "ACTION_PHASE" // Higher card player spends action points
   | "ROUND_END";
 
 // Piece types as plain data (not class instances)
@@ -23,6 +23,8 @@ export interface PieceState {
   tileId: number;
   x: number;
   y: number;
+  isAsleep?: boolean; // Baby raptors can be put to sleep
+  isFrightened?: boolean; // Scientists can be frightened
 }
 
 // Holding pen tracks how many of each piece type are available to place
