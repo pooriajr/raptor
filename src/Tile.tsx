@@ -19,12 +19,14 @@ interface TileProps {
   validMoves: Array<{ tileId: number; x: number; y: number }>;
   effectTargetIds?: string[];
   selectedEffectTargets?: string[];
+  effectDestinations?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;
   onDragStart: (pieceId: string) => void;
   onDrop: (tileId: number, localX: number, localY: number) => void;
   onPieceClick: (pieceId: string) => void;
+  onSpaceClick?: (tileId: number, x: number, y: number) => void;
 }
 
 function Tile({
@@ -33,12 +35,14 @@ function Tile({
   validMoves,
   effectTargetIds = [],
   selectedEffectTargets = [],
+  effectDestinations = [],
   showCoordinates = false,
   onMouseDown,
   onMouseUp,
   onDragStart,
   onDrop,
   onPieceClick,
+  onSpaceClick,
 }: TileProps) {
   const [dragOverSpace, setDragOverSpace] = useState<string | null>(null);
 
@@ -97,6 +101,14 @@ function Tile({
               move.x === space.coordinate.x && move.y === space.coordinate.y,
           );
 
+          // Check if this space is an effect destination (e.g., Mother's Call)
+          const isEffectDestination = effectDestinations.some(
+            (dest) =>
+              dest.tileId === tile.id &&
+              dest.x === space.coordinate.x &&
+              dest.y === space.coordinate.y,
+          );
+
           return (
             <div
               key={index}
@@ -106,6 +118,7 @@ function Tile({
               data-unusable={space.isUnusable}
               data-drag-over={isDragOver}
               data-valid-move={isValidMove}
+              data-effect-destination={isEffectDestination}
               onDragOver={(e) =>
                 handleDragOver(
                   e,
@@ -120,6 +133,11 @@ function Tile({
               onDrop={(e) =>
                 handleDrop(e, space.coordinate.x, space.coordinate.y)
               }
+              onClick={() => {
+                if (isEffectDestination && onSpaceClick) {
+                  onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y);
+                }
+              }}
             >
               {/* Show coordinates for debugging */}
               {showCoordinates && (

@@ -1,4 +1,5 @@
 import type { CardState, GameState, PieceState } from "../types/gameState.ts";
+import { getReachableDestinationsOnMotherTile } from "../utils/pathfinding.ts";
 
 // Action types
 export type GameAction =
@@ -19,6 +20,13 @@ export type GameAction =
   | { type: "CONFIRM_REVEAL" }
   | { type: "FRIGHTEN_SCIENTISTS"; pieceIds: string[] }
   | { type: "PUT_BABIES_TO_SLEEP"; pieceIds: string[] }
+  | {
+      type: "MOTHERS_CALL";
+      babyId: string;
+      destinationTileId: number;
+      destinationX: number;
+      destinationY: number;
+    }
   | { type: "END_EFFECT_PHASE" };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
@@ -443,6 +451,62 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         pieces: state.pieces.map((p) =>
           validTargets.includes(p.id) ? { ...p, isAsleep: true } : p,
+        ),
+        phase: "ACTION_PHASE",
+      };
+    }
+
+    case "MOTHERS_CALL": {
+      if (state.phase !== "EFFECT_PHASE") return state;
+
+      // Must be raptor's effect (raptor had lower card)
+      const { scientistCards, raptorCards } = state;
+      if (scientistCards.played === null || raptorCards.played === null)
+        return state;
+      if (raptorCards.played >= scientistCards.played) return state;
+
+      // Validate the baby exists
+      const baby = state.pieces.find(
+        (p) => p.id === action.babyId && p.type === "baby",
+      );
+      if (!baby) return state;
+
+      // Find mother
+      const mother = state.pieces.find((p) => p.type === "mother");
+      if (!mother) return state;
+
+      // Validate destination is on mother's tile
+      if (action.destinationTileId !== mother.tileId) return state;
+
+      // Validate the destination is reachable via pathfinding
+      const reachable = getReachableDestinationsOnMotherTile(
+        state.tiles,
+        state.pieces,
+        baby,
+        mother,
+      );
+
+      const isValidDestination = reachable.some(
+        (pos) =>
+          pos.tileId === action.destinationTileId &&
+          pos.x === action.destinationX &&
+          pos.y === action.destinationY,
+      );
+
+      if (!isValidDestination) return state;
+
+      // Move the baby
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.babyId
+            ? {
+                ...p,
+                tileId: action.destinationTileId,
+                x: action.destinationX,
+                y: action.destinationY,
+              }
+            : p,
         ),
         phase: "ACTION_PHASE",
       };

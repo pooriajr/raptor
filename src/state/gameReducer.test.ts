@@ -1403,6 +1403,94 @@ describe("Game Reducer - Card System", () => {
       });
     });
 
+    describe("MOTHERS_CALL", () => {
+      it("moves a baby to an empty space on mother's tile when raptor has lower card", () => {
+        let state = getToEffectPhaseRaptorLower();
+        expect(state.phase).toBe("EFFECT_PHASE");
+
+        const mother = state.pieces.find((p) => p.type === "mother")!;
+        const baby = state.pieces.find(
+          (p) => p.type === "baby" && p.tileId !== mother.tileId,
+        )!;
+
+        // Find an empty space on mother's tile
+        const motherTile = state.tiles.find((t) => t.id === mother.tileId)!;
+        const emptySpace = motherTile.spaces.find(
+          (s) =>
+            !s.isUnusable &&
+            !s.hasMountain &&
+            !s.isExit &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === mother.tileId &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+
+        expect(emptySpace).toBeDefined();
+
+        state = gameReducer(state, {
+          type: "MOTHERS_CALL",
+          babyId: baby.id,
+          destinationTileId: mother.tileId,
+          destinationX: emptySpace!.coordinate.x,
+          destinationY: emptySpace!.coordinate.y,
+        });
+
+        const movedBaby = state.pieces.find((p) => p.id === baby.id)!;
+        expect(movedBaby.tileId).toBe(mother.tileId);
+        expect(movedBaby.x).toBe(emptySpace!.coordinate.x);
+        expect(movedBaby.y).toBe(emptySpace!.coordinate.y);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("is rejected when scientist has lower card", () => {
+        let state = getToEffectPhaseScientistLower();
+        const mother = state.pieces.find((p) => p.type === "mother")!;
+        const baby = state.pieces.find(
+          (p) => p.type === "baby" && p.tileId !== mother.tileId,
+        )!;
+
+        const newState = gameReducer(state, {
+          type: "MOTHERS_CALL",
+          babyId: baby.id,
+          destinationTileId: mother.tileId,
+          destinationX: 0,
+          destinationY: 0,
+        });
+
+        // Baby should not have moved
+        const unmoved = newState.pieces.find((p) => p.id === baby.id)!;
+        expect(unmoved.tileId).toBe(baby.tileId);
+        expect(newState.phase).toBe("EFFECT_PHASE");
+      });
+
+      it("is rejected when destination is not on mother's tile", () => {
+        let state = getToEffectPhaseRaptorLower();
+        const mother = state.pieces.find((p) => p.type === "mother")!;
+        const baby = state.pieces.find(
+          (p) => p.type === "baby" && p.tileId !== mother.tileId,
+        )!;
+
+        // Try to move to a different tile
+        const otherTileId = mother.tileId === 2 ? 3 : 2;
+
+        const newState = gameReducer(state, {
+          type: "MOTHERS_CALL",
+          babyId: baby.id,
+          destinationTileId: otherTileId,
+          destinationX: 0,
+          destinationY: 0,
+        });
+
+        // Baby should not have moved
+        const unmoved = newState.pieces.find((p) => p.id === baby.id)!;
+        expect(unmoved.tileId).toBe(baby.tileId);
+        expect(newState.phase).toBe("EFFECT_PHASE");
+      });
+    });
+
     describe("END_EFFECT_PHASE", () => {
       it("transitions from EFFECT_PHASE to ACTION_PHASE", () => {
         let state = getToEffectPhaseRaptorLower();

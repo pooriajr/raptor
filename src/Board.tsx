@@ -11,6 +11,13 @@ import { getPieceEmoji } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
+import {
+  canBabyReachMotherTile,
+  getReachableDestinationsOnMotherTile,
+} from "./utils/pathfinding.ts";
+
+// Effect types for the current card
+type EffectType = "fear" | "sleeping_gas" | "mothers_call" | "none";
 
 // Adapter: create a piece class instance from plain state for movement logic
 function createPieceFromState(piece: PieceState) {
@@ -85,13 +92,38 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>(
     [],
   );
+  // For Mother's Call: track selected baby for two-step selection
+  const [selectedBabyForCall, setSelectedBabyForCall] = useState<string | null>(
+    null,
+  );
 
   // Reset effect targets when leaving effect phase
   useEffect(() => {
     if (state.phase !== "EFFECT_PHASE") {
       setSelectedEffectTargets([]);
+      setSelectedBabyForCall(null);
     }
   }, [state.phase]);
+
+  // Determine the current effect type based on played cards
+  const getCurrentEffectType = (): EffectType => {
+    const scientistCard = state.scientistCards.played;
+    const raptorCard = state.raptorCards.played;
+    if (scientistCard === null || raptorCard === null) return "none";
+
+    const raptorHasEffect = raptorCard < scientistCard;
+
+    if (raptorHasEffect) {
+      // Raptor effects: 1=Mother's Call(1), 3=Fear(1), 4=Mother's Call(2), 8=Fear(2)
+      if (raptorCard === 1 || raptorCard === 4) return "mothers_call";
+      if (raptorCard === 3 || raptorCard === 8) return "fear";
+      return "none";
+    } else {
+      // Scientist effects: 1=Sleeping Gas(1), 4=Sleeping Gas(2)
+      if (scientistCard === 1 || scientistCard === 4) return "sleeping_gas";
+      return "none";
+    }
+  };
 
   const handleMouseDown = (pieceId: string) => {
     setHoveredPieceId(pieceId);
@@ -122,46 +154,81 @@ function Board({ showCoordinates = false }: BoardProps) {
     if (scientistCard === null || raptorCard === null) return 0;
 
     const raptorHasEffect = raptorCard < scientistCard;
-    // For now, hardcode Fear x2 and Sleeping Gas x2
-    // Later this will be determined by actual card effects
-    return raptorHasEffect ? 2 : 2;
+
+    if (raptorHasEffect) {
+      // Raptor cards: 1=1 baby, 3=1 scientist, 4=2 babies, 8=2 scientists
+      if (raptorCard === 1) return 1;
+      if (raptorCard === 3) return 1;
+      if (raptorCard === 4) return 2;
+      if (raptorCard === 8) return 2;
+      return 0;
+    } else {
+      // Scientist cards: 1=1 baby, 4=2 babies
+      if (scientistCard === 1) return 1;
+      if (scientistCard === 4) return 2;
+      return 0;
+    }
   };
 
   const handlePieceClick = (pieceId: string) => {
     // Handle effect phase targeting
     if (state.phase === "EFFECT_PHASE") {
-      const scientistCard = state.scientistCards.played;
-      const raptorCard = state.raptorCards.played;
-      if (scientistCard === null || raptorCard === null) return;
-
-      const raptorHasEffect = raptorCard < scientistCard;
+      const effectType = getCurrentEffectType();
       const piece = state.pieces.find((p) => p.id === pieceId);
       if (!piece) return;
 
-      // Check if this is a valid target
-      const isValidTarget =
-        (raptorHasEffect &&
-          piece.type === "scientist" &&
-          !piece.isFrightened) ||
-        (!raptorHasEffect && piece.type === "baby" && !piece.isAsleep);
+      if (effectType === "fear") {
+        // Fear: select scientists to frighten
+        if (piece.type !== "scientist" || piece.isFrightened) return;
 
-      if (!isValidTarget) return;
-
-      // Toggle selection
-      setSelectedEffectTargets((prev) => {
-        if (prev.includes(pieceId)) {
-          // Deselect
-          return prev.filter((id) => id !== pieceId);
-        } else {
-          // Select (if under limit)
-          const limit = getEffectLimit();
-          if (prev.length >= limit) {
-            // At limit - replace oldest selection
-            return [...prev.slice(1), pieceId];
+        setSelectedEffectTargets((prev) => {
+          if (prev.includes(pieceId)) {
+            return prev.filter((id) => id !== pieceId);
+          } else {
+            const limit = getEffectLimit();
+            if (prev.length >= limit) {
+              return [...prev.slice(1), pieceId];
+            }
+            return [...prev, pieceId];
           }
-          return [...prev, pieceId];
+        });
+      } else if (effectType === "sleeping_gas") {
+        // Sleeping Gas: select babies to put to sleep
+        if (piece.type !== "baby" || piece.isAsleep) return;
+
+        setSelectedEffectTargets((prev) => {
+          if (prev.includes(pieceId)) {
+            return prev.filter((id) => id !== pieceId);
+          } else {
+            const limit = getEffectLimit();
+            if (prev.length >= limit) {
+              return [...prev.slice(1), pieceId];
+            }
+            return [...prev, pieceId];
+          }
+        });
+      } else if (effectType === "mothers_call") {
+        // Mother's Call: two-step selection
+        // Step 1: Select a baby that can reach mother's tile
+        // Step 2: Select destination on mother's tile
+        const mother = state.pieces.find((p) => p.type === "mother");
+        if (!mother) return;
+
+        if (selectedBabyForCall === null) {
+          // Step 1: Select baby
+          if (piece.type !== "baby") return;
+          if (!canBabyReachMotherTile(state.tiles, state.pieces, piece, mother))
+            return;
+
+          setSelectedBabyForCall(pieceId);
+        } else {
+          // If clicking the same baby, deselect it
+          if (pieceId === selectedBabyForCall) {
+            setSelectedBabyForCall(null);
+          }
+          // Otherwise ignore piece clicks - we need a space click for destination
         }
-      });
+      }
       return;
     }
 
@@ -192,6 +259,24 @@ function Board({ showCoordinates = false }: BoardProps) {
   const handleEffectSkip = () => {
     dispatch({ type: "END_EFFECT_PHASE" });
     setSelectedEffectTargets([]);
+    setSelectedBabyForCall(null);
+  };
+
+  // Handle space click for Mother's Call destination
+  const handleSpaceClick = (tileId: number, x: number, y: number) => {
+    if (state.phase !== "EFFECT_PHASE") return;
+    if (getCurrentEffectType() !== "mothers_call") return;
+    if (selectedBabyForCall === null) return;
+
+    // Dispatch the Mother's Call action
+    dispatch({
+      type: "MOTHERS_CALL",
+      babyId: selectedBabyForCall,
+      destinationTileId: tileId,
+      destinationX: x,
+      destinationY: y,
+    });
+    setSelectedBabyForCall(null);
   };
 
   const handleCardSelect = (value: number) => {
@@ -407,20 +492,59 @@ function Board({ showCoordinates = false }: BoardProps) {
   // Calculate valid effect targets during effect phase
   const effectTargetIds: string[] = (() => {
     if (state.phase !== "EFFECT_PHASE") return [];
-    const scientistCard = state.scientistCards.played;
-    const raptorCard = state.raptorCards.played;
-    if (scientistCard === null || raptorCard === null) return [];
 
-    const raptorHasEffect = raptorCard < scientistCard;
-    if (raptorHasEffect) {
+    const effectType = getCurrentEffectType();
+
+    if (effectType === "fear") {
       return state.pieces
         .filter((p) => p.type === "scientist" && !p.isFrightened)
         .map((p) => p.id);
-    } else {
+    } else if (effectType === "sleeping_gas") {
       return state.pieces
         .filter((p) => p.type === "baby" && !p.isAsleep)
         .map((p) => p.id);
+    } else if (effectType === "mothers_call") {
+      // If no baby selected yet, show babies that can reach mother
+      if (selectedBabyForCall === null) {
+        const mother = state.pieces.find((p) => p.type === "mother");
+        if (!mother) return [];
+
+        return state.pieces
+          .filter(
+            (p) =>
+              p.type === "baby" &&
+              canBabyReachMotherTile(state.tiles, state.pieces, p, mother),
+          )
+          .map((p) => p.id);
+      } else {
+        // Baby is selected - don't highlight any pieces
+        return [];
+      }
     }
+
+    return [];
+  })();
+
+  // Calculate valid destination spaces for Mother's Call
+  const mothersCallDestinations: Array<{
+    tileId: number;
+    x: number;
+    y: number;
+  }> = (() => {
+    if (state.phase !== "EFFECT_PHASE") return [];
+    if (getCurrentEffectType() !== "mothers_call") return [];
+    if (selectedBabyForCall === null) return [];
+
+    const baby = state.pieces.find((p) => p.id === selectedBabyForCall);
+    const mother = state.pieces.find((p) => p.type === "mother");
+    if (!baby || !mother) return [];
+
+    return getReachableDestinationsOnMotherTile(
+      state.tiles,
+      state.pieces,
+      baby,
+      mother,
+    );
   })();
 
   return (
@@ -433,6 +557,8 @@ function Board({ showCoordinates = false }: BoardProps) {
         <EffectPhaseBanner
           selectedTargets={selectedEffectTargets}
           effectLimit={getEffectLimit()}
+          effectType={getCurrentEffectType()}
+          selectedBabyForCall={selectedBabyForCall}
           onConfirm={handleEffectConfirm}
           onSkip={handleEffectSkip}
         />
@@ -489,13 +615,21 @@ function Board({ showCoordinates = false }: BoardProps) {
                 pieces={piecesOnTile}
                 validMoves={validMovesOnTile}
                 effectTargetIds={effectTargetIds}
-                selectedEffectTargets={selectedEffectTargets}
+                selectedEffectTargets={
+                  getCurrentEffectType() === "mothers_call"
+                    ? selectedBabyForCall
+                      ? [selectedBabyForCall]
+                      : []
+                    : selectedEffectTargets
+                }
+                effectDestinations={mothersCallDestinations}
                 showCoordinates={showCoordinates}
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onDragStart={handleDragStart}
                 onDrop={handleDrop}
                 onPieceClick={handlePieceClick}
+                onSpaceClick={handleSpaceClick}
               />
             );
           })}
