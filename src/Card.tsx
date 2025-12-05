@@ -42,7 +42,7 @@ function Card({
       }
       animate={{
         x: selected ? selectedOffsetX : 0,
-        y: selected ? -80 : 0,
+        y: selected ? -140 : 0,
         rotateY: faceUp ? 0 : 180,
         scale: selected ? 1.2 : 1,
         zIndex: selected ? 10 : 0,

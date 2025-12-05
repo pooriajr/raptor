@@ -65,32 +65,27 @@ function Hand({
         {player === "raptor" ? "Raptor" : "Scientist"} Hand
       </div>
 
-      {/* Selection area - shown when a card is selected */}
-      <div
-        className={`selection-area ${selectedCard !== null ? "active" : ""}`}
-      >
-        {selectedCard !== null && onConfirm && (
-          <button className="confirm-button" onClick={onConfirm}>
-            Confirm Choice
-          </button>
-        )}
-      </div>
-
       <div className="hand-cards">
         {animatedCards.map((value, index) => (
-          <Card
-            key={`${value}-${index}`}
-            value={value}
-            player={player}
-            faceUp={true}
-            onClick={onCardSelect ? () => onCardSelect(value) : undefined}
-            selected={isSelected(value)}
-            selectedOffsetX={isSelected(value) ? -selectedOffsetX : undefined}
-            initialPosition={
-              isNewDraw && deckPosition ? deckPosition : undefined
-            }
-            animationDelay={isNewDraw ? index * 0.15 : 0}
-          />
+          <div key={`${value}-${index}`} className="card-wrapper">
+            <Card
+              value={value}
+              player={player}
+              faceUp={true}
+              onClick={onCardSelect ? () => onCardSelect(value) : undefined}
+              selected={isSelected(value)}
+              selectedOffsetX={isSelected(value) ? -selectedOffsetX : undefined}
+              initialPosition={
+                isNewDraw && deckPosition ? deckPosition : undefined
+              }
+              animationDelay={isNewDraw ? index * 0.15 : 0}
+            />
+            {isSelected(value) && onConfirm && (
+              <button className="confirm-button" onClick={onConfirm}>
+                Confirm
+              </button>
+            )}
+          </div>
         ))}
       </div>
     </div>
