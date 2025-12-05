@@ -39,9 +39,9 @@ function Card({
       }
       animate={{
         x: 0,
-        y: 0,
+        y: selected ? -30 : 0,
         rotateY: faceUp ? 0 : 180,
-        scale: 1,
+        scale: selected ? 1.3 : 1,
       }}
       transition={{
         duration: 0.6,

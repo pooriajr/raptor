@@ -3,7 +3,6 @@ import Tile from "./Tile.tsx";
 import SetupPanel from "./SetupPanel.tsx";
 import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
-import CardSelectionOverlay from "./CardSelectionOverlay.tsx";
 import { useState, useEffect, useRef } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
@@ -110,16 +109,13 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   const handleCardSelect = (value: number) => {
-    setSelectedCard(value);
+    // Toggle selection - clicking same card deselects, clicking different card swaps
+    setSelectedCard((prev) => (prev === value ? null : value));
   };
 
   const handleCardConfirm = () => {
     // TODO: Dispatch action to play the selected card
     console.log("Card confirmed:", selectedCard);
-    setSelectedCard(null);
-  };
-
-  const handleCardCancel = () => {
     setSelectedCard(null);
   };
 
@@ -405,14 +401,13 @@ function Board({ showCoordinates = false }: BoardProps) {
         </div>
       </div>
 
-      {/* Card selection overlay */}
-      {currentCardPlayer && (
-        <CardSelectionOverlay
-          selectedCard={selectedCard}
-          player={currentCardPlayer}
-          onConfirm={handleCardConfirm}
-          onCancel={handleCardCancel}
-        />
+      {/* Confirm button when card is selected */}
+      {currentCardPlayer && selectedCard !== null && (
+        <div className="confirm-selection">
+          <button className="confirm-button" onClick={handleCardConfirm}>
+            Confirm Choice
+          </button>
+        </div>
       )}
     </>
   );

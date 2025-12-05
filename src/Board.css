@@ -120,3 +120,35 @@
   grid-column: 5;
   grid-row: 2;
 }
+
+.confirm-selection {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+.confirm-selection .confirm-button {
+  padding: 1rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #4a9a4a, #3a7a3a);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(74, 154, 74, 0.4);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.confirm-selection .confirm-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(74, 154, 74, 0.5);
+}
+
+.confirm-selection .confirm-button:active {
+  transform: scale(0.98);
+}
