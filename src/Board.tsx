@@ -196,6 +196,26 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   }, [state.phase]);
 
+  // Auto-dispatch effects that require no user input
+  useEffect(() => {
+    if (state.phase === "EFFECT_PHASE") {
+      const scientistCard = state.scientistCards.played;
+      const raptorCard = state.raptorCards.played;
+      if (scientistCard !== null && raptorCard !== null) {
+        const raptorHasEffect = raptorCard < scientistCard;
+        // Disappearance: auto-dispatch since no choices needed
+        if (raptorHasEffect && (raptorCard === 2 || raptorCard === 6)) {
+          dispatch({ type: "DISAPPEARANCE" });
+        }
+      }
+    }
+  }, [
+    state.phase,
+    state.scientistCards.played,
+    state.raptorCards.played,
+    dispatch,
+  ]);
+
   // Determine the current effect type based on played cards
   const getCurrentEffectType = (): EffectType => {
     const scientistCard = state.scientistCards.played;
