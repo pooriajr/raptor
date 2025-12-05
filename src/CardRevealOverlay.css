@@ -170,16 +170,18 @@
 }
 
 .CardRevealOverlay .confirm-button {
-  padding: 1rem 3rem;
-  font-size: 1.2rem;
+  padding: 1.25rem 4rem;
+  font-size: 1.4rem;
   font-weight: bold;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   background: linear-gradient(145deg, #4a9a4a, #3a7a3a);
   color: #fff;
   box-shadow: 0 4px 20px rgba(74, 154, 74, 0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .CardRevealOverlay .confirm-button:hover {
