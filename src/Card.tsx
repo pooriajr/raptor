@@ -51,11 +51,11 @@ function Card({
         zIndex: selected ? 10 : 0,
       }}
       transition={{
-        duration: 0.6,
+        duration: selected ? 0.2 : 0.6,
         delay: animationDelay,
         type: "spring",
-        stiffness: 100,
-        damping: 15,
+        stiffness: selected ? 300 : 100,
+        damping: selected ? 25 : 15,
       }}
       onAnimationStart={() => {
         // Play sound when the flip animation starts (with delay accounted for)
