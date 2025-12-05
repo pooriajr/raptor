@@ -23,6 +23,12 @@ function Hand({
 }: HandProps) {
   const handRef = useRef<HTMLDivElement>(null);
   const [animatedCards, setAnimatedCards] = useState<number[]>([]);
+  const [showConfirmButton, setShowConfirmButton] = useState(false);
+
+  // Reset confirm button visibility when selection changes
+  useEffect(() => {
+    setShowConfirmButton(false);
+  }, [selectedCard]);
 
   // Calculate the x offset needed to center the selected card
   const selectedIndex =
@@ -79,8 +85,9 @@ function Hand({
                 isNewDraw && deckPosition ? deckPosition : undefined
               }
               animationDelay={isNewDraw ? index * 0.15 : 0}
+              onSelectionComplete={() => setShowConfirmButton(true)}
             />
-            {isSelected(value) && onConfirm && (
+            {isSelected(value) && showConfirmButton && onConfirm && (
               <button className="confirm-button" onClick={onConfirm}>
                 Confirm
               </button>

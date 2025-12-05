@@ -14,6 +14,8 @@ interface CardProps {
   initialPosition?: { x: number; y: number };
   // Delay before animation starts
   animationDelay?: number;
+  // Callback when selection animation completes
+  onSelectionComplete?: () => void;
 }
 
 function Card({
@@ -25,6 +27,7 @@ function Card({
   selectedOffsetX = 0,
   initialPosition,
   animationDelay = 0,
+  onSelectionComplete,
 }: CardProps) {
   return (
     <motion.div
@@ -62,6 +65,11 @@ function Card({
       }}
       whileHover={onClick && !selected ? { scale: 1.05, y: -5 } : undefined}
       whileTap={onClick && !selected ? { scale: 0.98 } : undefined}
+      onAnimationComplete={() => {
+        if (selected && onSelectionComplete) {
+          onSelectionComplete();
+        }
+      }}
       style={{ transformStyle: "preserve-3d" }}
     >
       {/* Front face - shows the card value */}
