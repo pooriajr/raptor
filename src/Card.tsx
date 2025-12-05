@@ -8,13 +8,9 @@ interface CardProps {
   faceUp?: boolean;
   onClick?: () => void;
   selected?: boolean;
-  // X offset to center the selected card
   selectedOffsetX?: number;
-  // For animation - position to animate from
   initialPosition?: { x: number; y: number };
-  // Delay before animation starts
   animationDelay?: number;
-  // Callback when selection animation completes
   onSelectionComplete?: () => void;
 }
 
@@ -29,6 +25,8 @@ function Card({
   animationDelay = 0,
   onSelectionComplete,
 }: CardProps) {
+  const isInteractive = onClick && !selected;
+
   return (
     <motion.div
       className={`Card ${player} ${selected ? "selected" : ""}`}
@@ -57,13 +55,9 @@ function Card({
         stiffness: selected ? 300 : 100,
         damping: selected ? 25 : 15,
       }}
-      whileHover={onClick && !selected ? { scale: 1.05, y: -5 } : undefined}
-      whileTap={onClick && !selected ? { scale: 0.98 } : undefined}
-      onAnimationComplete={() => {
-        if (selected && onSelectionComplete) {
-          onSelectionComplete();
-        }
-      }}
+      whileHover={isInteractive ? { scale: 1.05, y: -5 } : undefined}
+      whileTap={isInteractive ? { scale: 0.98 } : undefined}
+      onAnimationComplete={() => selected && onSelectionComplete?.()}
       style={{ transformStyle: "preserve-3d" }}
     >
       {/* Front face - shows the card value */}

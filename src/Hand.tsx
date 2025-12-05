@@ -1,6 +1,9 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "./Card";
 import "./Hand.css";
+
+const CARD_WIDTH = 100;
+const CARD_GAP = 12;
 
 interface HandProps {
   cards: number[];
@@ -8,6 +11,8 @@ interface HandProps {
   onCardSelect?: (value: number) => void;
   onConfirm?: () => void;
   selectedCard?: number | null;
+  playedCard?: number | null;
+  faceDown?: boolean;
   deckPosition?: { x: number; y: number };
   isNewDraw?: boolean;
 }
@@ -18,77 +23,72 @@ function Hand({
   onCardSelect,
   onConfirm,
   selectedCard,
+  playedCard,
+  faceDown = false,
   deckPosition,
   isNewDraw = false,
 }: HandProps) {
-  const handRef = useRef<HTMLDivElement>(null);
   const [animatedCards, setAnimatedCards] = useState<number[]>([]);
   const [showConfirmButton, setShowConfirmButton] = useState(false);
 
-  // Reset confirm button visibility when selection changes
   useEffect(() => {
     setShowConfirmButton(false);
   }, [selectedCard]);
 
-  // Calculate the x offset needed to center the selected card
-  const selectedIndex =
-    selectedCard != null ? animatedCards.indexOf(selectedCard) : -1;
-  const cardWidth = 100; // Card width in px
-  const cardGap = 12; // Gap between cards
-  const totalCards = animatedCards.length;
-  // Center position is at index (totalCards - 1) / 2
-  // Offset = (selectedIndex - centerIndex) * (cardWidth + gap)
-  const centerIndex = (totalCards - 1) / 2;
-  const selectedOffsetX =
-    selectedIndex >= 0
-      ? (selectedIndex - centerIndex) * (cardWidth + cardGap)
-      : 0;
-
-  // Track which cards have been animated in
+  // Animate cards appearing one by one on new draw
   useEffect(() => {
-    if (isNewDraw) {
-      // Reset and animate new cards
-      setAnimatedCards([]);
-      const timeouts: ReturnType<typeof setTimeout>[] = [];
-      cards.forEach((card, index) => {
-        const timeout = setTimeout(() => {
-          setAnimatedCards((prev) => [...prev, card]);
-        }, index * 100); // Stagger the reveal
-        timeouts.push(timeout);
-      });
-      return () => timeouts.forEach(clearTimeout);
-    } else {
-      // Cards are already in hand, no animation needed
+    if (!isNewDraw) {
       setAnimatedCards(cards);
+      return;
     }
+
+    setAnimatedCards([]);
+    const timeouts = cards.map((card, i) =>
+      setTimeout(() => setAnimatedCards((prev) => [...prev, card]), i * 100),
+    );
+    return () => timeouts.forEach(clearTimeout);
   }, [cards, isNewDraw]);
 
-  const isSelected = (value: number) => selectedCard === value;
+  // Calculate offset to center the elevated card
+  const getElevatedOffset = (index: number) => {
+    const centerIndex = (animatedCards.length - 1) / 2;
+    return (centerIndex - index) * (CARD_WIDTH + CARD_GAP);
+  };
 
   return (
-    <div className={`Hand ${player}`} ref={handRef}>
+    <div className={`Hand ${player}`}>
       <div className="hand-label">
         {player === "raptor" ? "Raptor" : "Scientist"} Hand
       </div>
 
       <div className="hand-cards">
-        {animatedCards.map((value, index) => (
-          <div key={`${value}-${index}`} className="card-wrapper">
-            <Card
-              value={value}
-              player={player}
-              faceUp={true}
-              onClick={onCardSelect ? () => onCardSelect(value) : undefined}
-              selected={isSelected(value)}
-              selectedOffsetX={isSelected(value) ? -selectedOffsetX : undefined}
-              initialPosition={
-                isNewDraw && deckPosition ? deckPosition : undefined
-              }
-              animationDelay={isNewDraw ? index * 0.15 : 0}
-              onSelectionComplete={() => setShowConfirmButton(true)}
-            />
-          </div>
-        ))}
+        {animatedCards.map((value, index) => {
+          const isSelected = value === selectedCard;
+          const isPlayed = value === playedCard;
+          const isElevated = isSelected || isPlayed;
+
+          return (
+            <div key={`${value}-${index}`} className="card-wrapper">
+              <Card
+                value={value}
+                player={player}
+                faceUp={!faceDown}
+                onClick={
+                  !faceDown && onCardSelect
+                    ? () => onCardSelect(value)
+                    : undefined
+                }
+                selected={isElevated}
+                selectedOffsetX={isElevated ? getElevatedOffset(index) : 0}
+                initialPosition={isNewDraw ? deckPosition : undefined}
+                animationDelay={isNewDraw ? index * 0.15 : 0}
+                onSelectionComplete={
+                  isSelected ? () => setShowConfirmButton(true) : undefined
+                }
+              />
+            </div>
+          );
+        })}
         {showConfirmButton && selectedCard != null && onConfirm && (
           <button className="confirm-button" onClick={onConfirm}>
             Confirm

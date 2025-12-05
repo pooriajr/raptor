@@ -56,27 +56,25 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   // Draw cards when entering card selection phases
   useEffect(() => {
-    if (
-      state.phase === "SCIENTIST_CARD_SELECTION" &&
-      prevPhaseRef.current !== "SCIENTIST_CARD_SELECTION"
-    ) {
-      dispatch({ type: "DRAW_CARDS", player: "scientist" });
-      setIsScientistNewDraw(true);
-      const timeout = setTimeout(() => setIsScientistNewDraw(false), 1500);
-      prevPhaseRef.current = state.phase;
-      return () => clearTimeout(timeout);
-    }
-    if (
-      state.phase === "RAPTOR_CARD_SELECTION" &&
-      prevPhaseRef.current !== "RAPTOR_CARD_SELECTION"
-    ) {
-      dispatch({ type: "DRAW_CARDS", player: "raptor" });
-      setIsRaptorNewDraw(true);
-      const timeout = setTimeout(() => setIsRaptorNewDraw(false), 1500);
-      prevPhaseRef.current = state.phase;
-      return () => clearTimeout(timeout);
-    }
+    const phaseChanged = state.phase !== prevPhaseRef.current;
     prevPhaseRef.current = state.phase;
+
+    if (!phaseChanged) return;
+
+    const isScientistSelection = state.phase === "SCIENTIST_CARD_SELECTION";
+    const isRaptorSelection = state.phase === "RAPTOR_CARD_SELECTION";
+
+    if (isScientistSelection || isRaptorSelection) {
+      const player = isScientistSelection ? "scientist" : "raptor";
+      const setNewDraw = isScientistSelection
+        ? setIsScientistNewDraw
+        : setIsRaptorNewDraw;
+
+      dispatch({ type: "DRAW_CARDS", player });
+      setNewDraw(true);
+      const timeout = setTimeout(() => setNewDraw(false), 1500);
+      return () => clearTimeout(timeout);
+    }
   }, [state.phase, dispatch]);
   const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
     useState<PieceType | null>(null);
@@ -125,8 +123,8 @@ function Board({ showCoordinates = false }: BoardProps) {
 
     if (player) {
       dispatch({ type: "PLAY_CARD", player, card: selectedCard });
+      setSelectedCard(null);
     }
-    setSelectedCard(null);
   };
 
   // Get the valid moves for the currently dragged or hovered piece on the board
@@ -345,6 +343,15 @@ function Board({ showCoordinates = false }: BoardProps) {
                 selectedCard={selectedCard}
               />
             )}
+            {state.phase === "SCIENTIST_CARD_SELECTION" &&
+              state.raptorCards.hand.length > 0 && (
+                <Hand
+                  cards={state.raptorCards.hand}
+                  player="raptor"
+                  faceDown={true}
+                  playedCard={state.raptorCards.played}
+                />
+              )}
           </div>
           <div className="discard-section">
             <div className="discard-placeholder">Discard</div>
@@ -397,6 +404,18 @@ function Board({ showCoordinates = false }: BoardProps) {
                 selectedCard={selectedCard}
               />
             )}
+            {state.phase === "RAPTOR_CARD_SELECTION" &&
+              state.scientistCards.played !== null && (
+                <Hand
+                  cards={[
+                    ...state.scientistCards.hand,
+                    state.scientistCards.played,
+                  ]}
+                  player="scientist"
+                  faceDown={true}
+                  playedCard={state.scientistCards.played}
+                />
+              )}
           </div>
           <div className="discard-section">
             {/* Scientist discard will go here */}

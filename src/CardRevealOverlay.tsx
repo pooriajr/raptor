@@ -16,7 +16,6 @@ function CardRevealOverlay({
 }: CardRevealOverlayProps) {
   const [revealed, setRevealed] = useState(false);
 
-  // Trigger the flip animation after a short delay
   useEffect(() => {
     const timeout = setTimeout(() => setRevealed(true), 300);
     return () => clearTimeout(timeout);
@@ -25,6 +24,25 @@ function CardRevealOverlay({
   const sameCards = scientistCard === raptorCard;
   const difference = Math.abs(scientistCard - raptorCard);
   const scientistWins = scientistCard < raptorCard;
+  const winner = scientistWins ? "Scientist" : "Raptor";
+  const actionPoints = `${difference} action point${difference > 1 ? "s" : ""}`;
+
+  const renderEffectBox = (
+    player: "scientist" | "raptor",
+    card: number,
+    isWinner: boolean,
+  ) => (
+    <div className={`effect-box ${isWinner ? "winner" : "loser"}`}>
+      <div className="effect-player">
+        {player === "scientist" ? "Scientist" : "Raptor"}
+      </div>
+      <div className="effect-text">
+        {isWinner
+          ? `Uses card effect: ${getCardEffect(player, card)}`
+          : `Gets ${actionPoints}`}
+      </div>
+    </div>
+  );
 
   return (
     <div className="CardRevealOverlay">
@@ -32,7 +50,6 @@ function CardRevealOverlay({
         <h2 className="reveal-title">Card Reveal</h2>
 
         <div className="cards-comparison">
-          {/* Scientist card */}
           <div className="reveal-card-section">
             <div className="player-label scientist">Scientist</div>
             <div className="reveal-card-wrapper">
@@ -46,7 +63,6 @@ function CardRevealOverlay({
 
           <div className="vs-divider">VS</div>
 
-          {/* Raptor card */}
           <div className="reveal-card-section">
             <div className="player-label raptor">Raptor</div>
             <div className="reveal-card-wrapper">
@@ -67,41 +83,10 @@ function CardRevealOverlay({
             ) : (
               <div className="result-section">
                 <div className="effect-row">
-                  <div
-                    className={`effect-box ${scientistWins ? "winner" : "loser"}`}
-                  >
-                    <div className="effect-player">Scientist</div>
-                    {scientistWins ? (
-                      <div className="effect-text">
-                        Uses card effect:{" "}
-                        {getCardEffect("scientist", scientistCard)}
-                      </div>
-                    ) : (
-                      <div className="effect-text">
-                        Gets {difference} action point
-                        {difference > 1 ? "s" : ""}
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className={`effect-box ${!scientistWins ? "winner" : "loser"}`}
-                  >
-                    <div className="effect-player">Raptor</div>
-                    {!scientistWins ? (
-                      <div className="effect-text">
-                        Uses card effect: {getCardEffect("raptor", raptorCard)}
-                      </div>
-                    ) : (
-                      <div className="effect-text">
-                        Gets {difference} action point
-                        {difference > 1 ? "s" : ""}
-                      </div>
-                    )}
-                  </div>
+                  {renderEffectBox("scientist", scientistCard, scientistWins)}
+                  {renderEffectBox("raptor", raptorCard, !scientistWins)}
                 </div>
-                <div className="turn-order">
-                  {scientistWins ? "Scientist" : "Raptor"} acts first
-                </div>
+                <div className="turn-order">{winner} acts first</div>
               </div>
             )}
 
