@@ -3,6 +3,7 @@ import Tile from "./Tile.tsx";
 import SetupPanel from "./SetupPanel.tsx";
 import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
+import CardSelectionOverlay from "./CardSelectionOverlay.tsx";
 import { useState, useEffect, useRef } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
@@ -44,9 +45,15 @@ function Board({ showCoordinates = false }: BoardProps) {
   const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
   const [isScientistNewDraw, setIsScientistNewDraw] = useState(false);
   const [isRaptorNewDraw, setIsRaptorNewDraw] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const scientistDeckRef = useRef<HTMLDivElement>(null);
   const raptorDeckRef = useRef<HTMLDivElement>(null);
   const prevPhaseRef = useRef(state.phase);
+
+  // Reset selected card when phase changes
+  useEffect(() => {
+    setSelectedCard(null);
+  }, [state.phase]);
 
   // Draw cards when entering card selection phases
   useEffect(() => {
@@ -101,6 +108,28 @@ function Board({ showCoordinates = false }: BoardProps) {
   const handlePieceClick = (_pieceId: string) => {
     // TODO: Piece click handler (select piece, show info, toggle jeep mode)
   };
+
+  const handleCardSelect = (value: number) => {
+    setSelectedCard(value);
+  };
+
+  const handleCardConfirm = () => {
+    // TODO: Dispatch action to play the selected card
+    console.log("Card confirmed:", selectedCard);
+    setSelectedCard(null);
+  };
+
+  const handleCardCancel = () => {
+    setSelectedCard(null);
+  };
+
+  // Determine current player for card selection
+  const currentCardPlayer =
+    state.phase === "SCIENTIST_CARD_SELECTION"
+      ? "scientist"
+      : state.phase === "RAPTOR_CARD_SELECTION"
+        ? "raptor"
+        : null;
 
   // Get the valid moves for the currently dragged or hovered piece on the board
   const activePieceId = draggedPieceId || hoveredPieceId;
@@ -313,6 +342,8 @@ function Board({ showCoordinates = false }: BoardProps) {
                 player="raptor"
                 isNewDraw={isRaptorNewDraw}
                 deckPosition={{ x: -300, y: 0 }}
+                onCardSelect={handleCardSelect}
+                selectedCard={selectedCard}
               />
             )}
           </div>
@@ -362,6 +393,8 @@ function Board({ showCoordinates = false }: BoardProps) {
                 player="scientist"
                 isNewDraw={isScientistNewDraw}
                 deckPosition={{ x: -300, y: 0 }}
+                onCardSelect={handleCardSelect}
+                selectedCard={selectedCard}
               />
             )}
           </div>
@@ -371,6 +404,16 @@ function Board({ showCoordinates = false }: BoardProps) {
           </div>
         </div>
       </div>
+
+      {/* Card selection overlay */}
+      {currentCardPlayer && (
+        <CardSelectionOverlay
+          selectedCard={selectedCard}
+          player={currentCardPlayer}
+          onConfirm={handleCardConfirm}
+          onCancel={handleCardCancel}
+        />
+      )}
     </>
   );
 }
