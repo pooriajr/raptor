@@ -56,8 +56,8 @@ function Card({
           setTimeout(() => playCardFlipSound(), animationDelay * 1000 + 200);
         }
       }}
-      whileHover={onClick ? { scale: 1.05, y: -5 } : undefined}
-      whileTap={onClick ? { scale: 0.98 } : undefined}
+      whileHover={onClick && !selected ? { scale: 1.05, y: -5 } : undefined}
+      whileTap={onClick && !selected ? { scale: 0.98 } : undefined}
       style={{ transformStyle: "preserve-3d" }}
     >
       {/* Front face - shows the card value */}
