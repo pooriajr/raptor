@@ -68,6 +68,13 @@ function isValidDestination(
   return true;
 }
 
+export interface PathResult {
+  position: Position;
+  path: Position[]; // Intermediate positions (excludes start and end)
+}
+
+export type { Position };
+
 /**
  * BFS to find if there's a path from start to any of the target positions.
  * Returns the list of reachable target positions.
@@ -78,6 +85,21 @@ export function findReachablePositions(
   start: Position,
   targets: Position[],
 ): Position[] {
+  return findReachablePositionsWithPaths(tiles, pieces, start, targets).map(
+    (r) => r.position,
+  );
+}
+
+/**
+ * BFS to find paths from start to any of the target positions.
+ * Returns the list of reachable targets with the path to each.
+ */
+export function findReachablePositionsWithPaths(
+  tiles: Tile[],
+  pieces: PieceState[],
+  start: Position,
+  targets: Position[],
+): PathResult[] {
   if (targets.length === 0) return [];
 
   // Convert start to global coords
@@ -91,12 +113,16 @@ export function findReachablePositions(
     }),
   );
 
-  // BFS
+  // BFS with path tracking
   const visited = new Set<string>();
-  const queue: Array<{ globalX: number; globalY: number }> = [startGlobal];
+  const queue: Array<{
+    globalX: number;
+    globalY: number;
+    path: Array<{ globalX: number; globalY: number }>;
+  }> = [{ ...startGlobal, path: [] }];
   visited.add(`${startGlobal.globalX},${startGlobal.globalY}`);
 
-  const reachableTargets: Position[] = [];
+  const reachableTargets: PathResult[] = [];
 
   while (queue.length > 0) {
     const current = queue.shift()!;
@@ -106,10 +132,19 @@ export function findReachablePositions(
     if (targetSet.has(key)) {
       const local = globalToLocal(tiles, current.globalX, current.globalY);
       if (local) {
+        // Convert path from global to local coords (excludes start and end)
+        const localPath: Position[] = current.path
+          .map((p) => globalToLocal(tiles, p.globalX, p.globalY))
+          .filter((p): p is NonNullable<typeof p> => p !== null)
+          .map((p) => ({ tileId: p.tileId, x: p.localX, y: p.localY }));
+
         reachableTargets.push({
-          tileId: local.tileId,
-          x: local.localX,
-          y: local.localY,
+          position: {
+            tileId: local.tileId,
+            x: local.localX,
+            y: local.localY,
+          },
+          path: localPath,
         });
       }
     }
@@ -137,7 +172,12 @@ export function findReachablePositions(
         continue;
       }
 
-      queue.push(neighbor);
+      // Add current position to path (not the neighbor, as that might be the destination)
+      const newPath = [
+        ...current.path,
+        { globalX: current.globalX, globalY: current.globalY },
+      ];
+      queue.push({ ...neighbor, path: newPath });
     }
   }
 
@@ -184,7 +224,12 @@ export function canBabyReachMotherTile(
 
   // Check if baby can reach any of these destinations
   const start: Position = { tileId: baby.tileId, x: baby.x, y: baby.y };
-  const reachable = findReachablePositions(tiles, otherPieces, start, destinations);
+  const reachable = findReachablePositions(
+    tiles,
+    otherPieces,
+    start,
+    destinations,
+  );
 
   return reachable.length > 0;
 }
@@ -198,6 +243,24 @@ export function getReachableDestinationsOnMotherTile(
   baby: PieceState,
   mother: PieceState,
 ): Position[] {
+  return getReachableDestinationsOnMotherTileWithPaths(
+    tiles,
+    pieces,
+    baby,
+    mother,
+  ).map((r) => r.position);
+}
+
+/**
+ * Get all valid destination spaces on mother's tile that a baby can reach,
+ * including the path to each destination.
+ */
+export function getReachableDestinationsOnMotherTileWithPaths(
+  tiles: Tile[],
+  pieces: PieceState[],
+  baby: PieceState,
+  mother: PieceState,
+): PathResult[] {
   const motherTile = tiles.find((t) => t.id === mother.tileId);
   if (!motherTile) return [];
 
@@ -224,5 +287,10 @@ export function getReachableDestinationsOnMotherTile(
   }
 
   const start: Position = { tileId: baby.tileId, x: baby.x, y: baby.y };
-  return findReachablePositions(tiles, otherPieces, start, destinations);
+  return findReachablePositionsWithPaths(
+    tiles,
+    otherPieces,
+    start,
+    destinations,
+  );
 }

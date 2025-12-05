@@ -13,7 +13,9 @@ import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
 import {
   canBabyReachMotherTile,
-  getReachableDestinationsOnMotherTile,
+  getReachableDestinationsOnMotherTileWithPaths,
+  type Position,
+  type PathResult,
 } from "./utils/pathfinding.ts";
 
 // Effect types for the current card
@@ -102,7 +104,12 @@ function Board({ showCoordinates = false }: BoardProps) {
       destinationTileId: number;
       destinationX: number;
       destinationY: number;
+      path: Position[]; // Intermediate spaces for trail visualization
     }>
+  >([]);
+  // Cache the path results for the currently selected baby
+  const [selectedBabyPathResults, setSelectedBabyPathResults] = useState<
+    PathResult[]
   >([]);
 
   // Reset effect targets when leaving effect phase
@@ -111,6 +118,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       setSelectedEffectTargets([]);
       setSelectedBabyForCall(null);
       setPendingMothersCallMoves([]);
+      setSelectedBabyPathResults([]);
     }
   }, [state.phase]);
 
@@ -241,6 +249,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           // If clicking the currently selected baby, deselect it
           if (pieceId === selectedBabyForCall) {
             setSelectedBabyForCall(null);
+            setSelectedBabyPathResults([]);
             return;
           }
 
@@ -248,12 +257,30 @@ function Board({ showCoordinates = false }: BoardProps) {
           const limit = getEffectLimit();
           if (pendingMothersCallMoves.length >= limit) return;
 
-          // Check if baby can reach mother's tile
-          if (!canBabyReachMotherTile(state.tiles, state.pieces, piece, mother))
-            return;
+          // Check if baby can reach mother's tile and get paths
+          const pathResults = getReachableDestinationsOnMotherTileWithPaths(
+            state.tiles,
+            state.pieces,
+            piece,
+            mother,
+          );
 
-          // Select this baby
+          // Filter out destinations that are already pending from other babies
+          const availablePathResults = pathResults.filter(
+            (pr) =>
+              !pendingMothersCallMoves.some(
+                (m) =>
+                  m.destinationTileId === pr.position.tileId &&
+                  m.destinationX === pr.position.x &&
+                  m.destinationY === pr.position.y,
+              ),
+          );
+
+          if (availablePathResults.length === 0) return;
+
+          // Select this baby and cache its path results
           setSelectedBabyForCall(pieceId);
+          setSelectedBabyPathResults(availablePathResults);
         }
       }
       return;
@@ -300,7 +327,15 @@ function Board({ showCoordinates = false }: BoardProps) {
     if (getCurrentEffectType() !== "mothers_call") return;
     if (selectedBabyForCall === null) return;
 
-    // Add to pending moves instead of dispatching immediately
+    // Find the path for this destination from cached results
+    const pathResult = selectedBabyPathResults.find(
+      (pr) =>
+        pr.position.tileId === tileId &&
+        pr.position.x === x &&
+        pr.position.y === y,
+    );
+
+    // Add to pending moves with path
     setPendingMothersCallMoves((prev) => [
       ...prev,
       {
@@ -308,9 +343,11 @@ function Board({ showCoordinates = false }: BoardProps) {
         destinationTileId: tileId,
         destinationX: x,
         destinationY: y,
+        path: pathResult?.path ?? [],
       },
     ]);
     setSelectedBabyForCall(null);
+    setSelectedBabyPathResults([]);
   };
 
   const handleCardSelect = (value: number) => {
@@ -564,26 +601,36 @@ function Board({ showCoordinates = false }: BoardProps) {
     return [];
   })();
 
-  // Calculate valid destination spaces for Mother's Call
+  // Calculate valid destination spaces for Mother's Call (from cached results)
   const mothersCallDestinations: Array<{
     tileId: number;
     x: number;
     y: number;
+  }> = selectedBabyPathResults.map((pr) => pr.position);
+
+  // Calculate path trail positions for visualization
+  // Includes paths from pending moves + baby start positions
+  const pathTrailPositions: Array<{
+    tileId: number;
+    x: number;
+    y: number;
   }> = (() => {
-    if (state.phase !== "EFFECT_PHASE") return [];
-    if (getCurrentEffectType() !== "mothers_call") return [];
-    if (selectedBabyForCall === null) return [];
+    const positions: Array<{ tileId: number; x: number; y: number }> = [];
 
-    const baby = state.pieces.find((p) => p.id === selectedBabyForCall);
-    const mother = state.pieces.find((p) => p.type === "mother");
-    if (!baby || !mother) return [];
+    // Add paths and start positions from pending moves
+    for (const move of pendingMothersCallMoves) {
+      // Add baby's start position
+      const baby = state.pieces.find((p) => p.id === move.babyId);
+      if (baby) {
+        positions.push({ tileId: baby.tileId, x: baby.x, y: baby.y });
+      }
+      // Add intermediate path positions
+      for (const pos of move.path) {
+        positions.push(pos);
+      }
+    }
 
-    return getReachableDestinationsOnMotherTile(
-      state.tiles,
-      state.pieces,
-      baby,
-      mother,
-    );
+    return positions;
   })();
 
   return (
@@ -664,6 +711,17 @@ function Board({ showCoordinates = false }: BoardProps) {
                     : selectedEffectTargets
                 }
                 effectDestinations={mothersCallDestinations}
+                pendingMoves={pendingMothersCallMoves.map((m) => ({
+                  babyId: m.babyId,
+                  fromTileId:
+                    state.pieces.find((p) => p.id === m.babyId)?.tileId ?? 0,
+                  fromX: state.pieces.find((p) => p.id === m.babyId)?.x ?? 0,
+                  fromY: state.pieces.find((p) => p.id === m.babyId)?.y ?? 0,
+                  toTileId: m.destinationTileId,
+                  toX: m.destinationX,
+                  toY: m.destinationY,
+                }))}
+                pathTrailPositions={pathTrailPositions}
                 showCoordinates={showCoordinates}
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}

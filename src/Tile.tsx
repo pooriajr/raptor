@@ -13,6 +13,16 @@ interface AdaptedPiece {
   isFrightened?: boolean;
 }
 
+interface PendingMove {
+  babyId: string;
+  fromTileId: number;
+  fromX: number;
+  fromY: number;
+  toTileId: number;
+  toX: number;
+  toY: number;
+}
+
 interface TileProps {
   tile: TileType;
   pieces: AdaptedPiece[];
@@ -20,6 +30,8 @@ interface TileProps {
   effectTargetIds?: string[];
   selectedEffectTargets?: string[];
   effectDestinations?: Array<{ tileId: number; x: number; y: number }>;
+  pendingMoves?: PendingMove[];
+  pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;
@@ -36,6 +48,8 @@ function Tile({
   effectTargetIds = [],
   selectedEffectTargets = [],
   effectDestinations = [],
+  pendingMoves = [],
+  pathTrailPositions = [],
   showCoordinates = false,
   onMouseDown,
   onMouseUp,
@@ -109,6 +123,32 @@ function Tile({
               dest.y === space.coordinate.y,
           );
 
+          // Check if this space is a pending destination (baby moving here)
+          const pendingMoveToHere = pendingMoves.find(
+            (m) =>
+              m.toTileId === tile.id &&
+              m.toX === space.coordinate.x &&
+              m.toY === space.coordinate.y,
+          );
+          const isPendingDestination = !!pendingMoveToHere;
+
+          // Check if this space is where a baby is moving FROM (show footprint)
+          const pendingMoveFromHere = pendingMoves.find(
+            (m) =>
+              m.fromTileId === tile.id &&
+              m.fromX === space.coordinate.x &&
+              m.fromY === space.coordinate.y,
+          );
+          const isBabyOrigin = !!pendingMoveFromHere;
+
+          // Check if this space is part of a path trail
+          const isPathTrail = pathTrailPositions.some(
+            (pos) =>
+              pos.tileId === tile.id &&
+              pos.x === space.coordinate.x &&
+              pos.y === space.coordinate.y,
+          );
+
           return (
             <div
               key={index}
@@ -119,6 +159,8 @@ function Tile({
               data-drag-over={isDragOver}
               data-valid-move={isValidMove}
               data-effect-destination={isEffectDestination}
+              data-pending-destination={isPendingDestination}
+              data-path-trail={isPathTrail}
               onDragOver={(e) =>
                 handleDragOver(
                   e,
@@ -147,7 +189,26 @@ function Tile({
               )}
               {space.hasMountain && <span className="mountain">⛰️</span>}
               {space.isExit && <span className="exit">🚪</span>}
-              {pieceOnSpace && (
+              {/* Show footprint at baby's origin (where baby is moving from) */}
+              {isBabyOrigin && <span className="path-trail">🐾</span>}
+              {/* Show footprint on path trail (intermediate spaces) */}
+              {isPathTrail && !pieceOnSpace && !isBabyOrigin && (
+                <span className="path-trail">🐾</span>
+              )}
+              {/* Show baby at pending destination */}
+              {isPendingDestination && pendingMoveToHere && (
+                <span
+                  className="piece pending-piece"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPieceClick(pendingMoveToHere.babyId);
+                  }}
+                >
+                  🦎
+                </span>
+              )}
+              {/* Show piece normally, but hide if it has a pending move */}
+              {pieceOnSpace && !pendingMoveFromHere && (
                 <span
                   className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
                   draggable
