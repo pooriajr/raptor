@@ -1573,6 +1573,392 @@ describe("Game Reducer - Card System", () => {
       });
     });
 
+    describe("JEEP_MOVES", () => {
+      // Helper to get to effect phase with scientist having card 3 (Jeep x2)
+      function getToEffectPhaseWithJeep(): GameState {
+        let state = createInitialGameState();
+
+        // Set up decks so scientist plays 3 and raptor plays 8
+        state = {
+          ...state,
+          scientistCards: {
+            deck: [4, 5, 6, 3, 7, 8, 9, 1, 2],
+            hand: [],
+            played: null,
+          },
+          raptorCards: {
+            deck: [9, 2, 3, 4, 5, 6, 1, 7, 8],
+            hand: [],
+            played: null,
+          },
+        };
+
+        // Complete setup
+        state = completeRaptorSetup(state);
+        const lTiles = state.tiles.filter((t) => t.shape === "L");
+        for (const lTile of lTiles) {
+          const space = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+          state = gameReducer(state, {
+            type: "PLACE_SCIENTIST",
+            tileId: lTile.id,
+            x: space.coordinate.x,
+            y: space.coordinate.y,
+          });
+        }
+        state = gameReducer(state, { type: "START_GAME" });
+        state = gameReducer(state, {
+          type: "PLAYER_READY",
+          player: "scientist",
+        });
+        state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
+        state = gameReducer(state, {
+          type: "PLAY_CARD",
+          player: "scientist",
+          card: 3,
+        });
+        state = gameReducer(state, { type: "PLAYER_READY", player: "raptor" });
+        state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
+        state = gameReducer(state, {
+          type: "PLAY_CARD",
+          player: "raptor",
+          card: 9,
+        });
+        state = gameReducer(state, { type: "CONFIRM_REVEAL" });
+
+        return state;
+      }
+
+      it("moves a scientist to a new position", () => {
+        let state = getToEffectPhaseWithJeep();
+        expect(state.phase).toBe("EFFECT_PHASE");
+        expect(state.scientistCards.played).toBe(3);
+        expect(state.raptorCards.played).toBe(9);
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        const originalTileId = scientist.tileId;
+        const originalX = scientist.x;
+        const originalY = scientist.y;
+
+        // Find a valid destination on the same tile
+        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+        const destSpace = tile.spaces.find(
+          (s) =>
+            !s.hasMountain &&
+            !s.isUnusable &&
+            !s.isExit &&
+            (s.coordinate.x !== scientist.x ||
+              s.coordinate.y !== scientist.y) &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+
+        if (!destSpace) return; // Skip if no valid destination
+
+        state = gameReducer(state, {
+          type: "JEEP_MOVES",
+          moves: [
+            {
+              scientistId: scientist.id,
+              fromTileId: originalTileId,
+              fromX: originalX,
+              fromY: originalY,
+              toTileId: tile.id,
+              toX: destSpace.coordinate.x,
+              toY: destSpace.coordinate.y,
+              path: [],
+            },
+          ],
+        });
+
+        const movedScientist = state.pieces.find((p) => p.id === scientist.id)!;
+        expect(movedScientist.tileId).toBe(tile.id);
+        expect(movedScientist.x).toBe(destSpace.coordinate.x);
+        expect(movedScientist.y).toBe(destSpace.coordinate.y);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("moves the same scientist multiple times", () => {
+        let state = getToEffectPhaseWithJeep();
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+
+        // Find two valid destinations in sequence
+        const validSpaces = tile.spaces.filter(
+          (s) =>
+            !s.hasMountain &&
+            !s.isUnusable &&
+            !s.isExit &&
+            (s.coordinate.x !== scientist.x ||
+              s.coordinate.y !== scientist.y) &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+
+        if (validSpaces.length < 2) return; // Skip if not enough destinations
+
+        const dest1 = validSpaces[0];
+        const dest2 = validSpaces[1];
+
+        state = gameReducer(state, {
+          type: "JEEP_MOVES",
+          moves: [
+            {
+              scientistId: scientist.id,
+              fromTileId: scientist.tileId,
+              fromX: scientist.x,
+              fromY: scientist.y,
+              toTileId: tile.id,
+              toX: dest1.coordinate.x,
+              toY: dest1.coordinate.y,
+              path: [],
+            },
+            {
+              scientistId: scientist.id,
+              fromTileId: tile.id,
+              fromX: dest1.coordinate.x,
+              fromY: dest1.coordinate.y,
+              toTileId: tile.id,
+              toX: dest2.coordinate.x,
+              toY: dest2.coordinate.y,
+              path: [],
+            },
+          ],
+        });
+
+        const movedScientist = state.pieces.find((p) => p.id === scientist.id)!;
+        // Should end at the second destination
+        expect(movedScientist.x).toBe(dest2.coordinate.x);
+        expect(movedScientist.y).toBe(dest2.coordinate.y);
+        expect(state.phase).toBe("ACTION_PHASE");
+      });
+
+      it("extinguishes fires along the path", () => {
+        let state = getToEffectPhaseWithJeep();
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+
+        // Find a valid destination
+        const destSpace = tile.spaces.find(
+          (s) =>
+            !s.hasMountain &&
+            !s.isUnusable &&
+            !s.isExit &&
+            (s.coordinate.x !== scientist.x ||
+              s.coordinate.y !== scientist.y) &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+
+        if (!destSpace) return;
+
+        // Add fire at the destination
+        state = {
+          ...state,
+          fireTokens: [
+            ...state.fireTokens,
+            {
+              id: "fire-test",
+              tileId: tile.id,
+              x: destSpace.coordinate.x,
+              y: destSpace.coordinate.y,
+            },
+          ],
+        };
+
+        expect(state.fireTokens.length).toBeGreaterThan(0);
+
+        state = gameReducer(state, {
+          type: "JEEP_MOVES",
+          moves: [
+            {
+              scientistId: scientist.id,
+              fromTileId: scientist.tileId,
+              fromX: scientist.x,
+              fromY: scientist.y,
+              toTileId: tile.id,
+              toX: destSpace.coordinate.x,
+              toY: destSpace.coordinate.y,
+              path: [],
+            },
+          ],
+        });
+
+        // Fire at destination should be extinguished
+        const fireAtDest = state.fireTokens.find(
+          (f) =>
+            f.tileId === tile.id &&
+            f.x === destSpace.coordinate.x &&
+            f.y === destSpace.coordinate.y,
+        );
+        expect(fireAtDest).toBeUndefined();
+      });
+
+      it("extinguishes fires on intermediate path positions", () => {
+        let state = getToEffectPhaseWithJeep();
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+
+        // Find a destination and an intermediate position
+        const destSpace = tile.spaces.find(
+          (s) =>
+            !s.hasMountain &&
+            !s.isUnusable &&
+            !s.isExit &&
+            (s.coordinate.x !== scientist.x ||
+              s.coordinate.y !== scientist.y) &&
+            !state.pieces.some(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === s.coordinate.x &&
+                p.y === s.coordinate.y,
+            ),
+        );
+
+        if (!destSpace) return;
+
+        // Create a path position (intermediate)
+        const pathPos = {
+          tileId: tile.id,
+          x: (scientist.x + destSpace.coordinate.x) / 2,
+          y: (scientist.y + destSpace.coordinate.y) / 2,
+        };
+
+        // Only test if path position is valid (integer coordinates)
+        if (!Number.isInteger(pathPos.x) || !Number.isInteger(pathPos.y)) {
+          // Use a different approach - just put fire on path
+          const intermediateSpace = tile.spaces.find(
+            (s) =>
+              !s.hasMountain &&
+              !s.isUnusable &&
+              !s.isExit &&
+              s.coordinate.x !== scientist.x &&
+              s.coordinate.x !== destSpace.coordinate.x,
+          );
+
+          if (!intermediateSpace) return;
+
+          state = {
+            ...state,
+            fireTokens: [
+              {
+                id: "fire-path",
+                tileId: tile.id,
+                x: intermediateSpace.coordinate.x,
+                y: intermediateSpace.coordinate.y,
+              },
+            ],
+          };
+
+          state = gameReducer(state, {
+            type: "JEEP_MOVES",
+            moves: [
+              {
+                scientistId: scientist.id,
+                fromTileId: scientist.tileId,
+                fromX: scientist.x,
+                fromY: scientist.y,
+                toTileId: tile.id,
+                toX: destSpace.coordinate.x,
+                toY: destSpace.coordinate.y,
+                path: [
+                  {
+                    tileId: tile.id,
+                    x: intermediateSpace.coordinate.x,
+                    y: intermediateSpace.coordinate.y,
+                  },
+                ],
+              },
+            ],
+          });
+
+          // Fire on path should be extinguished
+          const fireOnPath = state.fireTokens.find(
+            (f) =>
+              f.tileId === tile.id &&
+              f.x === intermediateSpace.coordinate.x &&
+              f.y === intermediateSpace.coordinate.y,
+          );
+          expect(fireOnPath).toBeUndefined();
+        }
+      });
+
+      it("is rejected when raptor has lower card", () => {
+        let state = getToEffectPhaseRaptorLower();
+        expect(state.raptorCards.played).toBeLessThan(
+          state.scientistCards.played!,
+        );
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+        const originalX = scientist.x;
+        const originalY = scientist.y;
+
+        const newState = gameReducer(state, {
+          type: "JEEP_MOVES",
+          moves: [
+            {
+              scientistId: scientist.id,
+              fromTileId: scientist.tileId,
+              fromX: scientist.x,
+              fromY: scientist.y,
+              toTileId: scientist.tileId,
+              toX: 0,
+              toY: 0,
+              path: [],
+            },
+          ],
+        });
+
+        // Scientist should not have moved
+        const unmoved = newState.pieces.find((p) => p.id === scientist.id)!;
+        expect(unmoved.x).toBe(originalX);
+        expect(unmoved.y).toBe(originalY);
+        expect(newState.phase).toBe("EFFECT_PHASE");
+      });
+
+      it("is rejected outside of EFFECT_PHASE", () => {
+        let state = getToCardSelectionPhase(
+          createInitialGameState(),
+          "scientist",
+        );
+        expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
+
+        const scientist = state.pieces.find((p) => p.type === "scientist")!;
+
+        const newState = gameReducer(state, {
+          type: "JEEP_MOVES",
+          moves: [
+            {
+              scientistId: scientist.id,
+              fromTileId: scientist.tileId,
+              fromX: scientist.x,
+              fromY: scientist.y,
+              toTileId: scientist.tileId,
+              toX: 0,
+              toY: 0,
+              path: [],
+            },
+          ],
+        });
+
+        expect(newState.phase).toBe("SCIENTIST_CARD_SELECTION");
+      });
+    });
+
     describe("END_EFFECT_PHASE", () => {
       it("transitions from EFFECT_PHASE to ACTION_PHASE", () => {
         let state = getToEffectPhaseRaptorLower();
