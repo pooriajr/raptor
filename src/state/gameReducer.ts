@@ -1,22 +1,22 @@
-import type { CardState, GameState, PieceState } from "../types/gameState.ts";
+import type {
+  CardState,
+  GameState,
+  PieceState,
+  Player,
+} from "../types/gameState.ts";
 import { getReachableDestinationsOnMotherTile } from "../utils/pathfinding.ts";
 import {
   localToGlobal,
   getAdjacentGlobalCoordinates,
 } from "../types/coordinates.ts";
+import { BabyRaptor } from "../pieces/BabyRaptor.ts";
+import { Scientist } from "../pieces/Scientist.ts";
 
 // Action types
 export type GameAction =
   | { type: "PLACE_SCIENTIST"; tileId: number; x: number; y: number }
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
-  | {
-      type: "MOVE_PIECE";
-      pieceId: string;
-      tileId: number;
-      x: number;
-      y: number;
-    }
   | { type: "START_GAME" }
   | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
@@ -69,7 +69,23 @@ export type GameAction =
       type: "DEV_SKIP_TO_EFFECT";
       raptorCard: number;
       scientistCard: number;
-    };
+    }
+  // Action phase actions
+  | {
+      type: "ACTION_MOVE_BABY";
+      pieceId: string;
+      tileId: number;
+      x: number;
+      y: number;
+    }
+  | {
+      type: "ACTION_MOVE_SCIENTIST";
+      pieceId: string;
+      tileId: number;
+      x: number;
+      y: number;
+    }
+  | { type: "END_ACTION_PHASE" };
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
 function drawCards(cardState: CardState): CardState {
@@ -142,6 +158,46 @@ function isRaptorSetupComplete(state: GameState): boolean {
   const mother = state.pieces.find((p) => p.type === "mother");
   const babies = state.pieces.filter((p) => p.type === "baby");
   return mother !== undefined && babies.length === 5;
+}
+
+// Calculate action points and active player from played cards
+// Higher card gets action points = difference between cards
+function calculateActionPhaseState(state: GameState): {
+  actionPoints: number;
+  activePlayer: Player | null;
+} {
+  const scientistCard = state.scientistCards.played;
+  const raptorCard = state.raptorCards.played;
+
+  if (scientistCard === null || raptorCard === null) {
+    return { actionPoints: 0, activePlayer: null };
+  }
+
+  if (scientistCard === raptorCard) {
+    return { actionPoints: 0, activePlayer: null };
+  }
+
+  if (scientistCard > raptorCard) {
+    return {
+      actionPoints: scientistCard - raptorCard,
+      activePlayer: "scientist",
+    };
+  } else {
+    return {
+      actionPoints: raptorCard - scientistCard,
+      activePlayer: "raptor",
+    };
+  }
+}
+
+// Helper to transition to action phase with calculated AP
+function transitionToActionPhase(state: GameState): Partial<GameState> {
+  const { actionPoints, activePlayer } = calculateActionPhaseState(state);
+  return {
+    phase: "ACTION_PHASE" as const,
+    actionPoints,
+    activePlayer,
+  };
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -302,48 +358,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return newState;
     }
 
-    case "MOVE_PIECE": {
-      // Find the piece
-      const piece = state.pieces.find((p) => p.id === action.pieceId);
-      if (!piece) return state;
-
-      // Validate: target tile exists
-      const targetTile = state.tiles.find((t) => t.id === action.tileId);
-      if (!targetTile) return state;
-
-      // Validate: target space exists and has no mountain
-      const targetSpace = targetTile.spaces.find(
-        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
-      );
-      if (!targetSpace || targetSpace.hasMountain || targetSpace.isUnusable)
-        return state;
-
-      // Validate: space not occupied
-      if (
-        isSpaceOccupied(
-          state.pieces,
-          action.tileId,
-          action.x,
-          action.y,
-          action.pieceId,
-        )
-      )
-        return state;
-
-      // Note: Movement validation (is this a valid move for this piece type?)
-      // should be done by piece classes before dispatching. The reducer trusts
-      // that the caller has validated the move is legal for the piece.
-
-      return {
-        ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.pieceId
-            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
-            : p,
-        ),
-      };
-    }
-
     case "START_GAME": {
       // Validate: must be in scientist setup phase with 4 scientists placed
       if (state.phase !== "SCIENTIST_SETUP") return state;
@@ -464,12 +478,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       });
 
       // Frighten the scientists
-      return {
+      const newStateAfterFrighten = {
         ...state,
         pieces: state.pieces.map((p) =>
           validTargets.includes(p.id) ? { ...p, isFrightened: true } : p,
         ),
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterFrighten,
+        ...transitionToActionPhase(newStateAfterFrighten),
       };
     }
 
@@ -489,12 +506,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       });
 
       // Put the babies to sleep
-      return {
+      const newStateAfterSleep = {
         ...state,
         pieces: state.pieces.map((p) =>
           validTargets.includes(p.id) ? { ...p, isAsleep: true } : p,
         ),
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterSleep,
+        ...transitionToActionPhase(newStateAfterSleep),
       };
     }
 
@@ -554,10 +574,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         );
       }
 
-      return {
+      const newStateAfterMothersCall = {
         ...state,
         pieces: updatedPieces,
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterMothersCall,
+        ...transitionToActionPhase(newStateAfterMothersCall),
       };
     }
 
@@ -577,10 +600,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Remove mother from pieces (she'll be replaced after opponent acts)
       const updatedPieces = state.pieces.filter((p) => p.type !== "mother");
 
-      return {
+      const newStateAfterDisappearance = {
         ...state,
         pieces: updatedPieces,
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterDisappearance,
+        ...transitionToActionPhase(newStateAfterDisappearance),
       };
     }
 
@@ -600,12 +626,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       });
 
       // Wake up the babies
-      return {
+      const newStateAfterWake = {
         ...state,
         pieces: state.pieces.map((p) =>
           validTargets.includes(p.id) ? { ...p, isAsleep: false } : p,
         ),
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterWake,
+        ...transitionToActionPhase(newStateAfterWake),
       };
     }
 
@@ -676,11 +705,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         placedCount++;
       }
 
-      return {
+      const newStateAfterReinforcements = {
         ...state,
         pieces: updatedPieces,
         scientistReserve: remainingReserve,
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterReinforcements,
+        ...transitionToActionPhase(newStateAfterReinforcements),
       };
     }
 
@@ -759,10 +791,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         updatedFireTokens = [...updatedFireTokens, newFire];
       }
 
-      return {
+      const newStateAfterFire = {
         ...state,
         fireTokens: updatedFireTokens,
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterFire,
+        ...transitionToActionPhase(newStateAfterFire),
       };
     }
 
@@ -803,17 +838,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      return {
+      const newStateAfterJeep = {
         ...state,
         pieces: updatedPieces,
         fireTokens: updatedFireTokens,
-        phase: "ACTION_PHASE",
+      };
+      return {
+        ...newStateAfterJeep,
+        ...transitionToActionPhase(newStateAfterJeep),
       };
     }
 
     case "END_EFFECT_PHASE": {
       if (state.phase !== "EFFECT_PHASE") return state;
-      return { ...state, phase: "ACTION_PHASE" };
+      return { ...state, ...transitionToActionPhase(state) };
     }
 
     case "DEV_SKIP_TO_EFFECT": {
@@ -889,6 +927,149 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           hand: newState.raptorCards.hand.filter(
             (c) => c !== action.raptorCard,
           ),
+        },
+      };
+    }
+
+    // ========== ACTION PHASE ACTIONS ==========
+
+    case "ACTION_MOVE_BABY": {
+      // Validate: must be in action phase
+      if (state.phase !== "ACTION_PHASE") return state;
+
+      // Validate: raptor must be the active player
+      if (state.activePlayer !== "raptor") return state;
+
+      // Validate: must have action points
+      if (state.actionPoints <= 0) return state;
+
+      // Find the baby
+      const baby = state.pieces.find(
+        (p) => p.id === action.pieceId && p.type === "baby",
+      );
+      if (!baby) return state;
+
+      // Baby can't move if asleep
+      if (baby.isAsleep) return state;
+
+      // Validate the move using BabyRaptor class
+      const babyPiece = new BabyRaptor(baby.id, baby.tileId, baby.x, baby.y);
+      const validMoves = babyPiece.getValidMoves(state.tiles, state.pieces);
+
+      const isValidMove = validMoves.some(
+        (m) =>
+          m.tileId === action.tileId && m.x === action.x && m.y === action.y,
+      );
+      if (!isValidMove) return state;
+
+      // Check target space is not occupied
+      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+        return state;
+
+      // Check if this is an exit space (baby escapes)
+      const targetTile = state.tiles.find((t) => t.id === action.tileId);
+      const targetSpace = targetTile?.spaces.find(
+        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
+      );
+      const isExit = targetSpace?.isExit ?? false;
+
+      if (isExit) {
+        // Baby escapes - remove from board
+        return {
+          ...state,
+          pieces: state.pieces.filter((p) => p.id !== action.pieceId),
+          actionPoints: state.actionPoints - 1,
+        };
+      }
+
+      // Normal move
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.pieceId
+            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
+            : p,
+        ),
+        actionPoints: state.actionPoints - 1,
+      };
+    }
+
+    case "ACTION_MOVE_SCIENTIST": {
+      // Validate: must be in action phase
+      if (state.phase !== "ACTION_PHASE") return state;
+
+      // Validate: scientist must be the active player
+      if (state.activePlayer !== "scientist") return state;
+
+      // Validate: must have action points
+      if (state.actionPoints <= 0) return state;
+
+      // Find the scientist
+      const scientist = state.pieces.find(
+        (p) => p.id === action.pieceId && p.type === "scientist",
+      );
+      if (!scientist) return state;
+
+      // Scientist can't move if frightened
+      if (scientist.isFrightened) return state;
+
+      // Validate the move using Scientist class (normal mode, not jeep)
+      const scientistPiece = new Scientist(
+        scientist.id,
+        scientist.tileId,
+        scientist.x,
+        scientist.y,
+      );
+      const validMoves = scientistPiece.getValidMoves(
+        state.tiles,
+        state.pieces,
+      );
+
+      const isValidMove = validMoves.some(
+        (m) =>
+          m.tileId === action.tileId && m.x === action.x && m.y === action.y,
+      );
+      if (!isValidMove) return state;
+
+      // Check target space is not occupied
+      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+        return state;
+
+      // Check scientist can't end on fire
+      const hasFireAtTarget = state.fireTokens.some(
+        (f) =>
+          f.tileId === action.tileId && f.x === action.x && f.y === action.y,
+      );
+      if (hasFireAtTarget) return state;
+
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.pieceId
+            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
+            : p,
+        ),
+        actionPoints: state.actionPoints - 1,
+      };
+    }
+
+    case "END_ACTION_PHASE": {
+      if (state.phase !== "ACTION_PHASE") return state;
+
+      // Transition to next round - reset for new card selection
+      return {
+        ...state,
+        phase: "SCIENTIST_READY",
+        actionPoints: 0,
+        activePlayer: null,
+        // Clear played cards for new round
+        scientistCards: {
+          ...state.scientistCards,
+          played: null,
+        },
+        raptorCards: {
+          ...state.raptorCards,
+          played: null,
         },
       };
     }

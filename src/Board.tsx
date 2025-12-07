@@ -4,6 +4,7 @@ import SetupPanel from "./SetupPanel.tsx";
 import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
 import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
+import ActionPhaseBanner from "./ActionPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
@@ -878,14 +879,30 @@ function Board({ showCoordinates = false }: BoardProps) {
       }
       setDraggedHoldingPieceType(null);
     } else if (draggedPieceId) {
-      // Moving piece on board
-      dispatch({
-        type: "MOVE_PIECE",
-        pieceId: draggedPieceId,
-        tileId,
-        x: localX,
-        y: localY,
-      });
+      // Moving piece on board - only during action phase
+      if (state.phase === "ACTION_PHASE") {
+        const piece = state.pieces.find((p) => p.id === draggedPieceId);
+        if (piece?.type === "baby" && state.activePlayer === "raptor") {
+          dispatch({
+            type: "ACTION_MOVE_BABY",
+            pieceId: draggedPieceId,
+            tileId,
+            x: localX,
+            y: localY,
+          });
+        } else if (
+          piece?.type === "scientist" &&
+          state.activePlayer === "scientist"
+        ) {
+          dispatch({
+            type: "ACTION_MOVE_SCIENTIST",
+            pieceId: draggedPieceId,
+            tileId,
+            x: localX,
+            y: localY,
+          });
+        }
+      }
       setDraggedPieceId(null);
     }
   };
@@ -1141,6 +1158,11 @@ function Board({ showCoordinates = false }: BoardProps) {
           onSkip={handleEffectSkip}
           onFireReset={handleFireReset}
           onJeepReset={handleJeepReset}
+        />
+      )}
+      {state.phase === "ACTION_PHASE" && (
+        <ActionPhaseBanner
+          onEndTurn={() => dispatch({ type: "END_ACTION_PHASE" })}
         />
       )}
       <div className="game-layout">

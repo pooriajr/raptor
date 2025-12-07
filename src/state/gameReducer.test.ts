@@ -1982,3 +1982,394 @@ describe("Game Reducer - Card System", () => {
     });
   });
 });
+
+describe("Game Reducer - Action Phase", () => {
+  // Helper to get to ACTION_PHASE with raptor having action points
+  function getToActionPhaseRaptorActive(): GameState {
+    let state = createInitialGameState();
+
+    // Set up decks so raptor has higher card (gets action points)
+    state = {
+      ...state,
+      scientistCards: {
+        deck: [3, 2, 4, 5, 6, 1, 7, 8, 9],
+        hand: [],
+        played: null,
+      },
+      raptorCards: {
+        deck: [7, 2, 3, 4, 5, 6, 1, 8, 9],
+        hand: [],
+        played: null,
+      },
+    };
+
+    // Complete setup
+    state = completeRaptorSetup(state);
+    const lTiles = state.tiles.filter((t) => t.shape === "L");
+    for (const lTile of lTiles) {
+      const space = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+      state = gameReducer(state, {
+        type: "PLACE_SCIENTIST",
+        tileId: lTile.id,
+        x: space.coordinate.x,
+        y: space.coordinate.y,
+      });
+    }
+    state = gameReducer(state, { type: "START_GAME" });
+    state = gameReducer(state, { type: "PLAYER_READY", player: "scientist" });
+    state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
+    state = gameReducer(state, {
+      type: "PLAY_CARD",
+      player: "scientist",
+      card: 3,
+    });
+    state = gameReducer(state, { type: "PLAYER_READY", player: "raptor" });
+    state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
+    state = gameReducer(state, {
+      type: "PLAY_CARD",
+      player: "raptor",
+      card: 7,
+    });
+    state = gameReducer(state, { type: "CONFIRM_REVEAL" });
+    // Skip effect phase (scientist had lower card, uses effect)
+    state = gameReducer(state, { type: "END_EFFECT_PHASE" });
+
+    return state;
+  }
+
+  // Helper to get to ACTION_PHASE with scientist having action points
+  function getToActionPhaseScientistActive(): GameState {
+    let state = createInitialGameState();
+
+    // Set up decks so scientist has higher card (gets action points)
+    state = {
+      ...state,
+      scientistCards: {
+        deck: [8, 2, 3, 4, 5, 6, 1, 7, 9],
+        hand: [],
+        played: null,
+      },
+      raptorCards: {
+        deck: [3, 2, 4, 5, 6, 1, 7, 8, 9],
+        hand: [],
+        played: null,
+      },
+    };
+
+    // Complete setup
+    state = completeRaptorSetup(state);
+    const lTiles = state.tiles.filter((t) => t.shape === "L");
+    for (const lTile of lTiles) {
+      const space = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+      state = gameReducer(state, {
+        type: "PLACE_SCIENTIST",
+        tileId: lTile.id,
+        x: space.coordinate.x,
+        y: space.coordinate.y,
+      });
+    }
+    state = gameReducer(state, { type: "START_GAME" });
+    state = gameReducer(state, { type: "PLAYER_READY", player: "scientist" });
+    state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
+    state = gameReducer(state, {
+      type: "PLAY_CARD",
+      player: "scientist",
+      card: 8,
+    });
+    state = gameReducer(state, { type: "PLAYER_READY", player: "raptor" });
+    state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
+    state = gameReducer(state, {
+      type: "PLAY_CARD",
+      player: "raptor",
+      card: 3,
+    });
+    state = gameReducer(state, { type: "CONFIRM_REVEAL" });
+    // Skip effect phase (raptor had lower card, uses effect)
+    state = gameReducer(state, { type: "END_EFFECT_PHASE" });
+
+    return state;
+  }
+
+  describe("Action Phase Initialization", () => {
+    it("sets action points to card difference when transitioning to action phase", () => {
+      const state = getToActionPhaseRaptorActive();
+
+      expect(state.phase).toBe("ACTION_PHASE");
+      expect(state.actionPoints).toBe(4); // 7 - 3 = 4
+      expect(state.activePlayer).toBe("raptor");
+    });
+
+    it("sets scientist as active player when scientist has higher card", () => {
+      const state = getToActionPhaseScientistActive();
+
+      expect(state.phase).toBe("ACTION_PHASE");
+      expect(state.actionPoints).toBe(5); // 8 - 3 = 5
+      expect(state.activePlayer).toBe("scientist");
+    });
+  });
+
+  describe("ACTION_MOVE_BABY", () => {
+    it("allows raptor to move a baby when raptor is active", () => {
+      let state = getToActionPhaseRaptorActive();
+      const baby = state.pieces.find((p) => p.type === "baby")!;
+      const originalAP = state.actionPoints;
+
+      // Find an adjacent empty space for the baby
+      const babyTile = state.tiles.find((t) => t.id === baby.tileId)!;
+      const adjacentSpace = babyTile.spaces.find(
+        (s) =>
+          !s.hasMountain &&
+          !s.isUnusable &&
+          !s.isExit &&
+          (Math.abs(s.coordinate.x - baby.x) === 1) !==
+            (Math.abs(s.coordinate.y - baby.y) === 1) &&
+          (s.coordinate.x === baby.x || s.coordinate.y === baby.y) &&
+          !state.pieces.some(
+            (p) =>
+              p.tileId === baby.tileId &&
+              p.x === s.coordinate.x &&
+              p.y === s.coordinate.y,
+          ),
+      );
+
+      if (adjacentSpace) {
+        state = gameReducer(state, {
+          type: "ACTION_MOVE_BABY",
+          pieceId: baby.id,
+          tileId: baby.tileId,
+          x: adjacentSpace.coordinate.x,
+          y: adjacentSpace.coordinate.y,
+        });
+
+        const movedBaby = state.pieces.find((p) => p.id === baby.id)!;
+        expect(movedBaby.x).toBe(adjacentSpace.coordinate.x);
+        expect(movedBaby.y).toBe(adjacentSpace.coordinate.y);
+        expect(state.actionPoints).toBe(originalAP - 1);
+      }
+    });
+
+    it("rejects baby movement when scientist is active", () => {
+      let state = getToActionPhaseScientistActive();
+      const baby = state.pieces.find((p) => p.type === "baby")!;
+      const originalX = baby.x;
+      const originalY = baby.y;
+
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_BABY",
+        pieceId: baby.id,
+        tileId: baby.tileId,
+        x: baby.x + 1,
+        y: baby.y,
+      });
+
+      const sameBaby = state.pieces.find((p) => p.id === baby.id)!;
+      expect(sameBaby.x).toBe(originalX);
+      expect(sameBaby.y).toBe(originalY);
+    });
+
+    it("rejects baby movement when no action points remain", () => {
+      let state = getToActionPhaseRaptorActive();
+      state = { ...state, actionPoints: 0 };
+
+      const baby = state.pieces.find((p) => p.type === "baby")!;
+      const originalX = baby.x;
+
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_BABY",
+        pieceId: baby.id,
+        tileId: baby.tileId,
+        x: baby.x + 1,
+        y: baby.y,
+      });
+
+      const sameBaby = state.pieces.find((p) => p.id === baby.id)!;
+      expect(sameBaby.x).toBe(originalX);
+    });
+
+    it("rejects movement of sleeping baby", () => {
+      let state = getToActionPhaseRaptorActive();
+      const baby = state.pieces.find((p) => p.type === "baby")!;
+
+      // Put the baby to sleep
+      state = {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === baby.id ? { ...p, isAsleep: true } : p,
+        ),
+      };
+
+      const originalX = baby.x;
+
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_BABY",
+        pieceId: baby.id,
+        tileId: baby.tileId,
+        x: baby.x + 1,
+        y: baby.y,
+      });
+
+      const sameBaby = state.pieces.find((p) => p.id === baby.id)!;
+      expect(sameBaby.x).toBe(originalX);
+    });
+  });
+
+  describe("ACTION_MOVE_SCIENTIST", () => {
+    it("allows scientist to move when scientist is active", () => {
+      let state = getToActionPhaseScientistActive();
+      const scientist = state.pieces.find((p) => p.type === "scientist")!;
+      const originalAP = state.actionPoints;
+
+      // Find an adjacent empty space for the scientist
+      const scientistTile = state.tiles.find((t) => t.id === scientist.tileId)!;
+      const adjacentSpace = scientistTile.spaces.find(
+        (s) =>
+          !s.hasMountain &&
+          !s.isUnusable &&
+          !s.isExit &&
+          (Math.abs(s.coordinate.x - scientist.x) === 1) !==
+            (Math.abs(s.coordinate.y - scientist.y) === 1) &&
+          (s.coordinate.x === scientist.x || s.coordinate.y === scientist.y) &&
+          !state.pieces.some(
+            (p) =>
+              p.tileId === scientist.tileId &&
+              p.x === s.coordinate.x &&
+              p.y === s.coordinate.y,
+          ) &&
+          !state.fireTokens.some(
+            (f) =>
+              f.tileId === scientist.tileId &&
+              f.x === s.coordinate.x &&
+              f.y === s.coordinate.y,
+          ),
+      );
+
+      if (adjacentSpace) {
+        state = gameReducer(state, {
+          type: "ACTION_MOVE_SCIENTIST",
+          pieceId: scientist.id,
+          tileId: scientist.tileId,
+          x: adjacentSpace.coordinate.x,
+          y: adjacentSpace.coordinate.y,
+        });
+
+        const movedScientist = state.pieces.find((p) => p.id === scientist.id)!;
+        expect(movedScientist.x).toBe(adjacentSpace.coordinate.x);
+        expect(movedScientist.y).toBe(adjacentSpace.coordinate.y);
+        expect(state.actionPoints).toBe(originalAP - 1);
+      }
+    });
+
+    it("rejects scientist movement when raptor is active", () => {
+      let state = getToActionPhaseRaptorActive();
+      const scientist = state.pieces.find((p) => p.type === "scientist")!;
+      const originalX = scientist.x;
+      const originalY = scientist.y;
+
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_SCIENTIST",
+        pieceId: scientist.id,
+        tileId: scientist.tileId,
+        x: scientist.x + 1,
+        y: scientist.y,
+      });
+
+      const sameScientist = state.pieces.find((p) => p.id === scientist.id)!;
+      expect(sameScientist.x).toBe(originalX);
+      expect(sameScientist.y).toBe(originalY);
+    });
+
+    it("rejects movement of frightened scientist", () => {
+      let state = getToActionPhaseScientistActive();
+      const scientist = state.pieces.find((p) => p.type === "scientist")!;
+
+      // Frighten the scientist
+      state = {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === scientist.id ? { ...p, isFrightened: true } : p,
+        ),
+      };
+
+      const originalX = scientist.x;
+
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_SCIENTIST",
+        pieceId: scientist.id,
+        tileId: scientist.tileId,
+        x: scientist.x + 1,
+        y: scientist.y,
+      });
+
+      const sameScientist = state.pieces.find((p) => p.id === scientist.id)!;
+      expect(sameScientist.x).toBe(originalX);
+    });
+
+    it("rejects scientist movement onto fire", () => {
+      let state = getToActionPhaseScientistActive();
+      const scientist = state.pieces.find((p) => p.type === "scientist")!;
+
+      // Place fire adjacent to scientist
+      const fireX = scientist.x + 1;
+      const fireY = scientist.y;
+      state = {
+        ...state,
+        fireTokens: [
+          {
+            id: "fire-0",
+            tileId: scientist.tileId,
+            x: fireX,
+            y: fireY,
+          },
+        ],
+      };
+
+      const originalX = scientist.x;
+
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_SCIENTIST",
+        pieceId: scientist.id,
+        tileId: scientist.tileId,
+        x: fireX,
+        y: fireY,
+      });
+
+      const sameScientist = state.pieces.find((p) => p.id === scientist.id)!;
+      expect(sameScientist.x).toBe(originalX);
+    });
+  });
+
+  describe("END_ACTION_PHASE", () => {
+    it("transitions to SCIENTIST_READY for new round", () => {
+      let state = getToActionPhaseRaptorActive();
+      expect(state.phase).toBe("ACTION_PHASE");
+
+      state = gameReducer(state, { type: "END_ACTION_PHASE" });
+
+      expect(state.phase).toBe("SCIENTIST_READY");
+      expect(state.actionPoints).toBe(0);
+      expect(state.activePlayer).toBe(null);
+    });
+
+    it("clears played cards for new round", () => {
+      let state = getToActionPhaseRaptorActive();
+      expect(state.scientistCards.played).not.toBe(null);
+      expect(state.raptorCards.played).not.toBe(null);
+
+      state = gameReducer(state, { type: "END_ACTION_PHASE" });
+
+      expect(state.scientistCards.played).toBe(null);
+      expect(state.raptorCards.played).toBe(null);
+    });
+
+    it("is ignored during non-ACTION_PHASE", () => {
+      let state = getToCardSelectionPhase(
+        createInitialGameState(),
+        "scientist",
+      );
+
+      const newState = gameReducer(state, { type: "END_ACTION_PHASE" });
+
+      expect(newState.phase).toBe("SCIENTIST_CARD_SELECTION");
+    });
+  });
+});

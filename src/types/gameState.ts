@@ -49,6 +49,9 @@ export interface FireToken {
   y: number;
 }
 
+// Player type for action phase
+export type Player = "raptor" | "scientist";
+
 export interface GameState {
   phase: GamePhase;
   tiles: Tile[];
@@ -58,6 +61,9 @@ export interface GameState {
   scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
   raptorCards: CardState;
   scientistCards: CardState;
+  // Action phase state
+  actionPoints: number; // Remaining action points for current player
+  activePlayer: Player | null; // Who has action points this round (higher card player)
 }
 
 // Initial holding pen state for setup
@@ -100,5 +106,7 @@ export function createInitialGameState(): GameState {
     scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     raptorCards: createInitialCardState(),
     scientistCards: createInitialCardState(),
+    actionPoints: 0,
+    activePlayer: null,
   };
 }
