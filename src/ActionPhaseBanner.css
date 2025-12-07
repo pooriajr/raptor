@@ -92,6 +92,23 @@
   gap: 12px;
 }
 
+.ActionPhaseBanner .reset-button {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 2px solid #c90;
+  border-radius: 6px;
+  background: rgba(180, 120, 40, 0.5);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ActionPhaseBanner .reset-button:hover {
+  background: rgba(200, 140, 60, 0.6);
+  border-color: #fa0;
+}
+
 .end-turn-button {
   padding: 10px 24px;
   font-size: 1rem;

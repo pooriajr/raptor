@@ -3,9 +3,15 @@ import "./ActionPhaseBanner.css";
 
 interface ActionPhaseBannerProps {
   onEndTurn: () => void;
+  onReset: () => void;
+  hasActions: boolean; // Whether any actions have been taken (for reset button)
 }
 
-function ActionPhaseBanner({ onEndTurn }: ActionPhaseBannerProps) {
+function ActionPhaseBanner({
+  onEndTurn,
+  onReset,
+  hasActions,
+}: ActionPhaseBannerProps) {
   const { state } = useGame();
 
   if (state.phase !== "ACTION_PHASE" || state.activePlayer === null) {
@@ -19,9 +25,9 @@ function ActionPhaseBanner({ onEndTurn }: ActionPhaseBannerProps) {
       return "No action points remaining";
     }
     if (activePlayer === "raptor") {
-      return "Drag babies to move them (1 AP each)";
+      return "Click a baby to select, then click a space to move (1 AP each)";
     } else {
-      return "Drag scientists to move them (1 AP each)";
+      return "Click a scientist to select, then click a space to move (1 AP each)";
     }
   };
 
@@ -39,6 +45,11 @@ function ActionPhaseBanner({ onEndTurn }: ActionPhaseBannerProps) {
           <span className="banner-instruction">{getInstruction()}</span>
         </div>
         <div className="banner-buttons">
+          {hasActions && (
+            <button className="reset-button" onClick={onReset}>
+              Reset
+            </button>
+          )}
           <button className="end-turn-button" onClick={onEndTurn}>
             End Turn
           </button>

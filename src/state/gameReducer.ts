@@ -85,7 +85,15 @@ export type GameAction =
       x: number;
       y: number;
     }
-  | { type: "END_ACTION_PHASE" };
+  | { type: "END_ACTION_PHASE" }
+  | { type: "RESET_ACTION_PHASE"; savedState: ActionPhaseSavedState };
+
+// Saved state for action phase reset
+export interface ActionPhaseSavedState {
+  pieces: PieceState[];
+  fireTokens: import("../types/gameState.ts").FireToken[];
+  actionPoints: number;
+}
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
 function drawCards(cardState: CardState): CardState {
@@ -1071,6 +1079,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.raptorCards,
           played: null,
         },
+      };
+    }
+
+    case "RESET_ACTION_PHASE": {
+      if (state.phase !== "ACTION_PHASE") return state;
+
+      // Restore the saved state from the start of the action phase
+      return {
+        ...state,
+        pieces: action.savedState.pieces,
+        fireTokens: action.savedState.fireTokens,
+        actionPoints: action.savedState.actionPoints,
       };
     }
 

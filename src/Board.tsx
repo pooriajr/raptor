@@ -6,6 +6,7 @@ import Hand from "./Hand.tsx";
 import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
 import ActionPhaseBanner from "./ActionPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
+import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
@@ -182,6 +183,16 @@ function Board({ showCoordinates = false }: BoardProps) {
     }>
   >([]);
 
+  // Action phase state
+  const [selectedActionPieceId, setSelectedActionPieceId] = useState<
+    string | null
+  >(null);
+  const [actionPhaseSavedState, setActionPhaseSavedState] = useState<{
+    pieces: PieceState[];
+    fireTokens: typeof state.fireTokens;
+    actionPoints: number;
+  } | null>(null);
+
   // Reset effect targets when leaving effect phase
   useEffect(() => {
     if (state.phase !== "EFFECT_PHASE") {
@@ -197,6 +208,24 @@ function Board({ showCoordinates = false }: BoardProps) {
       setSelectedScientistJeepDestinations([]);
     }
   }, [state.phase]);
+
+  // Save state when entering action phase, reset when leaving
+  useEffect(() => {
+    if (state.phase === "ACTION_PHASE") {
+      // Save state on first entry (when savedState is null)
+      if (actionPhaseSavedState === null) {
+        setActionPhaseSavedState({
+          pieces: state.pieces.map((p) => ({ ...p })),
+          fireTokens: state.fireTokens.map((f) => ({ ...f })),
+          actionPoints: state.actionPoints,
+        });
+      }
+    } else {
+      // Reset when leaving action phase
+      setSelectedActionPieceId(null);
+      setActionPhaseSavedState(null);
+    }
+  }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-dispatch effects that require no user input
   useEffect(() => {
@@ -480,7 +509,31 @@ function Board({ showCoordinates = false }: BoardProps) {
       return;
     }
 
-    // TODO: Other piece click handlers (select piece, show info, toggle jeep mode)
+    // Handle action phase piece selection
+    if (state.phase === "ACTION_PHASE") {
+      const piece = state.pieces.find((p) => p.id === pieceId);
+      if (!piece) return;
+
+      // Check if this piece can be controlled by the active player
+      const canControl =
+        (state.activePlayer === "raptor" &&
+          (piece.type === "baby" || piece.type === "mother")) ||
+        (state.activePlayer === "scientist" && piece.type === "scientist");
+
+      if (!canControl) return;
+
+      // Check if piece can move (not asleep/frightened)
+      if (piece.type === "baby" && piece.isAsleep) return;
+      if (piece.type === "scientist" && piece.isFrightened) return;
+
+      // Toggle selection or switch to new piece
+      if (selectedActionPieceId === pieceId) {
+        setSelectedActionPieceId(null);
+      } else {
+        setSelectedActionPieceId(pieceId);
+      }
+      return;
+    }
   };
 
   const handleEffectConfirm = () => {
@@ -558,8 +611,49 @@ function Board({ showCoordinates = false }: BoardProps) {
     setSelectedScientistJeepDestinations([]);
   };
 
-  // Handle space click for effect destinations (Mother's Call, Reinforcements)
+  // Handle action phase reset
+  const handleActionReset = () => {
+    if (actionPhaseSavedState) {
+      dispatch({
+        type: "RESET_ACTION_PHASE",
+        savedState: actionPhaseSavedState,
+      });
+      setSelectedActionPieceId(null);
+    }
+  };
+
+  // Handle space click for effect destinations (Mother's Call, Reinforcements) and action phase moves
   const handleSpaceClick = (tileId: number, x: number, y: number) => {
+    // Handle action phase movement
+    if (state.phase === "ACTION_PHASE") {
+      if (!selectedActionPieceId || state.actionPoints <= 0) return;
+
+      const piece = state.pieces.find((p) => p.id === selectedActionPieceId);
+      if (!piece) return;
+
+      // Dispatch the appropriate move action
+      if (piece.type === "baby") {
+        dispatch({
+          type: "ACTION_MOVE_BABY",
+          pieceId: selectedActionPieceId,
+          tileId,
+          x,
+          y,
+        });
+        // Keep piece selected for chaining (selection persists)
+      } else if (piece.type === "scientist") {
+        dispatch({
+          type: "ACTION_MOVE_SCIENTIST",
+          pieceId: selectedActionPieceId,
+          tileId,
+          x,
+          y,
+        });
+        // Keep piece selected for chaining (selection persists)
+      }
+      return;
+    }
+
     if (state.phase !== "EFFECT_PHASE") return;
 
     const effectType = getCurrentEffectType();
@@ -693,8 +787,11 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
-  // Get the valid moves for the currently dragged or hovered piece on the board
-  const activePieceId = draggedPieceId || hoveredPieceId;
+  // Get the valid moves for the currently dragged, hovered, or selected piece on the board
+  const activePieceId =
+    draggedPieceId ||
+    hoveredPieceId ||
+    (state.phase === "ACTION_PHASE" ? selectedActionPieceId : null);
   const activePiece = activePieceId
     ? state.pieces.find((p) => p.id === activePieceId)
     : null;
@@ -820,6 +917,10 @@ function Board({ showCoordinates = false }: BoardProps) {
   const validMoves = activePiece
     ? // Piece on board - use movement rules
       (() => {
+        // No valid moves if no action points during action phase
+        if (state.phase === "ACTION_PHASE" && state.actionPoints <= 0) {
+          return [];
+        }
         const pieceInstance = createPieceFromState(activePiece);
         return pieceInstance
           .getValidMoves(state.tiles, state.pieces, state.fireTokens)
@@ -1163,6 +1264,11 @@ function Board({ showCoordinates = false }: BoardProps) {
       {state.phase === "ACTION_PHASE" && (
         <ActionPhaseBanner
           onEndTurn={() => dispatch({ type: "END_ACTION_PHASE" })}
+          onReset={handleActionReset}
+          hasActions={
+            actionPhaseSavedState !== null &&
+            state.actionPoints < actionPhaseSavedState.actionPoints
+          }
         />
       )}
       <div className="game-layout">
@@ -1202,65 +1308,70 @@ function Board({ showCoordinates = false }: BoardProps) {
         </div>
 
         {/* Game board */}
-        <div className="Board">
-          {state.tiles.map((tile) => {
-            const piecesOnTile = adaptedPieces.filter(
-              (p) => p.tileId === tile.id,
-            );
-            const validMovesOnTile = validMoves.filter(
-              (move) => move.tileId === tile.id,
-            );
-            return (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                pieces={piecesOnTile}
-                validMoves={validMovesOnTile}
-                effectTargetIds={effectTargetIds}
-                selectedEffectTargets={
-                  getCurrentEffectType() === "mothers_call"
-                    ? [
-                        ...pendingMothersCallMoves.map((m) => m.babyId),
-                        ...(selectedBabyForCall ? [selectedBabyForCall] : []),
-                      ]
-                    : selectedEffectTargets
-                }
-                effectDestinations={[
-                  ...mothersCallDestinations,
-                  ...reinforcementDestinations,
-                  ...fireDestinations,
-                  ...selectedScientistJeepDestinations.map((d) => ({
-                    tileId: d.tileId,
-                    x: d.x,
-                    y: d.y,
-                  })),
-                ]}
-                pendingFirePlacements={pendingFirePlacements}
-                fireTokens={state.fireTokens}
-                pendingJeepMoves={pendingJeepMoves}
-                pendingReinforcementPlacements={pendingReinforcementPlacements}
-                pendingMoves={pendingMothersCallMoves.map((m) => ({
-                  babyId: m.babyId,
-                  fromTileId:
-                    state.pieces.find((p) => p.id === m.babyId)?.tileId ?? 0,
-                  fromX: state.pieces.find((p) => p.id === m.babyId)?.x ?? 0,
-                  fromY: state.pieces.find((p) => p.id === m.babyId)?.y ?? 0,
-                  toTileId: m.destinationTileId,
-                  toX: m.destinationX,
-                  toY: m.destinationY,
-                }))}
-                pathTrailPositions={pathTrailPositions}
-                showCoordinates={showCoordinates}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onDragStart={handleDragStart}
-                onDrop={handleDrop}
-                onPieceClick={handlePieceClick}
-                onSpaceClick={handleSpaceClick}
-              />
-            );
-          })}
-        </div>
+        <LayoutGroup>
+          <div className="Board">
+            {state.tiles.map((tile) => {
+              const piecesOnTile = adaptedPieces.filter(
+                (p) => p.tileId === tile.id,
+              );
+              const validMovesOnTile = validMoves.filter(
+                (move) => move.tileId === tile.id,
+              );
+              return (
+                <Tile
+                  key={tile.id}
+                  tile={tile}
+                  pieces={piecesOnTile}
+                  validMoves={validMovesOnTile}
+                  effectTargetIds={effectTargetIds}
+                  selectedEffectTargets={
+                    getCurrentEffectType() === "mothers_call"
+                      ? [
+                          ...pendingMothersCallMoves.map((m) => m.babyId),
+                          ...(selectedBabyForCall ? [selectedBabyForCall] : []),
+                        ]
+                      : selectedEffectTargets
+                  }
+                  effectDestinations={[
+                    ...mothersCallDestinations,
+                    ...reinforcementDestinations,
+                    ...fireDestinations,
+                    ...selectedScientistJeepDestinations.map((d) => ({
+                      tileId: d.tileId,
+                      x: d.x,
+                      y: d.y,
+                    })),
+                  ]}
+                  pendingFirePlacements={pendingFirePlacements}
+                  fireTokens={state.fireTokens}
+                  pendingJeepMoves={pendingJeepMoves}
+                  pendingReinforcementPlacements={
+                    pendingReinforcementPlacements
+                  }
+                  pendingMoves={pendingMothersCallMoves.map((m) => ({
+                    babyId: m.babyId,
+                    fromTileId:
+                      state.pieces.find((p) => p.id === m.babyId)?.tileId ?? 0,
+                    fromX: state.pieces.find((p) => p.id === m.babyId)?.x ?? 0,
+                    fromY: state.pieces.find((p) => p.id === m.babyId)?.y ?? 0,
+                    toTileId: m.destinationTileId,
+                    toX: m.destinationX,
+                    toY: m.destinationY,
+                  }))}
+                  pathTrailPositions={pathTrailPositions}
+                  selectedActionPieceId={selectedActionPieceId}
+                  showCoordinates={showCoordinates}
+                  onMouseDown={handleMouseDown}
+                  onMouseUp={handleMouseUp}
+                  onDragStart={handleDragStart}
+                  onDrop={handleDrop}
+                  onPieceClick={handlePieceClick}
+                  onSpaceClick={handleSpaceClick}
+                />
+              );
+            })}
+          </div>
+        </LayoutGroup>
 
         {/* Scientist player area (bottom) */}
         <div className="player-area scientist-area" ref={scientistDeckRef}>

@@ -60,6 +60,7 @@ interface TileProps {
   fireTokens?: FireToken[];
   pendingJeepMoves?: PendingJeepMove[];
   pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
+  selectedActionPieceId?: string | null;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;
@@ -82,6 +83,7 @@ function Tile({
   fireTokens = [],
   pendingJeepMoves = [],
   pathTrailPositions = [],
+  selectedActionPieceId = null,
   showCoordinates = false,
   onMouseDown,
   onMouseUp,
@@ -294,7 +296,8 @@ function Tile({
                 if (
                   (isEffectDestination ||
                     isPendingReinforcement ||
-                    isPendingFire) &&
+                    isPendingFire ||
+                    isValidMove) &&
                   onSpaceClick
                 ) {
                   onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y);
@@ -332,7 +335,7 @@ function Tile({
                 <motion.span
                   className="piece pending-piece"
                   layoutId={`reinforcement-${pendingReinforcement.id}`}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  transition={{ type: "tween", duration: 0.2, ease: "linear" }}
                 >
                   🧑‍🔬
                 </motion.span>
@@ -370,8 +373,9 @@ function Tile({
               )}
               {/* Show piece normally, but hide if it has a pending move */}
               {pieceOnSpace && !pendingMoveFromHere && !isJeepOrigin && (
-                <span
-                  className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
+                <motion.span
+                  layoutId={`piece-${pieceOnSpace.id}`}
+                  className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""} ${selectedActionPieceId === pieceOnSpace.id ? "action-selected" : ""}`}
                   draggable
                   onMouseDown={() => onMouseDown(pieceOnSpace.id)}
                   onMouseUp={onMouseUp}
@@ -380,6 +384,7 @@ function Tile({
                     e.stopPropagation();
                     onPieceClick(pieceOnSpace.id);
                   }}
+                  transition={{ type: "tween", duration: 0.2, ease: "linear" }}
                 >
                   {pieceOnSpace.getEmoji()}
                   {pieceOnSpace.isAsleep && (
@@ -388,7 +393,7 @@ function Tile({
                   {pieceOnSpace.isFrightened && (
                     <span className="status-icon">😨</span>
                   )}
-                </span>
+                </motion.span>
               )}
             </div>
           );
