@@ -61,7 +61,7 @@
   /* 2 rows: top row and bottom row */
   grid-template-columns: 150px repeat(3, 200px) 150px;
   grid-template-rows: repeat(2, 200px);
-  gap: 4px;
+  gap: 2px;
   padding: 20px;
   width: fit-content;
 
