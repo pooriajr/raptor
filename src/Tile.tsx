@@ -65,9 +65,6 @@ interface TileProps {
   friendlyTargetIds?: string[];
   friendlyFirePositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
-  onMouseDown: (pieceId: string) => void;
-  onMouseUp: () => void;
-  onDragStart: (pieceId: string) => void;
   onDrop: (tileId: number, localX: number, localY: number) => void;
   onPieceClick: (pieceId: string) => void;
   onSpaceClick?: (tileId: number, x: number, y: number) => void;
@@ -91,9 +88,6 @@ function Tile({
   friendlyTargetIds = [],
   friendlyFirePositions = [],
   showCoordinates = false,
-  onMouseDown,
-  onMouseUp,
-  onDragStart,
   onDrop,
   onPieceClick,
   onSpaceClick,
@@ -398,10 +392,6 @@ function Tile({
                 <motion.span
                   layoutId={`piece-${pieceOnSpace.id}`}
                   className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""} ${selectedActionPieceId === pieceOnSpace.id ? "action-selected" : ""}`}
-                  draggable
-                  onMouseDown={() => onMouseDown(pieceOnSpace.id)}
-                  onMouseUp={onMouseUp}
-                  onDragStart={() => onDragStart(pieceOnSpace.id)}
                   onClick={(e) => {
                     e.stopPropagation();
                     onPieceClick(pieceOnSpace.id);

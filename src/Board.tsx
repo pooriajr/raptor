@@ -196,7 +196,6 @@ interface BoardProps {
 function Board({ showCoordinates = false }: BoardProps) {
   const { state, dispatch } = useGame();
 
-  const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
   const [isScientistNewDraw, setIsScientistNewDraw] = useState(false);
   const [isRaptorNewDraw, setIsRaptorNewDraw] = useState(false);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
@@ -233,7 +232,6 @@ function Board({ showCoordinates = false }: BoardProps) {
   }, [state.phase, dispatch]);
   const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
     useState<PieceType | null>(null);
-  const [hoveredPieceId, setHoveredPieceId] = useState<string | null>(null);
   const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>(
     [],
   );
@@ -371,25 +369,11 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
-  const handleMouseDown = (pieceId: string) => {
-    setHoveredPieceId(pieceId);
-  };
-
-  const handleMouseUp = () => {
-    setHoveredPieceId(null);
-  };
-
-  const handleDragStart = (pieceId: string) => {
-    setDraggedPieceId(pieceId);
-    setHoveredPieceId(null);
-  };
-
   const handleHoldingPenDragStart = (pieceType: PieceType) => {
     setDraggedHoldingPieceType(pieceType);
   };
 
   const handleDragEnd = () => {
-    setDraggedPieceId(null);
     setDraggedHoldingPieceType(null);
   };
 
@@ -1016,11 +1000,9 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
-  // Get the valid moves for the currently dragged, hovered, or selected piece on the board
+  // Get the valid moves for the currently selected piece on the board
   const activePieceId =
-    draggedPieceId ||
-    hoveredPieceId ||
-    (state.phase === "ACTION_PHASE" ? selectedActionPieceId : null);
+    state.phase === "ACTION_PHASE" ? selectedActionPieceId : null;
   const activePiece = activePieceId
     ? state.pieces.find((p) => p.id === activePieceId)
     : null;
@@ -1311,7 +1293,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   const handleDrop = (tileId: number, localX: number, localY: number) => {
     if (draggedHoldingPieceType) {
-      // Placing piece from holding pen
+      // Placing piece from holding pen during setup
       switch (draggedHoldingPieceType) {
         case "scientist":
           dispatch({ type: "PLACE_SCIENTIST", tileId, x: localX, y: localY });
@@ -1324,32 +1306,6 @@ function Board({ showCoordinates = false }: BoardProps) {
           break;
       }
       setDraggedHoldingPieceType(null);
-    } else if (draggedPieceId) {
-      // Moving piece on board - only during action phase
-      if (state.phase === "ACTION_PHASE") {
-        const piece = state.pieces.find((p) => p.id === draggedPieceId);
-        if (piece?.type === "baby" && state.activePlayer === "raptor") {
-          dispatch({
-            type: "ACTION_MOVE_BABY",
-            pieceId: draggedPieceId,
-            tileId,
-            x: localX,
-            y: localY,
-          });
-        } else if (
-          piece?.type === "scientist" &&
-          state.activePlayer === "scientist"
-        ) {
-          dispatch({
-            type: "ACTION_MOVE_SCIENTIST",
-            pieceId: draggedPieceId,
-            tileId,
-            x: localX,
-            y: localY,
-          });
-        }
-      }
-      setDraggedPieceId(null);
     }
   };
 
@@ -1724,9 +1680,6 @@ function Board({ showCoordinates = false }: BoardProps) {
                   friendlyTargetIds={actionTargets.friendlyTargets}
                   friendlyFirePositions={actionTargets.friendlyFirePositions}
                   showCoordinates={showCoordinates}
-                  onMouseDown={handleMouseDown}
-                  onMouseUp={handleMouseUp}
-                  onDragStart={handleDragStart}
                   onDrop={handleDrop}
                   onPieceClick={handlePieceClick}
                   onSpaceClick={handleSpaceClick}
