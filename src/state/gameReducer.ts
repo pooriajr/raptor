@@ -1222,10 +1222,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const isExit = targetSpace?.isExit ?? false;
 
       if (isExit) {
-        // Baby escapes - remove from board
+        // Baby escapes - remove from board and increment escaped count
         return {
           ...state,
           pieces: state.pieces.filter((p) => p.id !== action.pieceId),
+          escapedBabies: state.escapedBabies + 1,
           actionPoints: state.actionPoints - 1,
         };
       }
