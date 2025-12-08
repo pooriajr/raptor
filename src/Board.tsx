@@ -294,11 +294,30 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
+  // Helper to get all pieces as a single array
+  const getAllPieces = (): PieceState[] => {
+    const pieces: PieceState[] = [];
+    if (state.mother) {
+      pieces.push(state.mother);
+    }
+    pieces.push(...state.babies);
+    pieces.push(...state.scientists);
+    return pieces;
+  };
+
+  // Helper to find a piece by ID
+  const findPieceById = (id: string): PieceState | undefined => {
+    if (state.mother?.id === id) return state.mother;
+    const baby = state.babies.find((b) => b.id === id);
+    if (baby) return baby;
+    return state.scientists.find((s) => s.id === id);
+  };
+
   const handlePieceClick = (pieceId: string) => {
     // Handle effect phase targeting
     if (state.phase === "EFFECT_PHASE") {
       const effectType = getCurrentEffectType();
-      const piece = state.pieces.find((p) => p.id === pieceId);
+      const piece = findPieceById(pieceId);
       if (!piece) return;
 
       if (effectType === "fear") {
@@ -351,7 +370,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         // Step 1: Select a baby that can reach mother's tile
         // Step 2: Select destination on mother's tile
         // Repeat for additional babies (if limit allows)
-        const mother = state.pieces.find((p) => p.type === "mother");
+        const mother = state.mother;
         if (!mother) return;
 
         if (piece.type === "baby") {
@@ -382,7 +401,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           // Check if baby can reach mother's tile and get paths
           const pathResults = getReachableDestinationsOnMotherTileWithPaths(
             state.tiles,
-            state.pieces,
+            getAllPieces(),
             piece,
             mother,
           );
@@ -440,7 +459,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           // Get jeep destinations with paths
           const destinations = getJeepDestinationsWithPaths(
             state.tiles,
-            state.pieces,
+            getAllPieces(),
             state.fireTokens,
             tempPiece,
             pendingJeepMoves,
@@ -640,9 +659,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (!destination) return;
 
       // Get the scientist's effective position (start of this move)
-      const scientist = state.pieces.find(
-        (p) => p.id === selectedScientistForJeep,
-      );
+      const scientist = findPieceById(selectedScientistForJeep);
       if (!scientist) return;
 
       const fromPos = getScientistEffectivePosition(
@@ -694,11 +711,39 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   // Get the valid moves for the currently dragged or hovered piece on the board
   const activePieceId = draggedPieceId || hoveredPieceId;
-  const activePiece = activePieceId
-    ? state.pieces.find((p) => p.id === activePieceId)
-    : null;
+  const activePiece = activePieceId ? findPieceById(activePieceId) : null;
 
   // Calculate valid placement spaces for pieces from holding pen
+  // Helper to check if a space is occupied by any piece
+  const isSpaceOccupied = (tileId: number, x: number, y: number): boolean => {
+    if (
+      state.mother?.tileId === tileId &&
+      state.mother.x === x &&
+      state.mother.y === y
+    ) {
+      return true;
+    }
+    if (
+      state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)
+    ) {
+      return true;
+    }
+    if (
+      state.scientists.some(
+        (s) => s.tileId === tileId && s.x === x && s.y === y,
+      )
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  // Helper to check if a tile has any raptors
+  const tileHasRaptor = (tileId: number): boolean => {
+    if (state.mother?.tileId === tileId) return true;
+    return state.babies.some((b) => b.tileId === tileId);
+  };
+
   const getValidPlacementSpaces = (
     pieceType: PieceType,
   ): Array<{ tileId: number; x: number; y: number }> => {
@@ -708,9 +753,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       const lTiles = state.tiles.filter((t) => t.shape === "L");
 
       for (const tile of lTiles) {
-        const hasScientist = state.pieces.some(
-          (p) => p.type === "scientist" && p.tileId === tile.id,
-        );
+        const hasScientist = state.scientists.some((s) => s.tileId === tile.id);
         if (hasScientist) continue;
 
         for (const space of tile.spaces) {
@@ -718,12 +761,7 @@ function Board({ showCoordinates = false }: BoardProps) {
             !space.isExit &&
             !space.isUnusable &&
             !space.hasMountain &&
-            !state.pieces.some(
-              (p) =>
-                p.tileId === tile.id &&
-                p.x === space.coordinate.x &&
-                p.y === space.coordinate.y,
-            )
+            !isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)
           ) {
             validSpaces.push({
               tileId: tile.id,
@@ -740,22 +778,13 @@ function Board({ showCoordinates = false }: BoardProps) {
       );
 
       for (const tile of squareTiles) {
-        const hasRaptor = state.pieces.some(
-          (p) =>
-            (p.type === "mother" || p.type === "baby") && p.tileId === tile.id,
-        );
-        if (hasRaptor) continue;
+        if (tileHasRaptor(tile.id)) continue;
 
         for (const space of tile.spaces) {
           if (
             !space.isUnusable &&
             !space.hasMountain &&
-            !state.pieces.some(
-              (p) =>
-                p.tileId === tile.id &&
-                p.x === space.coordinate.x &&
-                p.y === space.coordinate.y,
-            )
+            !isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)
           ) {
             validSpaces.push({
               tileId: tile.id,
@@ -768,19 +797,15 @@ function Board({ showCoordinates = false }: BoardProps) {
     } else if (pieceType === "baby") {
       const squareTiles = state.tiles.filter((t) => t.shape === "square");
       const centralTiles = [2, 7];
-      const motherPlaced = state.pieces.some((p) => p.type === "mother");
+      const motherPlaced = state.mother !== null;
 
       // Only restrict central tiles if mother hasn't been placed yet
-      const babiesOnCentralTiles = state.pieces.filter(
-        (p) => p.type === "baby" && centralTiles.includes(p.tileId),
+      const babiesOnCentralTiles = state.babies.filter((b) =>
+        centralTiles.includes(b.tileId),
       );
 
       for (const tile of squareTiles) {
-        const hasRaptor = state.pieces.some(
-          (p) =>
-            (p.type === "mother" || p.type === "baby") && p.tileId === tile.id,
-        );
-        if (hasRaptor) continue;
+        if (tileHasRaptor(tile.id)) continue;
 
         // If mother not placed and one central tile has a baby, skip the other central tile
         if (
@@ -795,12 +820,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           if (
             !space.isUnusable &&
             !space.hasMountain &&
-            !state.pieces.some(
-              (p) =>
-                p.tileId === tile.id &&
-                p.x === space.coordinate.x &&
-                p.y === space.coordinate.y,
-            )
+            !isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)
           ) {
             validSpaces.push({
               tileId: tile.id,
@@ -820,8 +840,9 @@ function Board({ showCoordinates = false }: BoardProps) {
     ? // Piece on board - use movement rules
       (() => {
         const pieceInstance = createPieceFromState(activePiece);
+        const allPieces = getAllPieces();
         return pieceInstance
-          .getValidMoves(state.tiles, state.pieces, state.fireTokens)
+          .getValidMoves(state.tiles, allPieces, state.fireTokens)
           .filter((move) => {
             const targetTile = state.tiles.find((t) => t.id === move.tileId);
             if (!targetTile) return false;
@@ -833,7 +854,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
             if (targetSpace.hasMountain) return false;
 
-            const isOccupied = state.pieces.some(
+            const isOccupied = allPieces.some(
               (p) =>
                 p.id !== activePieceId &&
                 p.tileId === move.tileId &&
@@ -891,7 +912,7 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   // Adapt pieces for Tile component
-  const adaptedPieces = state.pieces.map(adaptPieceForRender);
+  const adaptedPieces = getAllPieces().map(adaptPieceForRender);
 
   // Calculate valid effect targets during effect phase
   const effectTargetIds: string[] = (() => {
@@ -900,19 +921,13 @@ function Board({ showCoordinates = false }: BoardProps) {
     const effectType = getCurrentEffectType();
 
     if (effectType === "fear") {
-      return state.pieces
-        .filter((p) => p.type === "scientist" && !p.isFrightened)
-        .map((p) => p.id);
+      return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
     } else if (effectType === "sleeping_gas") {
-      return state.pieces
-        .filter((p) => p.type === "baby" && !p.isAsleep)
-        .map((p) => p.id);
+      return state.babies.filter((b) => !b.isAsleep).map((b) => b.id);
     } else if (effectType === "recovery") {
-      return state.pieces
-        .filter((p) => p.type === "baby" && p.isAsleep)
-        .map((p) => p.id);
+      return state.babies.filter((b) => b.isAsleep).map((b) => b.id);
     } else if (effectType === "mothers_call") {
-      const mother = state.pieces.find((p) => p.type === "mother");
+      const mother = state.mother;
       if (!mother) return [];
 
       // Get IDs of babies that already have pending moves
@@ -925,14 +940,13 @@ function Board({ showCoordinates = false }: BoardProps) {
         return [];
       }
 
-      return state.pieces
+      return state.babies
         .filter(
-          (p) =>
-            p.type === "baby" &&
-            !pendingBabyIds.includes(p.id) &&
-            canBabyReachMotherTile(state.tiles, state.pieces, p, mother),
+          (b) =>
+            !pendingBabyIds.includes(b.id) &&
+            canBabyReachMotherTile(state.tiles, getAllPieces(), b, mother),
         )
-        .map((p) => p.id);
+        .map((b) => b.id);
     } else if (effectType === "jeep") {
       // Show all scientists as selectable (they can move multiple times)
       const limit = getEffectLimit();
@@ -940,9 +954,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         return [];
       }
 
-      return state.pieces
-        .filter((p) => p.type === "scientist" && !p.isFrightened)
-        .map((p) => p.id);
+      return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
     }
 
     return [];
@@ -989,10 +1001,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         if (!space || space.hasMountain) continue;
 
         // Check not occupied by a piece
-        const isOccupied = state.pieces.some(
-          (p) => p.tileId === tile.id && p.x === x && p.y === edgeY,
-        );
-        if (isOccupied) continue;
+        if (isSpaceOccupied(tile.id, x, edgeY)) continue;
 
         // Check not already in pending placements
         const isPending = pendingReinforcementPlacements.some(
@@ -1024,9 +1033,8 @@ function Board({ showCoordinates = false }: BoardProps) {
 
     // Collect all global positions adjacent to scientists
     const scientistAdjacents = new Set<string>();
-    for (const piece of state.pieces) {
-      if (piece.type !== "scientist") continue;
-      const pGlobal = localToGlobal(piece.tileId, piece.x, piece.y);
+    for (const scientist of state.scientists) {
+      const pGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
       for (const adj of getAdjacentGlobalCoordinates(
         pGlobal.globalX,
         pGlobal.globalY,
@@ -1068,13 +1076,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         continue;
 
       // Check no piece at this location
-      const hasPiece = state.pieces.some(
-        (p) =>
-          p.tileId === local.tileId &&
-          p.x === local.localX &&
-          p.y === local.localY,
-      );
-      if (hasPiece) continue;
+      if (isSpaceOccupied(local.tileId, local.localX, local.localY)) continue;
 
       // Check no fire already at this location (including pending)
       const hasFire = allFire.some(
@@ -1107,7 +1109,7 @@ function Board({ showCoordinates = false }: BoardProps) {
     // Add paths and start positions from pending moves
     for (const move of pendingMothersCallMoves) {
       // Add baby's start position
-      const baby = state.pieces.find((p) => p.id === move.babyId);
+      const baby = state.babies.find((b) => b.id === move.babyId);
       if (baby) {
         positions.push({ tileId: baby.tileId, x: baby.x, y: baby.y });
       }
@@ -1217,16 +1219,18 @@ function Board({ showCoordinates = false }: BoardProps) {
                 fireTokens={state.fireTokens}
                 pendingJeepMoves={pendingJeepMoves}
                 pendingReinforcementPlacements={pendingReinforcementPlacements}
-                pendingMoves={pendingMothersCallMoves.map((m) => ({
-                  babyId: m.babyId,
-                  fromTileId:
-                    state.pieces.find((p) => p.id === m.babyId)?.tileId ?? 0,
-                  fromX: state.pieces.find((p) => p.id === m.babyId)?.x ?? 0,
-                  fromY: state.pieces.find((p) => p.id === m.babyId)?.y ?? 0,
-                  toTileId: m.destinationTileId,
-                  toX: m.destinationX,
-                  toY: m.destinationY,
-                }))}
+                pendingMoves={pendingMothersCallMoves.map((m) => {
+                  const baby = state.babies.find((b) => b.id === m.babyId);
+                  return {
+                    babyId: m.babyId,
+                    fromTileId: baby?.tileId ?? 0,
+                    fromX: baby?.x ?? 0,
+                    fromY: baby?.y ?? 0,
+                    toTileId: m.destinationTileId,
+                    toX: m.destinationX,
+                    toY: m.destinationY,
+                  };
+                })}
                 pathTrailPositions={pathTrailPositions}
                 showCoordinates={showCoordinates}
                 onMouseDown={handleMouseDown}
