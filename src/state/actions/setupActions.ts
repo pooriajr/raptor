@@ -155,7 +155,7 @@ export function handlePlaceBaby(state: GameState, action: { tileId: number; x: n
   return newState;
 }
 
-export function handleStartGame(state: GameState, _action: unknown): GameState {
+export function handleStartGame(state: GameState): GameState {
   // Validate: must be in scientist setup phase with 4 scientists placed
   if (state.phase !== "SCIENTIST_SETUP") return state;
   if (state.scientists.length !== 4) return state;

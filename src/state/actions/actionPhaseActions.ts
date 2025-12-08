@@ -407,7 +407,7 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
   };
 }
 
-export function handleEndActionPhase(state: GameState, _action: unknown): GameState {
+export function handleEndActionPhase(state: GameState): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
 
   // Transition to next round - reset for new card selection
