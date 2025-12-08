@@ -18,6 +18,13 @@ export type GameAction =
   | { type: "PLACE_SCIENTIST"; tileId: number; x: number; y: number }
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
+  | {
+      type: "MOVE_PIECE";
+      pieceId: string;
+      tileId: number;
+      x: number;
+      y: number;
+    }
   | { type: "START_GAME" }
   | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
@@ -123,9 +130,87 @@ export type GameAction =
 
 // Saved state for action phase reset
 export interface ActionPhaseSavedState {
-  pieces: PieceState[];
+  mother: PieceState | null;
+  babies: PieceState[];
+  scientists: PieceState[];
   fireTokens: import("../types/gameState.ts").FireToken[];
   actionPoints: number;
+}
+
+// Helper to find an item by id in an array
+export function findById<T extends { id: string }>(
+  items: T[],
+  id: string,
+): T | undefined {
+  return items.find((item) => item.id === id);
+}
+
+// Helper to get all pieces as PieceState array (for backwards compatibility)
+export function getAllPieces(state: GameState): PieceState[] {
+  const pieces: PieceState[] = [];
+  if (state.mother) {
+    pieces.push({ ...state.mother, type: "mother" });
+  }
+  for (const baby of state.babies) {
+    pieces.push({ ...baby, type: "baby" });
+  }
+  for (const scientist of state.scientists) {
+    pieces.push({ ...scientist, type: "scientist" });
+  }
+  return pieces;
+}
+
+// Helper to check if a space is occupied by any piece
+function isSpaceOccupiedNew(
+  state: GameState,
+  tileId: number,
+  x: number,
+  y: number,
+  excludePieceId?: string,
+): boolean {
+  if (
+    state.mother &&
+    state.mother.tileId === tileId &&
+    state.mother.x === x &&
+    state.mother.y === y &&
+    state.mother.id !== excludePieceId
+  ) {
+    return true;
+  }
+  if (
+    state.babies.some(
+      (b) =>
+        b.tileId === tileId &&
+        b.x === x &&
+        b.y === y &&
+        b.id !== excludePieceId,
+    )
+  ) {
+    return true;
+  }
+  if (
+    state.scientists.some(
+      (s) =>
+        s.tileId === tileId &&
+        s.x === x &&
+        s.y === y &&
+        s.id !== excludePieceId,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+// Helper to check if tile has a raptor (mother or baby)
+function tileHasRaptorNew(state: GameState, tileId: number): boolean {
+  if (state.mother && state.mother.tileId === tileId) return true;
+  return state.babies.some((b) => b.tileId === tileId);
+}
+
+// Helper to check if tile has a scientist
+function tileHasScientistNew(state: GameState, tileId: number): boolean {
+  return state.scientists.some((s) => s.tileId === tileId);
 }
 
 // Helper to draw cards from deck to hand (up to 3 cards in hand)
@@ -187,17 +272,13 @@ function hasLineOfSight(
             if (space.hasMountain) return false;
 
             // Check for standing (non-frightened) scientist
-            const pieceHere = state.pieces.find(
-              (p) =>
-                p.tileId === tile.id &&
-                p.x === space.coordinate.x &&
-                p.y === space.coordinate.y,
+            const pieceHere = state.scientists.find(
+              (s) =>
+                s.tileId === tile.id &&
+                s.x === space.coordinate.x &&
+                s.y === space.coordinate.y,
             );
-            if (
-              pieceHere &&
-              pieceHere.type === "scientist" &&
-              !pieceHere.isFrightened
-            ) {
+            if (pieceHere && !pieceHere.isFrightened) {
               return false;
             }
           }
@@ -224,17 +305,13 @@ function hasLineOfSight(
             if (space.hasMountain) return false;
 
             // Check for standing (non-frightened) scientist
-            const pieceHere = state.pieces.find(
-              (p) =>
-                p.tileId === tile.id &&
-                p.x === space.coordinate.x &&
-                p.y === space.coordinate.y,
+            const pieceHere = state.scientists.find(
+              (s) =>
+                s.tileId === tile.id &&
+                s.x === space.coordinate.x &&
+                s.y === space.coordinate.y,
             );
-            if (
-              pieceHere &&
-              pieceHere.type === "scientist" &&
-              !pieceHere.isFrightened
-            ) {
+            if (pieceHere && !pieceHere.isFrightened) {
               return false;
             }
           }
@@ -320,20 +397,6 @@ function arePiecesAdjacent(
   );
 }
 
-// Helper to check if a space is occupied
-function isSpaceOccupied(
-  pieces: PieceState[],
-  tileId: number,
-  x: number,
-  y: number,
-  excludePieceId?: string,
-): boolean {
-  return pieces.some(
-    (p) =>
-      p.tileId === tileId && p.x === x && p.y === y && p.id !== excludePieceId,
-  );
-}
-
 // Helper to check if a space has a mountain
 function spaceHasMountain(
   state: GameState,
@@ -350,29 +413,9 @@ function spaceHasMountain(
   return space.hasMountain;
 }
 
-// Helper to check if tile already has a raptor
-function tileHasRaptor(pieces: PieceState[], tileId: number): boolean {
-  return pieces.some(
-    (p) => (p.type === "mother" || p.type === "baby") && p.tileId === tileId,
-  );
-}
-
-// Helper to check if tile already has a scientist
-function tileHasScientist(pieces: PieceState[], tileId: number): boolean {
-  return pieces.some((p) => p.type === "scientist" && p.tileId === tileId);
-}
-
-// Generate unique piece ID
-function generatePieceId(type: string, pieces: PieceState[]): string {
-  const existingOfType = pieces.filter((p) => p.id.startsWith(type));
-  return `${type}-${existingOfType.length}`;
-}
-
 // Check if raptor setup is complete (mother + 5 babies placed)
 function isRaptorSetupComplete(state: GameState): boolean {
-  const mother = state.pieces.find((p) => p.type === "mother");
-  const babies = state.pieces.filter((p) => p.type === "baby");
-  return mother !== undefined && babies.length === 5;
+  return state.mother !== null && state.babies.length === 5;
 }
 
 // Calculate action points and active player from played cards
@@ -417,31 +460,35 @@ function transitionToActionPhase(state: GameState): Partial<GameState> {
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
-  if (state.pieces.length > 0) return state;
+  if (state.mother || state.babies.length > 0) return state;
 
-  const newState = { ...state, pieces: [...state.pieces] };
+  let newState = { ...state };
   const squareTiles = newState.tiles.filter((t) => t.shape === "square");
   const lTiles = newState.tiles.filter((t) => t.shape === "L");
 
   // Place mother on tile 2
   const tile2 = squareTiles.find((t) => t.id === 2)!;
   const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
-  newState.pieces.push({
-    id: "mother",
-    type: "mother",
-    tileId: 2,
-    x: motherSpace.coordinate.x,
-    y: motherSpace.coordinate.y,
-  });
-  newState.holdingPen = { ...newState.holdingPen, mother: 0 };
+  newState = {
+    ...newState,
+    mother: {
+      id: "mother",
+      type: "mother",
+      tileId: 2,
+      x: motherSpace.coordinate.x,
+      y: motherSpace.coordinate.y,
+    },
+    holdingPen: { ...newState.holdingPen, mother: 0 },
+  };
 
   // Place babies on other square tiles
   const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
+  const newBabies: PieceState[] = [];
   let babyIndex = 0;
   for (const tile of tilesForBabies) {
     if (babyIndex >= 5) break;
     const space = tile.spaces.find((s) => !s.hasMountain)!;
-    newState.pieces.push({
+    newBabies.push({
       id: `baby-${babyIndex}`,
       type: "baby",
       tileId: tile.id,
@@ -450,14 +497,19 @@ function devAutoSetup(state: GameState): GameState {
     });
     babyIndex++;
   }
-  newState.holdingPen = { ...newState.holdingPen, babies: 0 };
+  newState = {
+    ...newState,
+    babies: newBabies,
+    holdingPen: { ...newState.holdingPen, babies: 0 },
+  };
 
   // Place scientists on L-tiles
+  const newScientists: PieceState[] = [];
   let scientistIndex = 0;
   for (const tile of lTiles) {
     if (scientistIndex >= 4) break;
     const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
-    newState.pieces.push({
+    newScientists.push({
       id: `scientist-${scientistIndex}`,
       type: "scientist",
       tileId: tile.id,
@@ -466,7 +518,11 @@ function devAutoSetup(state: GameState): GameState {
     });
     scientistIndex++;
   }
-  newState.holdingPen = { ...newState.holdingPen, scientists: 0 };
+  newState = {
+    ...newState,
+    scientists: newScientists,
+    holdingPen: { ...newState.holdingPen, scientists: 0 },
+  };
 
   return newState;
 }
@@ -494,14 +550,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (space.hasMountain) return state;
 
       // Validate: no scientist already on this L-tile
-      if (tileHasScientist(state.pieces, action.tileId)) return state;
+      if (tileHasScientistNew(state, action.tileId)) return state;
 
       // Validate: space not occupied
-      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+      if (isSpaceOccupiedNew(state, action.tileId, action.x, action.y))
         return state;
 
-      const newPiece: PieceState = {
-        id: generatePieceId("scientist", state.pieces),
+      const newScientist: PieceState = {
+        id: `scientist-${state.scientists.length}`,
         type: "scientist",
         tileId: action.tileId,
         x: action.x,
@@ -510,7 +566,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        pieces: [...state.pieces, newPiece],
+        scientists: [...state.scientists, newScientist],
         holdingPen: {
           ...state.holdingPen,
           scientists: state.holdingPen.scientists - 1,
@@ -540,13 +596,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
 
       // Validate: no raptor already on this tile
-      if (tileHasRaptor(state.pieces, action.tileId)) return state;
+      if (tileHasRaptorNew(state, action.tileId)) return state;
 
       // Validate: space not occupied
-      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+      if (isSpaceOccupiedNew(state, action.tileId, action.x, action.y))
         return state;
 
-      const newPiece: PieceState = {
+      const newMother: PieceState = {
         id: "mother",
         type: "mother",
         tileId: action.tileId,
@@ -556,7 +612,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const newState = {
         ...state,
-        pieces: [...state.pieces, newPiece],
+        mother: newMother,
         holdingPen: {
           ...state.holdingPen,
           mother: 0,
@@ -587,25 +643,24 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
 
       // Validate: no raptor already on this tile
-      if (tileHasRaptor(state.pieces, action.tileId)) return state;
+      if (tileHasRaptorNew(state, action.tileId)) return state;
 
       // Validate: must leave at least one central tile free for mother (if mother not yet placed)
       const centralTiles = [2, 7];
-      const motherPlaced = state.pieces.some((p) => p.type === "mother");
-      if (centralTiles.includes(action.tileId) && !motherPlaced) {
-        const babiesOnCentralTiles = state.pieces.filter(
-          (p) => p.type === "baby" && centralTiles.includes(p.tileId),
+      if (centralTiles.includes(action.tileId) && !state.mother) {
+        const babiesOnCentralTiles = state.babies.filter((b) =>
+          centralTiles.includes(b.tileId),
         );
         // If one central tile already has a baby, can't place on the other (must leave one for mother)
         if (babiesOnCentralTiles.length >= 1) return state;
       }
 
       // Validate: space not occupied
-      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+      if (isSpaceOccupiedNew(state, action.tileId, action.x, action.y))
         return state;
 
-      const newPiece: PieceState = {
-        id: generatePieceId("baby", state.pieces),
+      const newBaby: PieceState = {
+        id: `baby-${state.babies.length}`,
         type: "baby",
         tileId: action.tileId,
         x: action.x,
@@ -614,7 +669,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const newState = {
         ...state,
-        pieces: [...state.pieces, newPiece],
+        babies: [...state.babies, newBaby],
         holdingPen: {
           ...state.holdingPen,
           babies: state.holdingPen.babies - 1,
@@ -629,13 +684,76 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return newState;
     }
 
+    case "MOVE_PIECE": {
+      // Find the piece in any array
+      const allPieces = getAllPieces(state);
+      const piece = allPieces.find((p) => p.id === action.pieceId);
+      if (!piece) return state;
+
+      // Validate: target tile exists
+      const targetTile = state.tiles.find((t) => t.id === action.tileId);
+      if (!targetTile) return state;
+
+      // Validate: target space exists and has no mountain
+      const targetSpace = targetTile.spaces.find(
+        (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
+      );
+      if (!targetSpace || targetSpace.hasMountain || targetSpace.isUnusable)
+        return state;
+
+      // Validate: space not occupied
+      if (
+        isSpaceOccupiedNew(
+          state,
+          action.tileId,
+          action.x,
+          action.y,
+          action.pieceId,
+        )
+      )
+        return state;
+
+      // Note: Movement validation (is this a valid move for this piece type?)
+      // should be done by piece classes before dispatching. The reducer trusts
+      // that the caller has validated the move is legal for the piece.
+
+      // Update the appropriate array based on piece type
+      if (piece.type === "mother" && state.mother) {
+        return {
+          ...state,
+          mother: {
+            ...state.mother,
+            tileId: action.tileId,
+            x: action.x,
+            y: action.y,
+          },
+        };
+      } else if (piece.type === "baby") {
+        return {
+          ...state,
+          babies: state.babies.map((b) =>
+            b.id === action.pieceId
+              ? { ...b, tileId: action.tileId, x: action.x, y: action.y }
+              : b,
+          ),
+        };
+      } else if (piece.type === "scientist") {
+        return {
+          ...state,
+          scientists: state.scientists.map((s) =>
+            s.id === action.pieceId
+              ? { ...s, tileId: action.tileId, x: action.x, y: action.y }
+              : s,
+          ),
+        };
+      }
+      return state;
+    }
+
     case "START_GAME": {
       // Validate: must be in scientist setup phase with 4 scientists placed
       if (state.phase !== "SCIENTIST_SETUP") return state;
-      const scientistsPlaced = state.pieces.filter(
-        (p) => p.type === "scientist",
-      ).length;
-      if (scientistsPlaced !== 4) return state;
+      if (state.scientists.length !== 4) return state;
 
       // Go to scientist ready screen first (scientist picks first)
       return {
@@ -742,17 +860,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate all targets are valid scientists
       const validTargets = action.pieceIds.filter((id) => {
-        const scientist = state.pieces.find(
-          (p) => p.id === id && p.type === "scientist",
-        );
+        const scientist = findById(state.scientists, id);
         return scientist && !scientist.isFrightened;
       });
 
       // Frighten the scientists
       const newStateAfterFrighten = {
         ...state,
-        pieces: state.pieces.map((p) =>
-          validTargets.includes(p.id) ? { ...p, isFrightened: true } : p,
+        scientists: state.scientists.map((s) =>
+          validTargets.includes(s.id) ? { ...s, isFrightened: true } : s,
         ),
         frightenedThisRound: [...state.frightenedThisRound, ...validTargets],
       };
@@ -773,15 +889,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate all targets are valid babies
       const validTargets = action.pieceIds.filter((id) => {
-        const baby = state.pieces.find((p) => p.id === id && p.type === "baby");
+        const baby = findById(state.babies, id);
         return baby && !baby.isAsleep;
       });
 
       // Put the babies to sleep
       const newStateAfterSleep = {
         ...state,
-        pieces: state.pieces.map((p) =>
-          validTargets.includes(p.id) ? { ...p, isAsleep: true } : p,
+        babies: state.babies.map((b) =>
+          validTargets.includes(b.id) ? { ...b, isAsleep: true } : b,
         ),
         asleepThisRound: [...state.asleepThisRound, ...validTargets],
       };
@@ -801,28 +917,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (raptorCards.played >= scientistCards.played) return state;
 
       // Find mother
-      const mother = state.pieces.find((p) => p.type === "mother");
-      if (!mother) return state;
+      if (!state.mother) return state;
 
-      // Process each move, updating pieces as we go
-      let updatedPieces = [...state.pieces];
+      // Process each move, updating babies as we go
+      let updatedBabies = [...state.babies];
 
       for (const move of action.moves) {
         // Validate the baby exists
-        const baby = updatedPieces.find(
-          (p) => p.id === move.babyId && p.type === "baby",
-        );
+        const baby = findById(updatedBabies, move.babyId);
         if (!baby) continue;
 
         // Validate destination is on mother's tile
-        if (move.destinationTileId !== mother.tileId) continue;
+        if (move.destinationTileId !== state.mother.tileId) continue;
 
         // Validate the destination is reachable via pathfinding
+        const allPieces = getAllPieces({ ...state, babies: updatedBabies });
         const reachable = getReachableDestinationsOnMotherTile(
           state.tiles,
-          updatedPieces,
+          allPieces,
           baby,
-          mother,
+          state.mother,
         );
 
         const isValidDestination = reachable.some(
@@ -835,21 +949,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (!isValidDestination) continue;
 
         // Move the baby
-        updatedPieces = updatedPieces.map((p) =>
-          p.id === move.babyId
+        updatedBabies = updatedBabies.map((b) =>
+          b.id === move.babyId
             ? {
-                ...p,
+                ...b,
                 tileId: move.destinationTileId,
                 x: move.destinationX,
                 y: move.destinationY,
               }
-            : p,
+            : b,
         );
       }
 
       const newStateAfterMothersCall = {
         ...state,
-        pieces: updatedPieces,
+        babies: updatedBabies,
       };
       return {
         ...newStateAfterMothersCall,
@@ -866,16 +980,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       if (raptorCards.played >= scientistCards.played) return state;
 
-      // Find mother and remove her from the board
-      const mother = state.pieces.find((p) => p.type === "mother");
-      if (!mother) return state;
+      // Mother must exist
+      if (!state.mother) return state;
 
-      // Remove mother from pieces (she'll be replaced after opponent acts)
-      const updatedPieces = state.pieces.filter((p) => p.type !== "mother");
-
+      // Remove mother from the board (she'll be replaced after opponent acts)
       const newStateAfterDisappearance = {
         ...state,
-        pieces: updatedPieces,
+        mother: null,
       };
       return {
         ...newStateAfterDisappearance,
@@ -894,15 +1005,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate all targets are sleeping babies
       const validTargets = action.pieceIds.filter((id) => {
-        const baby = state.pieces.find((p) => p.id === id && p.type === "baby");
+        const baby = findById(state.babies, id);
         return baby && baby.isAsleep;
       });
 
       // Wake up the babies
       const newStateAfterWake = {
         ...state,
-        pieces: state.pieces.map((p) =>
-          validTargets.includes(p.id) ? { ...p, isAsleep: false } : p,
+        babies: state.babies.map((b) =>
+          validTargets.includes(b.id) ? { ...b, isAsleep: false } : b,
         ),
       };
       return {
@@ -929,9 +1040,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const bottomRowTiles = [6, 7, 8];
 
       // Validate and place each scientist
-      let updatedPieces = [...state.pieces];
+      let updatedScientists = [...state.scientists];
       let remainingReserve = state.scientistReserve;
-      let placedCount = 0;
 
       for (const placement of action.placements) {
         if (remainingReserve <= 0) break;
@@ -955,9 +1065,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (!space || space.hasMountain) continue;
 
         // Check space is not occupied
+        const tempState = { ...state, scientists: updatedScientists };
         if (
-          isSpaceOccupied(
-            updatedPieces,
+          isSpaceOccupiedNew(
+            tempState,
             placement.tileId,
             placement.x,
             placement.y,
@@ -967,20 +1078,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
         // Place the scientist
         const newScientist: PieceState = {
-          id: generatePieceId("scientist", updatedPieces),
+          id: `scientist-${updatedScientists.length}`,
           type: "scientist",
           tileId: placement.tileId,
           x: placement.x,
           y: placement.y,
         };
-        updatedPieces = [...updatedPieces, newScientist];
+        updatedScientists = [...updatedScientists, newScientist];
         remainingReserve--;
-        placedCount++;
       }
 
       const newStateAfterReinforcements = {
         ...state,
-        pieces: updatedPieces,
+        scientists: updatedScientists,
         scientistReserve: remainingReserve,
       };
       return {
@@ -1033,13 +1143,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           placementGlobal.globalY,
         );
 
-        const isAdjacentToScientist = state.pieces.some((p) => {
-          if (p.type !== "scientist") return false;
-          const pGlobal = localToGlobal(p.tileId, p.x, p.y);
+        const isAdjacentToScientist = state.scientists.some((s) => {
+          const sGlobal = localToGlobal(s.tileId, s.x, s.y);
           return adjacentGlobals.some(
             (adj) =>
-              adj.globalX === pGlobal.globalX &&
-              adj.globalY === pGlobal.globalY,
+              adj.globalX === sGlobal.globalX &&
+              adj.globalY === sGlobal.globalY,
           );
         });
 
@@ -1082,21 +1191,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (sc.played === null || rc.played === null) return state;
       if (sc.played >= rc.played) return state;
 
-      let updatedPieces = [...state.pieces];
+      let updatedScientists = [...state.scientists];
       let updatedFireTokens = [...state.fireTokens];
 
       for (const move of action.moves) {
-        // Find the scientist
-        const scientistIndex = updatedPieces.findIndex(
-          (p) => p.id === move.scientistId,
-        );
-        if (scientistIndex === -1) continue;
-
         // Move the scientist to the destination
-        updatedPieces = updatedPieces.map((p, i) =>
-          i === scientistIndex
-            ? { ...p, tileId: move.toTileId, x: move.toX, y: move.toY }
-            : p,
+        updatedScientists = updatedScientists.map((s) =>
+          s.id === move.scientistId
+            ? { ...s, tileId: move.toTileId, x: move.toX, y: move.toY }
+            : s,
         );
 
         // Extinguish fires along the path (including destination)
@@ -1113,7 +1216,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const newStateAfterJeep = {
         ...state,
-        pieces: updatedPieces,
+        scientists: updatedScientists,
         fireTokens: updatedFireTokens,
       };
       return {
@@ -1129,6 +1232,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "DEV_SKIP_TO_EFFECT": {
       // Dev-only: Skip directly to effect phase with specified cards
+      // Auto-setup pieces if needed
       const newState = devAutoSetup(state);
 
       // Set cards and phase
@@ -1192,17 +1296,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.actionPoints <= 0) return state;
 
       // Find the baby
-      const baby = state.pieces.find(
-        (p) => p.id === action.pieceId && p.type === "baby",
-      );
+      const baby = state.babies.find((b) => b.id === action.pieceId);
       if (!baby) return state;
 
       // Baby can't move if asleep
       if (baby.isAsleep) return state;
 
       // Validate the move using BabyRaptor class
+      const allPieces = getAllPieces(state);
       const babyPiece = new BabyRaptor(baby.id, baby.tileId, baby.x, baby.y);
-      const validMoves = babyPiece.getValidMoves(state.tiles, state.pieces);
+      const validMoves = babyPiece.getValidMoves(state.tiles, allPieces);
 
       const isValidMove = validMoves.some(
         (m) =>
@@ -1211,7 +1314,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!isValidMove) return state;
 
       // Check target space is not occupied
-      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+      if (isSpaceOccupiedNew(state, action.tileId, action.x, action.y))
         return state;
 
       // Check if this is an exit space (baby escapes)
@@ -1225,7 +1328,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         // Baby escapes - remove from board and increment escaped count
         return {
           ...state,
-          pieces: state.pieces.filter((p) => p.id !== action.pieceId),
+          babies: state.babies.filter((b) => b.id !== action.pieceId),
           escapedBabies: state.escapedBabies + 1,
           actionPoints: state.actionPoints - 1,
         };
@@ -1234,10 +1337,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Normal move
       return {
         ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.pieceId
-            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
-            : p,
+        babies: state.babies.map((b) =>
+          b.id === action.pieceId
+            ? { ...b, tileId: action.tileId, x: action.x, y: action.y }
+            : b,
         ),
         actionPoints: state.actionPoints - 1,
       };
@@ -1254,25 +1357,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.actionPoints <= 0) return state;
 
       // Find the scientist
-      const scientist = state.pieces.find(
-        (p) => p.id === action.pieceId && p.type === "scientist",
-      );
+      const scientist = state.scientists.find((s) => s.id === action.pieceId);
       if (!scientist) return state;
 
       // Scientist can't move if frightened
       if (scientist.isFrightened) return state;
 
       // Validate the move using Scientist class (normal mode, not jeep)
+      const allPieces = getAllPieces(state);
       const scientistPiece = new Scientist(
         scientist.id,
         scientist.tileId,
         scientist.x,
         scientist.y,
       );
-      const validMoves = scientistPiece.getValidMoves(
-        state.tiles,
-        state.pieces,
-      );
+      const validMoves = scientistPiece.getValidMoves(state.tiles, allPieces);
 
       const isValidMove = validMoves.some(
         (m) =>
@@ -1281,7 +1380,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!isValidMove) return state;
 
       // Check target space is not occupied
-      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+      if (isSpaceOccupiedNew(state, action.tileId, action.x, action.y))
         return state;
 
       // Check scientist can't end on fire
@@ -1293,10 +1392,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.pieceId
-            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
-            : p,
+        scientists: state.scientists.map((s) =>
+          s.id === action.pieceId
+            ? { ...s, tileId: action.tileId, x: action.x, y: action.y }
+            : s,
         ),
         actionPoints: state.actionPoints - 1,
       };
@@ -1310,10 +1409,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "raptor") return state;
 
       // Find the mother
-      const mother = state.pieces.find(
-        (p) => p.id === action.pieceId && p.type === "mother",
-      );
-      if (!mother) return state;
+      if (!state.mother) return state;
 
       // Calculate wound cost: mother must pay AP = sleep tokens before first movement
       const woundCost = state.motherPaidWoundCost ? 0 : state.motherSleepTokens;
@@ -1323,15 +1419,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.actionPoints < totalCost) return state;
 
       // Validate the move using MotherRaptor class
+      const allPieces = getAllPieces(state);
       const motherPiece = new MotherRaptor(
-        mother.id,
-        mother.tileId,
-        mother.x,
-        mother.y,
+        state.mother.id,
+        state.mother.tileId,
+        state.mother.x,
+        state.mother.y,
       );
       const validMoves = motherPiece.getValidMoves(
         state.tiles,
-        state.pieces,
+        allPieces,
         state.fireTokens,
       );
 
@@ -1342,7 +1439,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!isValidMove) return state;
 
       // Check target space is not occupied
-      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+      if (isSpaceOccupiedNew(state, action.tileId, action.x, action.y))
         return state;
 
       // Check mother can't end on fire
@@ -1354,11 +1451,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.pieceId
-            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
-            : p,
-        ),
+        mother: {
+          ...state.mother,
+          tileId: action.tileId,
+          x: action.x,
+          y: action.y,
+        },
         actionPoints: state.actionPoints - totalCost,
         motherPaidWoundCost: true, // Mark that wound cost has been paid
       };
@@ -1369,10 +1467,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "raptor") return state;
       if (state.actionPoints <= 0) return state;
 
-      const mother = state.pieces.find((p) => p.type === "mother");
-      const scientist = state.pieces.find(
-        (p) => p.id === action.targetId && p.type === "scientist",
-      );
+      const mother = state.mother;
+      const scientist = state.scientists.find((s) => s.id === action.targetId);
       if (!mother || !scientist) return state;
 
       // Must be adjacent
@@ -1381,7 +1477,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Remove the scientist from the game (killed, not returned to reserve)
       return {
         ...state,
-        pieces: state.pieces.filter((p) => p.id !== action.targetId),
+        scientists: state.scientists.filter((s) => s.id !== action.targetId),
         actionPoints: state.actionPoints - 1,
       };
     }
@@ -1391,10 +1487,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "raptor") return state;
       if (state.actionPoints <= 0) return state;
 
-      const mother = state.pieces.find((p) => p.type === "mother");
-      const baby = state.pieces.find(
-        (p) => p.id === action.targetId && p.type === "baby",
-      );
+      const mother = state.mother;
+      const baby = state.babies.find((b) => b.id === action.targetId);
       if (!mother || !baby) return state;
 
       // Baby must be asleep
@@ -1408,8 +1502,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.targetId ? { ...p, isAsleep: false } : p,
+        babies: state.babies.map((b) =>
+          b.id === action.targetId ? { ...b, isAsleep: false } : b,
         ),
         actionPoints: state.actionPoints - 1,
       };
@@ -1420,7 +1514,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "raptor") return state;
       if (state.actionPoints <= 0) return state;
 
-      const mother = state.pieces.find((p) => p.type === "mother");
+      const mother = state.mother;
       if (!mother) return state;
 
       // Check if there's a fire at the target position
@@ -1465,12 +1559,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "scientist") return state;
       if (state.actionPoints <= 0) return state;
 
-      const scientist = state.pieces.find(
-        (p) => p.id === action.scientistId && p.type === "scientist",
+      const scientist = state.scientists.find(
+        (s) => s.id === action.scientistId,
       );
-      const baby = state.pieces.find(
-        (p) => p.id === action.targetId && p.type === "baby",
-      );
+      const baby = state.babies.find((b) => b.id === action.targetId);
       if (!scientist || !baby) return state;
 
       // Scientist can't act if frightened
@@ -1488,8 +1580,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.targetId ? { ...p, isAsleep: true } : p,
+        babies: state.babies.map((b) =>
+          b.id === action.targetId ? { ...b, isAsleep: true } : b,
         ),
         actionPoints: state.actionPoints - 1,
         aggressiveActionsUsed: [
@@ -1504,12 +1596,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "scientist") return state;
       if (state.actionPoints <= 0) return state;
 
-      const scientist = state.pieces.find(
-        (p) => p.id === action.scientistId && p.type === "scientist",
+      const scientist = state.scientists.find(
+        (s) => s.id === action.scientistId,
       );
-      const baby = state.pieces.find(
-        (p) => p.id === action.targetId && p.type === "baby",
-      );
+      const baby = state.babies.find((b) => b.id === action.targetId);
       if (!scientist || !baby) return state;
 
       // Scientist can't act if frightened
@@ -1528,7 +1618,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Remove baby and increment captured count
       return {
         ...state,
-        pieces: state.pieces.filter((p) => p.id !== action.targetId),
+        babies: state.babies.filter((b) => b.id !== action.targetId),
         capturedBabies: state.capturedBabies + 1,
         actionPoints: state.actionPoints - 1,
         aggressiveActionsUsed: [
@@ -1543,10 +1633,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "scientist") return state;
       if (state.actionPoints <= 0) return state;
 
-      const scientist = state.pieces.find(
-        (p) => p.id === action.scientistId && p.type === "scientist",
+      const scientist = state.scientists.find(
+        (s) => s.id === action.scientistId,
       );
-      const mother = state.pieces.find((p) => p.type === "mother");
+      const mother = state.mother;
       if (!scientist || !mother) return state;
 
       // Scientist can't act if frightened
@@ -1575,8 +1665,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.activePlayer !== "scientist") return state;
       if (state.actionPoints <= 0) return state;
 
-      const scientist = state.pieces.find(
-        (p) => p.id === action.scientistId && p.type === "scientist",
+      const scientist = state.scientists.find(
+        (s) => s.id === action.scientistId,
       );
       if (!scientist) return state;
 
@@ -1588,8 +1678,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        pieces: state.pieces.map((p) =>
-          p.id === action.scientistId ? { ...p, isFrightened: false } : p,
+        scientists: state.scientists.map((s) =>
+          s.id === action.scientistId ? { ...s, isFrightened: false } : s,
         ),
         actionPoints: state.actionPoints - 1,
       };
@@ -1626,7 +1716,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Restore the saved state from the start of the action phase
       return {
         ...state,
-        pieces: action.savedState.pieces,
+        mother: action.savedState.mother,
+        babies: action.savedState.babies,
+        scientists: action.savedState.scientists,
         fireTokens: action.savedState.fireTokens,
         actionPoints: action.savedState.actionPoints,
       };

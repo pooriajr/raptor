@@ -16,11 +16,9 @@ function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
   }
 
   const isRaptorSetup = state.phase === "RAPTOR_SETUP";
-  const motherPlaced = state.pieces.some((p) => p.type === "mother");
-  const babiesPlaced = state.pieces.filter((p) => p.type === "baby").length;
-  const scientistsPlaced = state.pieces.filter(
-    (p) => p.type === "scientist",
-  ).length;
+  const motherPlaced = state.mother !== null;
+  const babiesPlaced = state.babies.length;
+  const scientistsPlaced = state.scientists.length;
 
   // Create arrays of draggable items based on holding pen counts
   const motherItems = Array(state.holdingPen.mother).fill(

@@ -55,10 +55,13 @@ export type Player = "raptor" | "scientist";
 export interface GameState {
   phase: GamePhase;
   tiles: Tile[];
-  pieces: PieceState[];
+  // Split piece arrays - each piece type has its own array
+  mother: PieceState | null;
+  babies: PieceState[];
+  scientists: PieceState[];
+  scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
   fireTokens: FireToken[];
   holdingPen: HoldingPen;
-  scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
   raptorCards: CardState;
   scientistCards: CardState;
   // Action phase state
@@ -108,10 +111,12 @@ export function createInitialGameState(): GameState {
   return {
     phase: "RAPTOR_SETUP",
     tiles: createBoard(),
-    pieces: [],
+    mother: null,
+    babies: [],
+    scientists: [],
+    scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     fireTokens: [],
     holdingPen: createInitialHoldingPen(),
-    scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     raptorCards: createInitialCardState(),
     scientistCards: createInitialCardState(),
     actionPoints: 0,

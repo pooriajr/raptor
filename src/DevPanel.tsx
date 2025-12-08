@@ -34,14 +34,13 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
     // Place babies on remaining square tiles
     if (state.phase === "RAPTOR_SETUP") {
       const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
-      let babiesPlaced = state.pieces.filter((p) => p.type === "baby").length;
+      let babiesPlaced = state.babies.length;
 
       for (const tile of tilesForBabies) {
         if (babiesPlaced >= 5) break;
-        const hasRaptor = state.pieces.some(
-          (p) =>
-            (p.type === "mother" || p.type === "baby") && p.tileId === tile.id,
-        );
+        const hasRaptor =
+          state.mother?.tileId === tile.id ||
+          state.babies.some((b) => b.tileId === tile.id);
         if (hasRaptor) continue;
 
         const space = tile.spaces.find((s) => !s.hasMountain)!;
@@ -57,15 +56,11 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
 
     // Place scientists on L-tiles
     if (state.phase === "SCIENTIST_SETUP") {
-      let scientistsPlaced = state.pieces.filter(
-        (p) => p.type === "scientist",
-      ).length;
+      let scientistsPlaced = state.scientists.length;
 
       for (const tile of lTiles) {
         if (scientistsPlaced >= 4) break;
-        const hasScientist = state.pieces.some(
-          (p) => p.type === "scientist" && p.tileId === tile.id,
-        );
+        const hasScientist = state.scientists.some((s) => s.tileId === tile.id);
         if (hasScientist) continue;
 
         const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
