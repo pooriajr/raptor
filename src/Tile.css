@@ -88,7 +88,7 @@
 .mountain,
 .exit,
 .piece {
-  font-size: 36px;
+  font-size: 48px;
   display: inline-block;
 }
 
@@ -230,7 +230,7 @@
 }
 
 .path-trail {
-  font-size: 24px;
+  font-size: 36px;
   opacity: 0.7;
 }
 
@@ -241,7 +241,7 @@
 
 /* Fire token styling */
 .fire-token {
-  font-size: 32px;
+  font-size: 42px;
   position: absolute;
   z-index: 5;
 }
@@ -272,7 +272,7 @@
 
 /* Jeep trail (smoke puffs) */
 .jeep-trail {
-  font-size: 24px;
+  font-size: 36px;
   opacity: 0.7;
 }
 
