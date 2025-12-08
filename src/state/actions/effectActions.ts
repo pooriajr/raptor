@@ -1,8 +1,8 @@
-import type { GameState, PieceState } from "../types/gameState.ts";
-import { findById, getAllPieces, isSpaceOccupied } from "../utils/boardUtils.ts";
-import { getReachableDestinationsOnMotherTile } from "../utils/pathfinding.ts";
-import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
-import { transitionToActionPhase } from "./cardActions.ts";
+import type { GameState, PieceState } from "@/types/gameState.ts";
+import { findById, getAllPieces, isSpaceOccupied } from "@/utils/boardUtils.ts";
+import { getReachableDestinationsOnMotherTile } from "@/utils/pathfinding.ts";
+import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
+import { transitionToActionPhase } from "@/state/actions/cardActions.ts";
 
 // Action types for effect phase
 export type EffectAction =

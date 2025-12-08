@@ -1,4 +1,4 @@
-import type { GameState, CardState, Player } from "../types/gameState.ts";
+import type { GameState, CardState, Player } from "@/types/gameState.ts";
 
 // Action types for card phase
 export type CardAction =

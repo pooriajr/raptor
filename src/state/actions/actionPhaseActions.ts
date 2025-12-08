@@ -1,18 +1,18 @@
-import type { GameState, PieceState } from "../types/gameState.ts";
-import { getAllPieces, isSpaceOccupied, arePiecesAdjacent } from "../utils/boardUtils.ts";
-import { hasLineOfSight } from "../utils/lineOfSight.ts";
-import { getConnectedFires } from "../utils/fireUtils.ts";
-import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
-import { BabyRaptor } from "../pieces/BabyRaptor.ts";
-import { MotherRaptor } from "../pieces/MotherRaptor.ts";
-import { Scientist } from "../pieces/Scientist.ts";
+import type { GameState, PieceState, FireToken } from "@/types/gameState.ts";
+import { getAllPieces, isSpaceOccupied, arePiecesAdjacent } from "@/utils/boardUtils.ts";
+import { hasLineOfSight } from "@/utils/lineOfSight.ts";
+import { getConnectedFires } from "@/utils/fireUtils.ts";
+import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
+import { BabyRaptor } from "@/pieces/BabyRaptor.ts";
+import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
+import { Scientist } from "@/pieces/Scientist.ts";
 
 // Saved state for action phase reset
 export interface ActionPhaseSavedState {
   mother: PieceState | null;
   babies: PieceState[];
   scientists: PieceState[];
-  fireTokens: import("../types/gameState.ts").FireToken[];
+  fireTokens: FireToken[];
   actionPoints: number;
 }
 

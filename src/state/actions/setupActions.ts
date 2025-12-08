@@ -1,11 +1,11 @@
-import type { GameState, PieceState } from "../types/gameState.ts";
+import type { GameState, PieceState } from "@/types/gameState.ts";
 import {
   isSpaceOccupied,
   tileHasRaptor,
   tileHasScientist,
   spaceHasMountain,
   isRaptorSetupComplete,
-} from "../utils/boardUtils.ts";
+} from "@/utils/boardUtils.ts";
 
 // Action types for setup phase
 export type SetupAction =
