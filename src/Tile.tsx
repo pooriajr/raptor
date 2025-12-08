@@ -66,8 +66,12 @@ interface TileProps {
   friendlyFirePositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onDrop: (tileId: number, localX: number, localY: number) => void;
-  onPieceClick: (pieceId: string) => void;
-  onSpaceClick?: (tileId: number, x: number, y: number) => void;
+  onSpaceClick: (
+    tileId: number,
+    x: number,
+    y: number,
+    pieceId: string | null,
+  ) => void;
 }
 
 function Tile({
@@ -89,7 +93,6 @@ function Tile({
   friendlyFirePositions = [],
   showCoordinates = false,
   onDrop,
-  onPieceClick,
   onSpaceClick,
 }: TileProps) {
   const [dragOverSpace, setDragOverSpace] = useState<string | null>(null);
@@ -307,18 +310,14 @@ function Tile({
               onDrop={(e) =>
                 handleDrop(e, space.coordinate.x, space.coordinate.y)
               }
-              onClick={() => {
-                if (
-                  (isEffectDestination ||
-                    isPendingReinforcement ||
-                    isPendingFire ||
-                    isValidMove ||
-                    isFriendlyFireTarget) &&
-                  onSpaceClick
-                ) {
-                  onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y);
-                }
-              }}
+              onClick={() =>
+                onSpaceClick(
+                  tile.id,
+                  space.coordinate.x,
+                  space.coordinate.y,
+                  pieceOnSpace?.id ?? null,
+                )
+              }
             >
               {/* Show coordinates for debugging */}
               {showCoordinates && (
@@ -344,10 +343,6 @@ function Tile({
                     <motion.span
                       layoutId={`piece-${pieceOnSpace.id}`}
                       className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""} ${selectedActionPieceId === pieceOnSpace.id ? "action-selected" : ""}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPieceClick(pieceOnSpace.id);
-                      }}
                       transition={{
                         type: "tween",
                         duration: 0.2,
@@ -367,17 +362,7 @@ function Tile({
 
                 // Priority 4: Pending piece previews
                 if (isPendingDestination && pendingMoveToHere) {
-                  return (
-                    <span
-                      className="piece pending-piece"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPieceClick(pendingMoveToHere.babyId);
-                      }}
-                    >
-                      🦎
-                    </span>
-                  );
+                  return <span className="piece pending-piece">🦎</span>;
                 }
 
                 if (isPendingReinforcement && pendingReinforcement) {
@@ -398,15 +383,7 @@ function Tile({
 
                 if (isFinalJeepDestination && finalJeepMoveHere) {
                   return (
-                    <span
-                      className="piece pending-piece jeep-car"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPieceClick(finalJeepMoveHere.scientistId);
-                      }}
-                    >
-                      🚙
-                    </span>
+                    <span className="piece pending-piece jeep-car">🚙</span>
                   );
                 }
 
