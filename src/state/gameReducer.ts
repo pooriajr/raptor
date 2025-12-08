@@ -55,81 +55,55 @@ import { handleDevSkipToEffect, handleDevSkipToAction, type DevAction } from "@/
 // Combined action type
 export type GameAction = SetupAction | CardAction | EffectAction | ActionPhaseAction | DevAction;
 
+// Handler type - uses `any` for action since each handler has its own specific type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ActionHandler = (state: GameState, action: any) => GameState;
+
+// Handler map
+const handlers: Record<string, ActionHandler> = {
+  // Setup actions
+  PLACE_SCIENTIST: handlePlaceScientist,
+  PLACE_MOTHER: handlePlaceMother,
+  PLACE_BABY: handlePlaceBaby,
+  START_GAME: handleStartGame,
+
+  // Card actions
+  PLAYER_READY: handlePlayerReady,
+  DRAW_CARDS: handleDrawCards,
+  PLAY_CARD: handlePlayCard,
+  CONFIRM_REVEAL: handleConfirmReveal,
+
+  // Effect actions
+  FRIGHTEN_SCIENTISTS: handleFrightenScientists,
+  PUT_BABIES_TO_SLEEP: handlePutBabiesToSleep,
+  MOTHERS_CALL: handleMothersCall,
+  DISAPPEARANCE: handleDisappearance,
+  WAKE_BABIES: handleWakeBabies,
+  REINFORCEMENTS: handleReinforcements,
+  PLACE_FIRE: handlePlaceFire,
+  JEEP_MOVES: handleJeepMoves,
+  END_EFFECT_PHASE: handleEndEffectPhase,
+
+  // Action phase actions
+  ACTION_MOVE_BABY: handleActionMoveBaby,
+  ACTION_MOVE_SCIENTIST: handleActionMoveScientist,
+  ACTION_MOVE_MOTHER: handleActionMoveMother,
+  ACTION_MOTHER_KILL_SCIENTIST: handleMotherKillScientist,
+  ACTION_MOTHER_WAKE_BABY: handleMotherWakeBaby,
+  ACTION_MOTHER_EXTINGUISH_FIRE: handleMotherExtinguishFire,
+  ACTION_SCIENTIST_SLEEP_BABY: handleScientistSleepBaby,
+  ACTION_SCIENTIST_CAPTURE_BABY: handleScientistCaptureBaby,
+  ACTION_SCIENTIST_SHOOT_MOTHER: handleScientistShootMother,
+  ACTION_SCIENTIST_STAND_UP: handleScientistStandUp,
+  END_ACTION_PHASE: handleEndActionPhase,
+  RESET_ACTION_PHASE: handleResetActionPhase,
+
+  // Dev actions
+  DEV_SKIP_TO_EFFECT: handleDevSkipToEffect,
+  DEV_SKIP_TO_ACTION: handleDevSkipToAction,
+};
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
-  switch (action.type) {
-    // Setup actions
-    case "PLACE_SCIENTIST":
-      return handlePlaceScientist(state, action);
-    case "PLACE_MOTHER":
-      return handlePlaceMother(state, action);
-    case "PLACE_BABY":
-      return handlePlaceBaby(state, action);
-    case "START_GAME":
-      return handleStartGame(state);
-
-    // Card actions
-    case "PLAYER_READY":
-      return handlePlayerReady(state, action);
-    case "DRAW_CARDS":
-      return handleDrawCards(state, action);
-    case "PLAY_CARD":
-      return handlePlayCard(state, action);
-    case "CONFIRM_REVEAL":
-      return handleConfirmReveal(state);
-
-    // Effect actions
-    case "FRIGHTEN_SCIENTISTS":
-      return handleFrightenScientists(state, action);
-    case "PUT_BABIES_TO_SLEEP":
-      return handlePutBabiesToSleep(state, action);
-    case "MOTHERS_CALL":
-      return handleMothersCall(state, action);
-    case "DISAPPEARANCE":
-      return handleDisappearance(state);
-    case "WAKE_BABIES":
-      return handleWakeBabies(state, action);
-    case "REINFORCEMENTS":
-      return handleReinforcements(state, action);
-    case "PLACE_FIRE":
-      return handlePlaceFire(state, action);
-    case "JEEP_MOVES":
-      return handleJeepMoves(state, action);
-    case "END_EFFECT_PHASE":
-      return handleEndEffectPhase(state);
-
-    // Action phase actions
-    case "ACTION_MOVE_BABY":
-      return handleActionMoveBaby(state, action);
-    case "ACTION_MOVE_SCIENTIST":
-      return handleActionMoveScientist(state, action);
-    case "ACTION_MOVE_MOTHER":
-      return handleActionMoveMother(state, action);
-    case "ACTION_MOTHER_KILL_SCIENTIST":
-      return handleMotherKillScientist(state, action);
-    case "ACTION_MOTHER_WAKE_BABY":
-      return handleMotherWakeBaby(state, action);
-    case "ACTION_MOTHER_EXTINGUISH_FIRE":
-      return handleMotherExtinguishFire(state, action);
-    case "ACTION_SCIENTIST_SLEEP_BABY":
-      return handleScientistSleepBaby(state, action);
-    case "ACTION_SCIENTIST_CAPTURE_BABY":
-      return handleScientistCaptureBaby(state, action);
-    case "ACTION_SCIENTIST_SHOOT_MOTHER":
-      return handleScientistShootMother(state, action);
-    case "ACTION_SCIENTIST_STAND_UP":
-      return handleScientistStandUp(state, action);
-    case "END_ACTION_PHASE":
-      return handleEndActionPhase(state);
-    case "RESET_ACTION_PHASE":
-      return handleResetActionPhase(state, action);
-
-    // Dev actions
-    case "DEV_SKIP_TO_EFFECT":
-      return handleDevSkipToEffect(state, action);
-    case "DEV_SKIP_TO_ACTION":
-      return handleDevSkipToAction(state, action);
-
-    default:
-      return state;
-  }
+  const handler = handlers[action.type];
+  return handler ? handler(state, action) : state;
 }

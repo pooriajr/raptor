@@ -167,7 +167,7 @@ export function handleMothersCall(
   };
 }
 
-export function handleDisappearance(state: GameState): GameState {
+export function handleDisappearance(state: GameState, _action: unknown): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
 
   // Must be raptor's effect (raptor had lower card)
@@ -407,7 +407,7 @@ export function handleJeepMoves(
   };
 }
 
-export function handleEndEffectPhase(state: GameState): GameState {
+export function handleEndEffectPhase(state: GameState, _action: unknown): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
   return { ...state, ...transitionToActionPhase(state) };
 }

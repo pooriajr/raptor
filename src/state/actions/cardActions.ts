@@ -125,7 +125,7 @@ export function handlePlayCard(state: GameState, action: { player: "raptor" | "s
   return state;
 }
 
-export function handleConfirmReveal(state: GameState): GameState {
+export function handleConfirmReveal(state: GameState, _action: unknown): GameState {
   if (state.phase !== "CARD_REVEAL") return state;
 
   const scientistCard = state.scientistCards.played;
