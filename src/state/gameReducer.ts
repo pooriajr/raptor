@@ -71,6 +71,14 @@ export type GameAction =
       scientistCard: number;
     };
 
+// Helper to find an item by id in an array
+function findById<T extends { id: string }>(
+  items: T[],
+  id: string,
+): T | undefined {
+  return items.find((item) => item.id === id);
+}
+
 // Helper to get all pieces as PieceState array (for backwards compatibility)
 export function getAllPieces(state: GameState): PieceState[] {
   const pieces: PieceState[] = [];
@@ -511,7 +519,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate all targets are valid scientists
       const validTargets = action.pieceIds.filter((id) => {
-        const scientist = state.scientists.find((s) => s.id === id);
+        const scientist = findById(state.scientists, id);
         return scientist && !scientist.isFrightened;
       });
 
@@ -536,7 +544,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate all targets are valid babies
       const validTargets = action.pieceIds.filter((id) => {
-        const baby = state.babies.find((b) => b.id === id);
+        const baby = findById(state.babies, id);
         return baby && !baby.isAsleep;
       });
 
@@ -567,7 +575,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       for (const move of action.moves) {
         // Validate the baby exists
-        const baby = updatedBabies.find((b) => b.id === move.babyId);
+        const baby = findById(updatedBabies, move.babyId);
         if (!baby) continue;
 
         // Validate destination is on mother's tile
@@ -642,7 +650,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Validate all targets are sleeping babies
       const validTargets = action.pieceIds.filter((id) => {
-        const baby = state.babies.find((b) => b.id === id);
+        const baby = findById(state.babies, id);
         return baby && baby.isAsleep;
       });
 
