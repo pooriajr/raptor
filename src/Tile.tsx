@@ -5,6 +5,7 @@ import type { Tile as TileType } from "./types/board.ts";
 // Adapted piece interface - works with plain data
 interface AdaptedPiece {
   id: string;
+  type: "mother" | "baby" | "scientist";
   tileId: number;
   localX: number;
   localY: number;
@@ -246,12 +247,15 @@ function Tile({
                 if (pieceOnSpace && !pendingMoveFromHere && !isJeepOrigin) {
                   return (
                     <motion.span
+                      layout
                       layoutId={`piece-${pieceOnSpace.id}`}
-                      className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""} ${selectedActionPieceId === pieceOnSpace.id ? "action-selected" : ""}`}
+                      className={`piece piece-${pieceOnSpace.type} ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""} ${selectedActionPieceId === pieceOnSpace.id ? "action-selected" : ""}`}
                       transition={{
-                        type: "tween",
-                        duration: 0.2,
-                        ease: "linear",
+                        layout: {
+                          type: "tween",
+                          duration: 0.2,
+                          ease: "easeOut",
+                        },
                       }}
                     >
                       {pieceOnSpace.getEmoji()}

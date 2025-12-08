@@ -79,8 +79,7 @@
 
 /* Spaces with mountains */
 .space[data-mountain="true"] {
-  background-color: #8b7355;
-  border-color: #6b5335;
+  background-color: #928472;
 }
 
 /* Unusable spaces (empty grid cells in L-tiles) */
@@ -104,6 +103,14 @@
 .piece {
   cursor: pointer;
   user-select: none;
+}
+
+/* Mother raptor - bigger and scarier, overflows the tile */
+.piece.piece-mother {
+  font-size: 72px;
+  margin: -12px;
+  z-index: 20;
+  filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.4));
 }
 
 /* Valid move highlighting - show when dragging starts or piece selected */
@@ -199,14 +206,12 @@
 .piece.effect-selected {
   cursor: pointer;
   transform: scale(1.1);
-  transition: transform 0.15s ease;
 }
 
 /* Action phase selected piece */
 .piece.action-selected {
   cursor: pointer;
   transform: scale(1.1);
-  transition: transform 0.15s ease;
 }
 
 /* Hostile target - red tile highlight (scientist can act on baby, mother can kill scientist) */

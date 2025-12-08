@@ -147,6 +147,7 @@ function createPieceFromState(piece: PieceState) {
 function adaptPieceForRender(piece: PieceState) {
   return {
     id: piece.id,
+    type: piece.type,
     tileId: piece.tileId,
     localX: piece.x,
     localY: piece.y,
