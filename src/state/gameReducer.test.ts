@@ -344,7 +344,7 @@ describe("Game Reducer - Setup Rules", () => {
       expect(newState.mother).toBeNull();
     });
 
-    it("rejects mother raptor placement on tile that already has a raptor", () => {
+    it("displaces baby when mother is placed on tile that has a baby", () => {
       const state = createInitialGameState();
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const spaces = tile2.spaces.filter((s) => !s.hasMountain);
@@ -357,7 +357,10 @@ describe("Game Reducer - Setup Rules", () => {
         y: spaces[0].coordinate.y,
       });
 
-      // Try to place mother on same tile
+      expect(state1.babies).toHaveLength(1);
+      expect(state1.holdingPen.babies).toBe(4);
+
+      // Place mother on same tile - baby should be displaced
       const state2 = gameReducer(state1, {
         type: "PLACE_MOTHER",
         tileId: 2,
@@ -365,8 +368,10 @@ describe("Game Reducer - Setup Rules", () => {
         y: spaces[1].coordinate.y,
       });
 
-      expect(state2.babies).toHaveLength(1);
-      expect(state2.mother).toBeNull();
+      expect(state2.babies).toHaveLength(0); // Baby was displaced
+      expect(state2.mother).not.toBeNull(); // Mother was placed
+      expect(state2.holdingPen.babies).toBe(5); // Baby returned to holding pen
+      expect(state2.holdingPen.mother).toBe(0); // Mother removed from holding pen
     });
   });
 
@@ -514,6 +519,166 @@ describe("Game Reducer - Setup Rules", () => {
 
       expect(squareTiles).toHaveLength(6);
       expect(squareTiles.map((t) => t.id).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 7, 8]);
+    });
+  });
+
+  describe("Remove Piece During Setup", () => {
+    it("removes mother and returns to holding pen", () => {
+      const state = createInitialGameState();
+      const tile2 = state.tiles.find((t) => t.id === 2)!;
+      const space = tile2.spaces.find((s) => !s.hasMountain)!;
+
+      // Place mother
+      const state1 = gameReducer(state, {
+        type: "PLACE_MOTHER",
+        tileId: 2,
+        x: space.coordinate.x,
+        y: space.coordinate.y,
+      });
+
+      expect(state1.mother).not.toBeNull();
+      expect(state1.holdingPen.mother).toBe(0);
+
+      // Remove mother
+      const state2 = gameReducer(state1, {
+        type: "REMOVE_PIECE",
+        pieceId: "mother",
+      });
+
+      expect(state2.mother).toBeNull();
+      expect(state2.holdingPen.mother).toBe(1);
+    });
+
+    it("removes baby and returns to holding pen", () => {
+      const state = createInitialGameState();
+      const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
+      const space = squareTile.spaces.find((s) => !s.hasMountain)!;
+
+      // Place baby
+      const state1 = gameReducer(state, {
+        type: "PLACE_BABY",
+        tileId: squareTile.id,
+        x: space.coordinate.x,
+        y: space.coordinate.y,
+      });
+
+      expect(state1.babies).toHaveLength(1);
+      expect(state1.holdingPen.babies).toBe(4);
+
+      // Remove baby
+      const state2 = gameReducer(state1, {
+        type: "REMOVE_PIECE",
+        pieceId: state1.babies[0].id,
+      });
+
+      expect(state2.babies).toHaveLength(0);
+      expect(state2.holdingPen.babies).toBe(5);
+    });
+
+    it("removes scientist and returns to holding pen", () => {
+      // First complete raptor setup
+      let state = createInitialGameState();
+      const tile2 = state.tiles.find((t) => t.id === 2)!;
+      const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
+
+      state = gameReducer(state, {
+        type: "PLACE_MOTHER",
+        tileId: 2,
+        x: motherSpace.coordinate.x,
+        y: motherSpace.coordinate.y,
+      });
+
+      // Place 5 babies
+      const squareTiles = state.tiles.filter((t) => t.shape === "square" && t.id !== 2);
+      for (let i = 0; i < 5; i++) {
+        const tile = squareTiles[i];
+        const space = tile.spaces.find((s) => !s.hasMountain)!;
+        state = gameReducer(state, {
+          type: "PLACE_BABY",
+          tileId: tile.id,
+          x: space.coordinate.x,
+          y: space.coordinate.y,
+        });
+      }
+
+      expect(state.phase).toBe("SCIENTIST_SETUP");
+
+      // Place a scientist
+      const lTile = state.tiles.find((t) => t.shape === "L")!;
+      const sciSpace = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+
+      state = gameReducer(state, {
+        type: "PLACE_SCIENTIST",
+        tileId: lTile.id,
+        x: sciSpace.coordinate.x,
+        y: sciSpace.coordinate.y,
+      });
+
+      expect(state.scientists).toHaveLength(1);
+      expect(state.holdingPen.scientists).toBe(9);
+
+      // Remove scientist
+      const state2 = gameReducer(state, {
+        type: "REMOVE_PIECE",
+        pieceId: state.scientists[0].id,
+      });
+
+      expect(state2.scientists).toHaveLength(0);
+      expect(state2.holdingPen.scientists).toBe(10);
+    });
+
+    it("ignores remove action outside setup phases", () => {
+      // First complete full setup
+      let state = createInitialGameState();
+      const tile2 = state.tiles.find((t) => t.id === 2)!;
+      const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
+
+      state = gameReducer(state, {
+        type: "PLACE_MOTHER",
+        tileId: 2,
+        x: motherSpace.coordinate.x,
+        y: motherSpace.coordinate.y,
+      });
+
+      // Place 5 babies
+      const squareTiles = state.tiles.filter((t) => t.shape === "square" && t.id !== 2);
+      for (let i = 0; i < 5; i++) {
+        const tile = squareTiles[i];
+        const space = tile.spaces.find((s) => !s.hasMountain)!;
+        state = gameReducer(state, {
+          type: "PLACE_BABY",
+          tileId: tile.id,
+          x: space.coordinate.x,
+          y: space.coordinate.y,
+        });
+      }
+
+      // Place 4 scientists
+      const lTiles = state.tiles.filter((t) => t.shape === "L");
+      for (let i = 0; i < 4; i++) {
+        const tile = lTiles[i];
+        const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+        state = gameReducer(state, {
+          type: "PLACE_SCIENTIST",
+          tileId: tile.id,
+          x: space.coordinate.x,
+          y: space.coordinate.y,
+        });
+      }
+
+      // Start game
+      state = gameReducer(state, { type: "START_GAME" });
+
+      expect(state.phase).toBe("SCIENTIST_READY");
+
+      // Try to remove a piece - should be ignored
+      const babyId = state.babies[0].id;
+      const state2 = gameReducer(state, {
+        type: "REMOVE_PIECE",
+        pieceId: babyId,
+      });
+
+      expect(state2.babies).toHaveLength(5); // Baby still there
     });
   });
 

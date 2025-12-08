@@ -12,6 +12,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "PLACE_SCIENTIST": return h.handlePlaceScientist(state, action);
     case "PLACE_MOTHER": return h.handlePlaceMother(state, action);
     case "PLACE_BABY": return h.handlePlaceBaby(state, action);
+    case "REMOVE_PIECE": return h.handleRemovePiece(state, action);
     case "START_GAME": return h.handleStartGame(state);
     case "PLAYER_READY": return h.handlePlayerReady(state, action);
     case "DRAW_CARDS": return h.handleDrawCards(state, action);

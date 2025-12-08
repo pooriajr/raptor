@@ -48,30 +48,28 @@
   opacity: 0.6;
 }
 
-.SetupPanel .pieces {
+.SetupPanel .piece-counts {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
   padding: 12px;
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
-  min-height: 60px;
   margin: 0.75rem 0;
 }
 
-.SetupPanel .piece {
-  font-size: 36px;
-  cursor: grab;
-  user-select: none;
-  transition: transform 0.2s;
+.SetupPanel .piece-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.SetupPanel .piece:hover {
-  transform: scale(1.1);
+.SetupPanel .piece-icon {
+  font-size: 32px;
 }
 
-.SetupPanel .piece:active {
-  cursor: grabbing;
+.SetupPanel .count-label {
+  font-size: 1rem;
 }
 
 .SetupPanel .hint {

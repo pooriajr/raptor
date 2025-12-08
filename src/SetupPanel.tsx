@@ -1,14 +1,7 @@
 import "./SetupPanel.css";
 import { useGame } from "./state/GameContext.tsx";
-import type { PieceType } from "./types/gameState.ts";
-import { getPieceEmoji } from "./utils/pieceUtils.ts";
 
-interface SetupPanelProps {
-  onDragStart: (pieceType: PieceType) => void;
-  onDragEnd: () => void;
-}
-
-function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
+function SetupPanel() {
   const { state, dispatch } = useGame();
 
   if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") {
@@ -20,11 +13,6 @@ function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
   const babiesPlaced = state.babies.length;
   const scientistsPlaced = state.scientists.length;
 
-  // Create arrays of draggable items based on holding pen counts
-  const motherItems = Array(state.holdingPen.mother).fill("mother" as PieceType);
-  const babyItems = Array(state.holdingPen.babies).fill("baby" as PieceType);
-  const scientistItems = Array(state.holdingPen.scientists).fill("scientist" as PieceType);
-
   return (
     <div className={`SetupPanel ${isRaptorSetup ? "raptor" : "scientist"}`}>
       <h2>{isRaptorSetup ? "Raptor Setup" : "Scientist Setup"}</h2>
@@ -32,66 +20,53 @@ function SetupPanel({ onDragStart, onDragEnd }: SetupPanelProps) {
       {isRaptorSetup ? (
         <>
           <div className="instructions">
-            <p>Place your pieces on the board:</p>
+            <p>Click on the board to place pieces:</p>
             <ul>
-              <li className={motherPlaced ? "done" : ""}>Mother on a central tile {motherPlaced ? "(done)" : "(1)"}</li>
-              <li className={babiesPlaced === 5 ? "done" : ""}>
-                Babies on other square tiles ({5 - babiesPlaced} left)
+              <li className={motherPlaced ? "done" : ""}>
+                Mother on a central tile {motherPlaced ? "(placed)" : "(click center tiles)"}
               </li>
+              <li className={babiesPlaced === 5 ? "done" : ""}>Babies on other tiles ({5 - babiesPlaced} remaining)</li>
             </ul>
           </div>
-          <div className="pieces">
-            {motherItems.map((type, index) => (
-              <span
-                key={`mother-${index}`}
-                className="piece"
-                draggable
-                onDragStart={() => onDragStart(type)}
-                onDragEnd={onDragEnd}
-              >
-                {getPieceEmoji(type)}
-              </span>
-            ))}
-            {babyItems.map((type, index) => (
-              <span
-                key={`baby-${index}`}
-                className="piece"
-                draggable
-                onDragStart={() => onDragStart(type)}
-                onDragEnd={onDragEnd}
-              >
-                {getPieceEmoji(type)}
-              </span>
-            ))}
+          <div className="piece-counts">
+            {!motherPlaced && (
+              <div className="piece-count mother-count">
+                <span className="piece-icon">🦖</span>
+                <span className="count-label">Mother to place</span>
+              </div>
+            )}
+            {babiesPlaced < 5 && motherPlaced && (
+              <div className="piece-count baby-count">
+                <span className="piece-icon">🦎</span>
+                <span className="count-label">× {5 - babiesPlaced} babies to place</span>
+              </div>
+            )}
           </div>
-          <p className="hint">One raptor per tile. Babies cannot share a tile with the mother.</p>
+          <p className="hint">
+            {!motherPlaced
+              ? "Click any space on a highlighted center tile to place the mother."
+              : "Click any space on a highlighted tile to place a baby. Click a placed piece to remove it."}
+          </p>
         </>
       ) : (
         <>
           <div className="instructions">
-            <p>Place your scientists on the board:</p>
+            <p>Click on L-shaped tiles to place scientists:</p>
             <ul>
               <li className={scientistsPlaced === 4 ? "done" : ""}>
-                One per L-shaped tile ({4 - scientistsPlaced} left)
+                One per L-shaped tile ({4 - scientistsPlaced} remaining)
               </li>
             </ul>
           </div>
           {scientistsPlaced < 4 ? (
             <>
-              <div className="pieces">
-                {scientistItems.slice(0, 4 - scientistsPlaced).map((type, index) => (
-                  <span
-                    key={`scientist-${index}`}
-                    className="piece"
-                    draggable
-                    onDragStart={() => onDragStart(type)}
-                    onDragEnd={onDragEnd}
-                  >
-                    {getPieceEmoji(type)}
-                  </span>
-                ))}
+              <div className="piece-counts">
+                <div className="piece-count scientist-count">
+                  <span className="piece-icon">🧑‍🔬</span>
+                  <span className="count-label">× {4 - scientistsPlaced} scientists to place</span>
+                </div>
               </div>
-              <p className="hint">6 scientists will remain in reserve after setup.</p>
+              <p className="hint">Click any space on a highlighted L-tile. Click a placed scientist to remove it.</p>
             </>
           ) : (
             <button className="start-button" onClick={() => dispatch({ type: "START_GAME" })}>

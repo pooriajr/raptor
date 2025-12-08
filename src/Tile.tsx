@@ -1,5 +1,4 @@
 import "./Tile.css";
-import { useState } from "react";
 import { motion } from "framer-motion";
 import type { Tile as TileType } from "./types/board.ts";
 
@@ -46,6 +45,8 @@ interface TileProps {
   tile: TileType;
   pieces: AdaptedPiece[];
   validMoves: Array<{ tileId: number; x: number; y: number }>;
+  setupPlacements?: Array<{ tileId: number; x: number; y: number }>;
+  isValidSetupTile?: boolean;
   effectTargetIds?: string[];
   selectedEffectTargets?: string[];
   effectDestinations?: Array<{ tileId: number; x: number; y: number }>;
@@ -65,7 +66,6 @@ interface TileProps {
   friendlyTargetIds?: string[];
   friendlyFirePositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
-  onDrop: (tileId: number, localX: number, localY: number) => void;
   onSpaceClick: (tileId: number, x: number, y: number, pieceId: string | null) => void;
 }
 
@@ -73,6 +73,8 @@ function Tile({
   tile,
   pieces,
   validMoves,
+  setupPlacements = [],
+  isValidSetupTile = false,
   effectTargetIds = [],
   selectedEffectTargets = [],
   effectDestinations = [],
@@ -87,44 +89,15 @@ function Tile({
   friendlyTargetIds = [],
   friendlyFirePositions = [],
   showCoordinates = false,
-  onDrop,
   onSpaceClick,
 }: TileProps) {
-  const [dragOverSpace, setDragOverSpace] = useState<string | null>(null);
-
-  const handleDragOver = (
-    e: React.DragEvent,
-    localX: number,
-    localY: number,
-    hasMountain: boolean,
-    isUnusable: boolean,
-    isOccupied: boolean,
-  ) => {
-    e.preventDefault(); // Allow drop
-    // Only highlight if it's a valid drop zone
-    if (!hasMountain && !isUnusable && !isOccupied) {
-      setDragOverSpace(`${localX},${localY}`);
-    } else {
-      setDragOverSpace(null);
-    }
-  };
-
-  const handleDragLeave = () => {
-    setDragOverSpace(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, localX: number, localY: number) => {
-    e.preventDefault();
-    setDragOverSpace(null);
-    onDrop(tile.id, localX, localY);
-  };
-
   return (
     <div
       className="Tile"
       data-shape={tile.shape}
       data-side={tile.shape === "L" ? tile.side : undefined}
       data-exit-position={tile.shape === "L" ? tile.exitPosition : undefined}
+      data-valid-setup-tile={isValidSetupTile}
     >
       {/* Show tile number for debugging */}
       {showCoordinates && <div className="tile-label">Tile {tile.id}</div>}
@@ -134,10 +107,13 @@ function Tile({
         {tile.spaces.map((space, index) => {
           const pieceOnSpace = pieces.find((p) => p.localX === space.coordinate.x && p.localY === space.coordinate.y);
 
-          const isDragOver = dragOverSpace === `${space.coordinate.x},${space.coordinate.y}`;
-
           // Check if this space is a valid move
           const isValidMove = validMoves.some((move) => move.x === space.coordinate.x && move.y === space.coordinate.y);
+
+          // Check if this space is a valid setup placement
+          const isValidSetupPlacement = setupPlacements.some(
+            (s) => s.x === space.coordinate.x && s.y === space.coordinate.y,
+          );
 
           // Check if this space is an effect destination (e.g., Mother's Call)
           const isEffectDestination = effectDestinations.some(
@@ -224,8 +200,8 @@ function Tile({
               data-exit={space.isExit}
               data-mountain={space.hasMountain}
               data-unusable={space.isUnusable}
-              data-drag-over={isDragOver}
               data-valid-move={isValidMove}
+              data-valid-setup-placement={isValidSetupPlacement}
               data-effect-destination={isEffectDestination}
               data-pending-destination={isPendingDestination || isPendingReinforcement || isPendingFire}
               data-has-fire={hasFireToken}
@@ -238,18 +214,6 @@ function Tile({
               data-friendly-target={
                 (pieceOnSpace && friendlyTargetIds.includes(pieceOnSpace.id)) || isFriendlyFireTarget
               }
-              onDragOver={(e) =>
-                handleDragOver(
-                  e,
-                  space.coordinate.x,
-                  space.coordinate.y,
-                  space.hasMountain,
-                  space.isUnusable,
-                  !!pieceOnSpace,
-                )
-              }
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, space.coordinate.x, space.coordinate.y)}
               onClick={() => onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y, pieceOnSpace?.id ?? null)}
             >
               {/* Show coordinates for debugging */}

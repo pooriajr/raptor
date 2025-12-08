@@ -3,6 +3,14 @@
   padding: 8px;
   position: relative;
   border-radius: 4px;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Highlight valid tiles during setup */
+.Tile[data-valid-setup-tile="true"] {
+  box-shadow:
+    0 0 0 3px #6aad5a,
+    0 0 12px rgba(106, 173, 90, 0.5);
 }
 
 /* Label showing tile number */
@@ -106,11 +114,18 @@
   box-shadow: inset 0 0 8px rgba(111, 157, 74, 0.4);
 }
 
-/* Drag over feedback - highlight valid drop zones */
-.space[data-drag-over="true"] {
+/* Valid setup placement highlighting */
+.space[data-valid-setup-placement="true"] {
+  cursor: pointer;
+  background-color: #b8e0a8 !important;
+  border-color: #6aad5a !important;
+  box-shadow: inset 0 0 8px rgba(106, 173, 90, 0.4);
+}
+
+.space[data-valid-setup-placement="true"]:hover {
   background-color: #90d5a8 !important;
   border-color: #4a9d6f !important;
-  box-shadow: inset 0 0 10px rgba(74, 157, 111, 0.5);
+  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
 }
 
 /* Piece status indicators */

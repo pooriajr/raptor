@@ -8,7 +8,7 @@ import ActionPhaseBanner from "./ActionPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import type { PieceState, PieceType } from "./types/gameState.ts";
+import type { PieceState } from "./types/gameState.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
@@ -195,7 +195,6 @@ function Board({ showCoordinates = false }: BoardProps) {
       return () => clearTimeout(timeout);
     }
   }, [state.phase, dispatch]);
-  const [draggedHoldingPieceType, setDraggedHoldingPieceType] = useState<PieceType | null>(null);
   const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>([]);
   // For Mother's Call: track selected baby and pending moves
   const [selectedBabyForCall, setSelectedBabyForCall] = useState<string | null>(null);
@@ -335,14 +334,6 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (scientistCard === 5 || scientistCard === 7) return "fire";
       return "none";
     }
-  };
-
-  const handleHoldingPenDragStart = (pieceType: PieceType) => {
-    setDraggedHoldingPieceType(pieceType);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedHoldingPieceType(null);
   };
 
   // Get effect limit for current card
@@ -758,6 +749,33 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   // Unified space click handler - handles all interactions on a tile space
   const handleSpaceClick = (tileId: number, x: number, y: number, pieceId: string | null) => {
+    // Handle setup phase clicks
+    if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
+      // If clicking on a placed piece during setup, remove it
+      if (pieceId) {
+        dispatch({ type: "REMOVE_PIECE", pieceId });
+        return;
+      }
+
+      // Check if this is a valid placement space
+      const isValidPlacement = setupPlacementSpaces.some((s) => s.tileId === tileId && s.x === x && s.y === y);
+
+      if (!isValidPlacement) return;
+
+      // Place the appropriate piece based on phase and state
+      if (state.phase === "RAPTOR_SETUP") {
+        const motherPlaced = state.mother !== null;
+        if (!motherPlaced) {
+          dispatch({ type: "PLACE_MOTHER", tileId, x, y });
+        } else {
+          dispatch({ type: "PLACE_BABY", tileId, x, y });
+        }
+      } else if (state.phase === "SCIENTIST_SETUP") {
+        dispatch({ type: "PLACE_SCIENTIST", tileId, x, y });
+      }
+      return;
+    }
+
     // If there's a piece on this space, handle piece-related interactions first
     if (pieceId) {
       const handled = handlePieceInteraction(pieceId);
@@ -959,91 +977,70 @@ function Board({ showCoordinates = false }: BoardProps) {
     return state.babies.some((b) => b.tileId === tileId);
   };
 
-  const getValidPlacementSpaces = (pieceType: PieceType): Array<{ tileId: number; x: number; y: number }> => {
-    const validSpaces: Array<{ tileId: number; x: number; y: number }> = [];
-
-    if (pieceType === "scientist") {
-      const lTiles = state.tiles.filter((t) => t.shape === "L");
-
-      for (const tile of lTiles) {
-        const hasScientist = state.scientists.some((s) => s.tileId === tile.id);
-        if (hasScientist) continue;
-
-        for (const space of tile.spaces) {
-          if (
-            !space.isExit &&
-            !space.isUnusable &&
-            !space.hasMountain &&
-            !isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)
-          ) {
-            validSpaces.push({
-              tileId: tile.id,
-              x: space.coordinate.x,
-              y: space.coordinate.y,
-            });
-          }
-        }
-      }
-    } else if (pieceType === "mother") {
-      const centralTiles = [2, 7];
-      const squareTiles = state.tiles.filter((t) => t.shape === "square" && centralTiles.includes(t.id));
-
-      for (const tile of squareTiles) {
-        if (tileHasRaptor(tile.id)) continue;
-
-        for (const space of tile.spaces) {
-          if (
-            !space.isUnusable &&
-            !space.hasMountain &&
-            !isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)
-          ) {
-            validSpaces.push({
-              tileId: tile.id,
-              x: space.coordinate.x,
-              y: space.coordinate.y,
-            });
-          }
-        }
-      }
-    } else if (pieceType === "baby") {
-      const squareTiles = state.tiles.filter((t) => t.shape === "square");
-      const centralTiles = [2, 7];
+  // Get valid tiles for setup placement (returns tile IDs that should be highlighted)
+  const getValidSetupTiles = (): number[] => {
+    if (state.phase === "RAPTOR_SETUP") {
       const motherPlaced = state.mother !== null;
-
-      // Only restrict central tiles if mother hasn't been placed yet
-      const babiesOnCentralTiles = state.babies.filter((b) => centralTiles.includes(b.tileId));
-
-      for (const tile of squareTiles) {
-        if (tileHasRaptor(tile.id)) continue;
-
-        // If mother not placed and one central tile has a baby, skip the other central tile
-        if (centralTiles.includes(tile.id) && !motherPlaced && babiesOnCentralTiles.length >= 1) {
-          continue;
-        }
-
-        for (const space of tile.spaces) {
-          if (
-            !space.isUnusable &&
-            !space.hasMountain &&
-            !isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)
-          ) {
-            validSpaces.push({
-              tileId: tile.id,
-              x: space.coordinate.x,
-              y: space.coordinate.y,
-            });
-          }
-        }
+      if (!motherPlaced) {
+        // Mother not placed - only center tiles (2, 7) are valid
+        return [2, 7];
+      } else {
+        // Mother placed - all square tiles without a raptor are valid for babies
+        const squareTiles = state.tiles.filter((t) => t.shape === "square");
+        return squareTiles.filter((t) => !tileHasRaptor(t.id)).map((t) => t.id);
       }
+    } else if (state.phase === "SCIENTIST_SETUP") {
+      // L-tiles without a scientist are valid
+      const lTiles = state.tiles.filter((t) => t.shape === "L");
+      const tilesWithScientist = new Set(state.scientists.map((s) => s.tileId));
+      return lTiles.filter((t) => !tilesWithScientist.has(t.id)).map((t) => t.id);
+    }
+    return [];
+  };
+
+  // Get valid spaces for setup placement on a specific tile
+  const getValidSetupSpaces = (tileId: number): Array<{ x: number; y: number }> => {
+    const tile = state.tiles.find((t) => t.id === tileId);
+    if (!tile) return [];
+
+    const validSpaces: Array<{ x: number; y: number }> = [];
+
+    for (const space of tile.spaces) {
+      if (space.isUnusable || space.hasMountain) continue;
+      if (state.phase === "SCIENTIST_SETUP" && space.isExit) continue;
+      if (isSpaceOccupied(tileId, space.coordinate.x, space.coordinate.y)) continue;
+
+      validSpaces.push({ x: space.coordinate.x, y: space.coordinate.y });
     }
 
     return validSpaces;
   };
 
-  // Calculate valid moves
+  // Calculate all valid placement spaces during setup
+  const setupPlacementSpaces: Array<{ tileId: number; x: number; y: number }> = (() => {
+    if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") {
+      return [];
+    }
+
+    const validTiles = getValidSetupTiles();
+    const spaces: Array<{ tileId: number; x: number; y: number }> = [];
+
+    for (const tileId of validTiles) {
+      const tileSpaces = getValidSetupSpaces(tileId);
+      for (const { x, y } of tileSpaces) {
+        spaces.push({ tileId, x, y });
+      }
+    }
+
+    return spaces;
+  })();
+
+  // Get the set of valid tile IDs for setup (for tile highlighting)
+  const validSetupTileIds = new Set(getValidSetupTiles());
+
+  // Calculate valid moves for action phase
   const validMoves = activePiece
-    ? // Piece on board - use movement rules
-      (() => {
+    ? (() => {
         // No valid moves if no action points during action phase
         if (state.phase === "ACTION_PHASE" && state.actionPoints <= 0) {
           return [];
@@ -1086,10 +1083,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           return true;
         });
       })()
-    : draggedHoldingPieceType
-      ? // Piece from holding pen - use placement rules
-        getValidPlacementSpaces(draggedHoldingPieceType)
-      : [];
+    : [];
 
   // Calculate adjacent action targets during action phase
   // Returns { hostileTargets: string[], friendlyTargets: string[], friendlyFirePositions: {tileId, x, y}[] }
@@ -1170,24 +1164,6 @@ function Board({ showCoordinates = false }: BoardProps) {
 
     return result;
   })();
-
-  const handleDrop = (tileId: number, localX: number, localY: number) => {
-    if (draggedHoldingPieceType) {
-      // Placing piece from holding pen during setup
-      switch (draggedHoldingPieceType) {
-        case "scientist":
-          dispatch({ type: "PLACE_SCIENTIST", tileId, x: localX, y: localY });
-          break;
-        case "mother":
-          dispatch({ type: "PLACE_MOTHER", tileId, x: localX, y: localY });
-          break;
-        case "baby":
-          dispatch({ type: "PLACE_BABY", tileId, x: localX, y: localY });
-          break;
-      }
-      setDraggedHoldingPieceType(null);
-    }
-  };
 
   // Adapt pieces for Tile component
   const adaptedPieces = getAllPieces().map(adaptPieceForRender);
@@ -1381,7 +1357,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   return (
     <>
-      <SetupPanel onDragStart={handleHoldingPenDragStart} onDragEnd={handleDragEnd} />
+      <SetupPanel />
       {state.phase === "EFFECT_PHASE" && (
         <EffectPhaseBanner
           selectedTargets={selectedEffectTargets}
@@ -1468,12 +1444,16 @@ function Board({ showCoordinates = false }: BoardProps) {
             {state.tiles.map((tile) => {
               const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
               const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
+              const setupPlacementsOnTile = setupPlacementSpaces.filter((s) => s.tileId === tile.id);
+              const isValidSetupTile = validSetupTileIds.has(tile.id);
               return (
                 <Tile
                   key={tile.id}
                   tile={tile}
                   pieces={piecesOnTile}
                   validMoves={validMovesOnTile}
+                  setupPlacements={setupPlacementsOnTile}
+                  isValidSetupTile={isValidSetupTile}
                   effectTargetIds={effectTargetIds}
                   selectedEffectTargets={
                     getCurrentEffectType() === "mothers_call"
@@ -1515,7 +1495,6 @@ function Board({ showCoordinates = false }: BoardProps) {
                   friendlyTargetIds={actionTargets.friendlyTargets}
                   friendlyFirePositions={actionTargets.friendlyFirePositions}
                   showCoordinates={showCoordinates}
-                  onDrop={handleDrop}
                   onSpaceClick={handleSpaceClick}
                 />
               );

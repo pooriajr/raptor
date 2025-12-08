@@ -12,6 +12,7 @@ export type SetupAction =
   | { type: "PLACE_SCIENTIST"; tileId: number; x: number; y: number }
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
+  | { type: "REMOVE_PIECE"; pieceId: string }
   | { type: "START_GAME" };
 
 export function handlePlaceScientist(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
@@ -71,11 +72,30 @@ export function handlePlaceMother(state: GameState, action: { tileId: number; x:
   // Validate: no mountain
   if (spaceHasMountain(state, action.tileId, action.x, action.y)) return state;
 
-  // Validate: no raptor already on this tile
-  if (tileHasRaptor(state, action.tileId)) return state;
+  // Validate: space not occupied (by mother - babies will be displaced)
+  if (
+    state.mother &&
+    state.mother.tileId === action.tileId &&
+    state.mother.x === action.x &&
+    state.mother.y === action.y
+  ) {
+    return state;
+  }
 
-  // Validate: space not occupied
-  if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
+  // Check if a baby is on this tile - if so, remove it (mother displaces baby)
+  const babyOnTile = state.babies.find((b) => b.tileId === action.tileId);
+  let newBabies = state.babies;
+  let newBabiesInHoldingPen = state.holdingPen.babies;
+
+  if (babyOnTile) {
+    newBabies = state.babies.filter((b) => b.id !== babyOnTile.id);
+    newBabiesInHoldingPen = state.holdingPen.babies + 1;
+  }
+
+  // Validate: specific space not occupied by another piece (scientist shouldn't be here during raptor setup, but check anyway)
+  if (state.scientists.some((s) => s.tileId === action.tileId && s.x === action.x && s.y === action.y)) {
+    return state;
+  }
 
   const newMother: PieceState = {
     id: "mother",
@@ -88,9 +108,11 @@ export function handlePlaceMother(state: GameState, action: { tileId: number; x:
   const newState = {
     ...state,
     mother: newMother,
+    babies: newBabies,
     holdingPen: {
       ...state.holdingPen,
       mother: 0,
+      babies: newBabiesInHoldingPen,
     },
   };
 
@@ -167,10 +189,58 @@ export function handleStartGame(state: GameState): GameState {
   };
 }
 
+export function handleRemovePiece(state: GameState, action: { pieceId: string }): GameState {
+  // Only allow during setup phases
+  if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return state;
+
+  const { pieceId } = action;
+
+  // Check if it's the mother
+  if (state.mother?.id === pieceId) {
+    return {
+      ...state,
+      mother: null,
+      holdingPen: {
+        ...state.holdingPen,
+        mother: 1,
+      },
+    };
+  }
+
+  // Check if it's a baby
+  const babyIndex = state.babies.findIndex((b) => b.id === pieceId);
+  if (babyIndex !== -1) {
+    return {
+      ...state,
+      babies: state.babies.filter((b) => b.id !== pieceId),
+      holdingPen: {
+        ...state.holdingPen,
+        babies: state.holdingPen.babies + 1,
+      },
+    };
+  }
+
+  // Check if it's a scientist
+  const scientistIndex = state.scientists.findIndex((s) => s.id === pieceId);
+  if (scientistIndex !== -1) {
+    return {
+      ...state,
+      scientists: state.scientists.filter((s) => s.id !== pieceId),
+      holdingPen: {
+        ...state.holdingPen,
+        scientists: state.holdingPen.scientists + 1,
+      },
+    };
+  }
+
+  return state;
+}
+
 // Handler map for setup actions
 export const setupHandlers = {
   PLACE_SCIENTIST: handlePlaceScientist,
   PLACE_MOTHER: handlePlaceMother,
   PLACE_BABY: handlePlaceBaby,
+  REMOVE_PIECE: handleRemovePiece,
   START_GAME: handleStartGame,
 };
