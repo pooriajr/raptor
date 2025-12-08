@@ -127,6 +127,33 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
       <div className="section">
         <div className="skip-buttons">
           <button
+            className="skip-btn action-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_ACTION",
+                player: "scientist",
+              });
+            }}
+          >
+            Scientist Actions (8)
+          </button>
+          <button
+            className="skip-btn action-btn"
+            onClick={() => {
+              dispatch({
+                type: "DEV_SKIP_TO_ACTION",
+                player: "raptor",
+              });
+            }}
+          >
+            Raptor Actions (8)
+          </button>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="skip-buttons">
+          <button
             className="skip-btn"
             onClick={() => {
               dispatch({

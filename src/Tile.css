@@ -203,6 +203,22 @@
   }
 }
 
+/* Hostile target - red tile highlight (scientist can act on baby, mother can kill scientist) */
+.space[data-hostile-target="true"] {
+  cursor: pointer;
+  background-color: #e89090 !important;
+  border-color: #c45050 !important;
+  box-shadow: inset 0 0 8px rgba(196, 80, 80, 0.4);
+}
+
+/* Friendly target - purple tile highlight (mother waking sleeping baby) */
+.space[data-friendly-target="true"] {
+  cursor: pointer;
+  background-color: #c8a0e8 !important;
+  border-color: #9060c0 !important;
+  box-shadow: inset 0 0 8px rgba(144, 96, 192, 0.4);
+}
+
 /* Effect destination spaces (e.g., Mother's Call destination) */
 .space[data-effect-destination="true"] {
   cursor: pointer;

@@ -61,6 +61,9 @@ interface TileProps {
   pendingJeepMoves?: PendingJeepMove[];
   pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
   selectedActionPieceId?: string | null;
+  hostileTargetIds?: string[];
+  friendlyTargetIds?: string[];
+  friendlyFirePositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onMouseDown: (pieceId: string) => void;
   onMouseUp: () => void;
@@ -84,6 +87,9 @@ function Tile({
   pendingJeepMoves = [],
   pathTrailPositions = [],
   selectedActionPieceId = null,
+  hostileTargetIds = [],
+  friendlyTargetIds = [],
+  friendlyFirePositions = [],
   showCoordinates = false,
   onMouseDown,
   onMouseUp,
@@ -200,6 +206,14 @@ function Tile({
               f.y === space.coordinate.y,
           );
 
+          // Check if this fire can be extinguished (friendly fire target for mother)
+          const isFriendlyFireTarget = friendlyFirePositions.some(
+            (f) =>
+              f.tileId === tile.id &&
+              f.x === space.coordinate.x &&
+              f.y === space.coordinate.y,
+          );
+
           // Check if this space has a pending fire placement
           const isPendingFire = pendingFirePlacements.some(
             (p) =>
@@ -278,6 +292,13 @@ function Tile({
                   finalJeepMoveHere &&
                   effectTargetIds.includes(finalJeepMoveHere.scientistId))
               }
+              data-hostile-target={
+                pieceOnSpace && hostileTargetIds.includes(pieceOnSpace.id)
+              }
+              data-friendly-target={
+                (pieceOnSpace && friendlyTargetIds.includes(pieceOnSpace.id)) ||
+                isFriendlyFireTarget
+              }
               onDragOver={(e) =>
                 handleDragOver(
                   e,
@@ -297,7 +318,8 @@ function Tile({
                   (isEffectDestination ||
                     isPendingReinforcement ||
                     isPendingFire ||
-                    isValidMove) &&
+                    isValidMove ||
+                    isFriendlyFireTarget) &&
                   onSpaceClick
                 ) {
                   onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y);

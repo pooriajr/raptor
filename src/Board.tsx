@@ -65,6 +65,105 @@ function getScientistEffectivePosition(
   return { tileId: scientist.tileId, x: scientist.x, y: scientist.y };
 }
 
+// Helper to check if a scientist has line of sight to the mother for shooting
+// LOS is blocked by: Rocks, Active (standing) scientists
+// Can shoot through: Frightened scientists, fire tokens, baby raptors
+function hasLineOfSight(
+  tiles: import("./types/board.ts").Tile[],
+  pieces: PieceState[],
+  scientist: PieceState,
+  mother: PieceState,
+): boolean {
+  const sciGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
+  const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
+
+  // Must be in same row or column (orthogonal)
+  const sameRow = sciGlobal.globalY === motherGlobal.globalY;
+  const sameCol = sciGlobal.globalX === motherGlobal.globalX;
+  if (!sameRow && !sameCol) return false;
+
+  // Can't shoot at same position
+  if (sameRow && sameCol) return false;
+
+  // Check each space between scientist and mother
+  if (sameRow) {
+    const minX = Math.min(sciGlobal.globalX, motherGlobal.globalX);
+    const maxX = Math.max(sciGlobal.globalX, motherGlobal.globalX);
+    for (let x = minX + 1; x < maxX; x++) {
+      for (const tile of tiles) {
+        for (const space of tile.spaces) {
+          const spaceGlobal = localToGlobal(
+            tile.id,
+            space.coordinate.x,
+            space.coordinate.y,
+          );
+          if (
+            spaceGlobal.globalX === x &&
+            spaceGlobal.globalY === sciGlobal.globalY
+          ) {
+            // Check for mountain
+            if (space.hasMountain) return false;
+
+            // Check for standing (non-frightened) scientist
+            const pieceHere = pieces.find(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
+            );
+            if (
+              pieceHere &&
+              pieceHere.type === "scientist" &&
+              !pieceHere.isFrightened
+            ) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+  } else {
+    // sameCol
+    const minY = Math.min(sciGlobal.globalY, motherGlobal.globalY);
+    const maxY = Math.max(sciGlobal.globalY, motherGlobal.globalY);
+    for (let y = minY + 1; y < maxY; y++) {
+      for (const tile of tiles) {
+        for (const space of tile.spaces) {
+          const spaceGlobal = localToGlobal(
+            tile.id,
+            space.coordinate.x,
+            space.coordinate.y,
+          );
+          if (
+            spaceGlobal.globalX === sciGlobal.globalX &&
+            spaceGlobal.globalY === y
+          ) {
+            // Check for mountain
+            if (space.hasMountain) return false;
+
+            // Check for standing (non-frightened) scientist
+            const pieceHere = pieces.find(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
+            );
+            if (
+              pieceHere &&
+              pieceHere.type === "scientist" &&
+              !pieceHere.isFrightened
+            ) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 // Adapter: create a piece class instance from plain state for movement logic
 function createPieceFromState(piece: PieceState) {
   switch (piece.type) {
@@ -509,10 +608,99 @@ function Board({ showCoordinates = false }: BoardProps) {
       return;
     }
 
-    // Handle action phase piece selection
+    // Handle action phase piece selection and target interactions
     if (state.phase === "ACTION_PHASE") {
       const piece = state.pieces.find((p) => p.id === pieceId);
       if (!piece) return;
+
+      // Check if clicking on an action target (adjacent piece that can be acted upon)
+      if (selectedActionPieceId && state.actionPoints > 0) {
+        const selectedPiece = state.pieces.find(
+          (p) => p.id === selectedActionPieceId,
+        );
+        if (selectedPiece) {
+          // Check if this is a valid target for the selected piece
+          const selectedGlobal = localToGlobal(
+            selectedPiece.tileId,
+            selectedPiece.x,
+            selectedPiece.y,
+          );
+          const targetGlobal = localToGlobal(piece.tileId, piece.x, piece.y);
+          const adjacentCoords = getAdjacentGlobalCoordinates(
+            selectedGlobal.globalX,
+            selectedGlobal.globalY,
+          );
+          const isAdjacent = adjacentCoords.some(
+            (adj) =>
+              adj.globalX === targetGlobal.globalX &&
+              adj.globalY === targetGlobal.globalY,
+          );
+
+          if (isAdjacent) {
+            // Mother actions
+            if (
+              selectedPiece.type === "mother" &&
+              state.activePlayer === "raptor"
+            ) {
+              if (piece.type === "scientist") {
+                dispatch({
+                  type: "ACTION_MOTHER_KILL_SCIENTIST",
+                  targetId: pieceId,
+                });
+                return;
+              } else if (piece.type === "baby" && piece.isAsleep) {
+                dispatch({
+                  type: "ACTION_MOTHER_WAKE_BABY",
+                  targetId: pieceId,
+                });
+                return;
+              }
+            }
+            // Scientist actions (adjacent)
+            if (
+              selectedPiece.type === "scientist" &&
+              state.activePlayer === "scientist" &&
+              !selectedPiece.isFrightened
+            ) {
+              if (piece.type === "baby") {
+                if (piece.isAsleep) {
+                  dispatch({
+                    type: "ACTION_SCIENTIST_CAPTURE_BABY",
+                    scientistId: selectedActionPieceId,
+                    targetId: pieceId,
+                  });
+                } else {
+                  dispatch({
+                    type: "ACTION_SCIENTIST_SLEEP_BABY",
+                    scientistId: selectedActionPieceId,
+                    targetId: pieceId,
+                  });
+                }
+                return;
+              }
+            }
+          }
+
+          // Scientist shooting mother (not adjacent, but has line of sight)
+          if (
+            selectedPiece.type === "scientist" &&
+            state.activePlayer === "scientist" &&
+            !selectedPiece.isFrightened &&
+            !state.aggressiveActionsUsed.includes(selectedPiece.id) &&
+            piece.type === "mother"
+          ) {
+            if (
+              hasLineOfSight(state.tiles, state.pieces, selectedPiece, piece)
+            ) {
+              dispatch({
+                type: "ACTION_SCIENTIST_SHOOT_MOTHER",
+                scientistId: selectedActionPieceId,
+              });
+              return;
+            }
+          }
+        }
+      }
 
       // Check if this piece can be controlled by the active player
       const canControl =
@@ -524,7 +712,23 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Check if piece can move (not asleep/frightened)
       if (piece.type === "baby" && piece.isAsleep) return;
-      if (piece.type === "scientist" && piece.isFrightened) return;
+
+      // Frightened scientist clicking themselves to stand up
+      // (can't stand up if frightened this round)
+      if (piece.type === "scientist" && piece.isFrightened) {
+        if (
+          state.actionPoints > 0 &&
+          !state.frightenedThisRound.includes(pieceId)
+        ) {
+          // Stand up and select
+          dispatch({
+            type: "ACTION_SCIENTIST_STAND_UP",
+            scientistId: pieceId,
+          });
+          setSelectedActionPieceId(pieceId);
+        }
+        return;
+      }
 
       // Toggle selection or switch to new piece
       if (selectedActionPieceId === pieceId) {
@@ -624,12 +828,28 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   // Handle space click for effect destinations (Mother's Call, Reinforcements) and action phase moves
   const handleSpaceClick = (tileId: number, x: number, y: number) => {
-    // Handle action phase movement
+    // Handle action phase movement and fire extinguishing
     if (state.phase === "ACTION_PHASE") {
       if (!selectedActionPieceId || state.actionPoints <= 0) return;
 
       const piece = state.pieces.find((p) => p.id === selectedActionPieceId);
       if (!piece) return;
+
+      // Check if clicking on an adjacent fire (mother extinguishing)
+      if (piece.type === "mother" && state.activePlayer === "raptor") {
+        const isAdjacentFire = actionTargets.friendlyFirePositions.some(
+          (f) => f.tileId === tileId && f.x === x && f.y === y,
+        );
+        if (isAdjacentFire) {
+          dispatch({
+            type: "ACTION_MOTHER_EXTINGUISH_FIRE",
+            tileId,
+            x,
+            y,
+          });
+          return;
+        }
+      }
 
       // Dispatch the appropriate move action
       if (piece.type === "baby") {
@@ -644,6 +864,15 @@ function Board({ showCoordinates = false }: BoardProps) {
       } else if (piece.type === "scientist") {
         dispatch({
           type: "ACTION_MOVE_SCIENTIST",
+          pieceId: selectedActionPieceId,
+          tileId,
+          x,
+          y,
+        });
+        // Keep piece selected for chaining (selection persists)
+      } else if (piece.type === "mother") {
+        dispatch({
+          type: "ACTION_MOVE_MOTHER",
           pieceId: selectedActionPieceId,
           tileId,
           x,
@@ -921,6 +1150,18 @@ function Board({ showCoordinates = false }: BoardProps) {
         if (state.phase === "ACTION_PHASE" && state.actionPoints <= 0) {
           return [];
         }
+
+        // Mother must pay wound cost (= sleep tokens) before first movement
+        if (state.phase === "ACTION_PHASE" && activePiece.type === "mother") {
+          const woundCost = state.motherPaidWoundCost
+            ? 0
+            : state.motherSleepTokens;
+          const totalCost = woundCost + 1; // wound cost + 1 for the move
+          if (state.actionPoints < totalCost) {
+            return [];
+          }
+        }
+
         const pieceInstance = createPieceFromState(activePiece);
         return pieceInstance
           .getValidMoves(state.tiles, state.pieces, state.fireTokens)
@@ -963,6 +1204,110 @@ function Board({ showCoordinates = false }: BoardProps) {
       ? // Piece from holding pen - use placement rules
         getValidPlacementSpaces(draggedHoldingPieceType)
       : [];
+
+  // Calculate adjacent action targets during action phase
+  // Returns { hostileTargets: string[], friendlyTargets: string[], friendlyFirePositions: {tileId, x, y}[] }
+  const actionTargets = (() => {
+    const result = {
+      hostileTargets: [] as string[],
+      friendlyTargets: [] as string[],
+      friendlyFirePositions: [] as Array<{
+        tileId: number;
+        x: number;
+        y: number;
+      }>,
+    };
+
+    if (
+      state.phase !== "ACTION_PHASE" ||
+      !selectedActionPieceId ||
+      state.actionPoints <= 0
+    ) {
+      return result;
+    }
+
+    const selectedPiece = state.pieces.find(
+      (p) => p.id === selectedActionPieceId,
+    );
+    if (!selectedPiece) return result;
+
+    // Get global coordinates for selected piece
+    const selectedGlobal = localToGlobal(
+      selectedPiece.tileId,
+      selectedPiece.x,
+      selectedPiece.y,
+    );
+    const adjacentCoords = getAdjacentGlobalCoordinates(
+      selectedGlobal.globalX,
+      selectedGlobal.globalY,
+    );
+
+    // Find adjacent pieces
+    const adjacentPieces = state.pieces.filter((p) => {
+      if (p.id === selectedActionPieceId) return false;
+      const pGlobal = localToGlobal(p.tileId, p.x, p.y);
+      return adjacentCoords.some(
+        (adj) =>
+          adj.globalX === pGlobal.globalX && adj.globalY === pGlobal.globalY,
+      );
+    });
+
+    if (selectedPiece.type === "mother" && state.activePlayer === "raptor") {
+      // Mother can kill adjacent scientists (hostile) or wake adjacent sleeping babies (friendly)
+      for (const adj of adjacentPieces) {
+        if (adj.type === "scientist") {
+          result.hostileTargets.push(adj.id);
+        } else if (
+          adj.type === "baby" &&
+          adj.isAsleep &&
+          !state.asleepThisRound.includes(adj.id)
+        ) {
+          result.friendlyTargets.push(adj.id);
+        }
+      }
+
+      // Mother can also extinguish adjacent fires (friendly action)
+      for (const fire of state.fireTokens) {
+        const fireGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
+        const isAdjacent = adjacentCoords.some(
+          (adj) =>
+            adj.globalX === fireGlobal.globalX &&
+            adj.globalY === fireGlobal.globalY,
+        );
+        if (isAdjacent) {
+          result.friendlyFirePositions.push({
+            tileId: fire.tileId,
+            x: fire.x,
+            y: fire.y,
+          });
+        }
+      }
+    } else if (
+      selectedPiece.type === "scientist" &&
+      state.activePlayer === "scientist" &&
+      !selectedPiece.isFrightened &&
+      !state.aggressiveActionsUsed.includes(selectedPiece.id)
+    ) {
+      // Scientist can put adjacent awake babies to sleep or capture adjacent sleeping babies (both hostile)
+      // But only if they haven't used their aggressive action this round
+      for (const adj of adjacentPieces) {
+        if (adj.type === "baby") {
+          result.hostileTargets.push(adj.id);
+        }
+      }
+
+      // Scientist can also shoot the mother if they have line of sight
+      const mother = state.pieces.find((p) => p.type === "mother");
+      if (
+        mother &&
+        hasLineOfSight(state.tiles, state.pieces, selectedPiece, mother)
+      ) {
+        result.hostileTargets.push(mother.id);
+      }
+    }
+
+    return result;
+  })();
 
   const handleDrop = (tileId: number, localX: number, localY: number) => {
     if (draggedHoldingPieceType) {
@@ -1305,6 +1650,21 @@ function Board({ showCoordinates = false }: BoardProps) {
           <div className="discard-section">
             <div className="discard-placeholder">Discard</div>
           </div>
+          <div className="sleep-tokens-section">
+            <div className="sleep-tokens-display">
+              <span className="sleep-tokens-label">Mother Sleep Tokens:</span>
+              <span className="sleep-tokens-count">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`sleep-token-pip ${i < state.motherSleepTokens ? "filled" : "empty"}`}
+                  >
+                    💉
+                  </span>
+                ))}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Game board */}
@@ -1360,6 +1720,9 @@ function Board({ showCoordinates = false }: BoardProps) {
                   }))}
                   pathTrailPositions={pathTrailPositions}
                   selectedActionPieceId={selectedActionPieceId}
+                  hostileTargetIds={actionTargets.hostileTargets}
+                  friendlyTargetIds={actionTargets.friendlyTargets}
+                  friendlyFirePositions={actionTargets.friendlyFirePositions}
                   showCoordinates={showCoordinates}
                   onMouseDown={handleMouseDown}
                   onMouseUp={handleMouseUp}

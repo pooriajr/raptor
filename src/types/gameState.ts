@@ -64,6 +64,14 @@ export interface GameState {
   // Action phase state
   actionPoints: number; // Remaining action points for current player
   activePlayer: Player | null; // Who has action points this round (higher card player)
+  aggressiveActionsUsed: string[]; // Scientist IDs that used aggressive action this round (shoot/capture)
+  frightenedThisRound: string[]; // Scientist IDs frightened this round (can't stand up same round)
+  asleepThisRound: string[]; // Baby IDs put to sleep this round (can't wake same round)
+  motherPaidWoundCost: boolean; // Whether mother has paid her wound cost this round (sleep tokens)
+  // Win condition tracking
+  motherSleepTokens: number; // Sleep tokens on mother (scientist wins at 5)
+  capturedBabies: number; // Babies captured by scientists (scientist wins at 3)
+  escapedBabies: number; // Babies that escaped the board (raptor wins at 3)
 }
 
 // Initial holding pen state for setup
@@ -108,5 +116,12 @@ export function createInitialGameState(): GameState {
     scientistCards: createInitialCardState(),
     actionPoints: 0,
     activePlayer: null,
+    aggressiveActionsUsed: [],
+    frightenedThisRound: [],
+    asleepThisRound: [],
+    motherPaidWoundCost: false,
+    motherSleepTokens: 0,
+    capturedBabies: 0,
+    escapedBabies: 0,
   };
 }

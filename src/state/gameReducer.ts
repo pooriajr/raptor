@@ -10,6 +10,7 @@ import {
   getAdjacentGlobalCoordinates,
 } from "../types/coordinates.ts";
 import { BabyRaptor } from "../pieces/BabyRaptor.ts";
+import { MotherRaptor } from "../pieces/MotherRaptor.ts";
 import { Scientist } from "../pieces/Scientist.ts";
 
 // Action types
@@ -70,6 +71,10 @@ export type GameAction =
       raptorCard: number;
       scientistCard: number;
     }
+  | {
+      type: "DEV_SKIP_TO_ACTION";
+      player: "scientist" | "raptor";
+    }
   // Action phase actions
   | {
       type: "ACTION_MOVE_BABY";
@@ -85,6 +90,34 @@ export type GameAction =
       x: number;
       y: number;
     }
+  | {
+      type: "ACTION_MOVE_MOTHER";
+      pieceId: string;
+      tileId: number;
+      x: number;
+      y: number;
+    }
+  // Adjacent piece interactions (all cost 1 action point)
+  | { type: "ACTION_MOTHER_KILL_SCIENTIST"; targetId: string }
+  | { type: "ACTION_MOTHER_WAKE_BABY"; targetId: string }
+  | {
+      type: "ACTION_MOTHER_EXTINGUISH_FIRE";
+      tileId: number;
+      x: number;
+      y: number;
+    }
+  | {
+      type: "ACTION_SCIENTIST_SLEEP_BABY";
+      scientistId: string;
+      targetId: string;
+    }
+  | {
+      type: "ACTION_SCIENTIST_CAPTURE_BABY";
+      scientistId: string;
+      targetId: string;
+    }
+  | { type: "ACTION_SCIENTIST_SHOOT_MOTHER"; scientistId: string }
+  | { type: "ACTION_SCIENTIST_STAND_UP"; scientistId: string }
   | { type: "END_ACTION_PHASE" }
   | { type: "RESET_ACTION_PHASE"; savedState: ActionPhaseSavedState };
 
@@ -111,6 +144,180 @@ function drawCards(cardState: CardState): CardState {
     deck: newDeck,
     hand: newHand,
   };
+}
+
+// Helper to check if a scientist has line of sight to the mother
+// LOS is blocked by: Rocks, Active (standing) scientists
+// Can shoot through: Frightened scientists, fire tokens, baby raptors
+function hasLineOfSight(
+  state: GameState,
+  scientist: PieceState,
+  mother: PieceState,
+): boolean {
+  const sciGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
+  const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
+
+  // Must be in same row or column (orthogonal)
+  const sameRow = sciGlobal.globalY === motherGlobal.globalY;
+  const sameCol = sciGlobal.globalX === motherGlobal.globalX;
+  if (!sameRow && !sameCol) return false;
+
+  // Can't shoot at same position
+  if (sameRow && sameCol) return false;
+
+  // Check each space between scientist and mother
+  if (sameRow) {
+    const minX = Math.min(sciGlobal.globalX, motherGlobal.globalX);
+    const maxX = Math.max(sciGlobal.globalX, motherGlobal.globalX);
+    for (let x = minX + 1; x < maxX; x++) {
+      // Check for mountain at this global position
+      // We need to convert back to local coords to check
+      for (const tile of state.tiles) {
+        for (const space of tile.spaces) {
+          const spaceGlobal = localToGlobal(
+            tile.id,
+            space.coordinate.x,
+            space.coordinate.y,
+          );
+          if (
+            spaceGlobal.globalX === x &&
+            spaceGlobal.globalY === sciGlobal.globalY
+          ) {
+            // Check for mountain
+            if (space.hasMountain) return false;
+
+            // Check for standing (non-frightened) scientist
+            const pieceHere = state.pieces.find(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
+            );
+            if (
+              pieceHere &&
+              pieceHere.type === "scientist" &&
+              !pieceHere.isFrightened
+            ) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+  } else {
+    // sameCol
+    const minY = Math.min(sciGlobal.globalY, motherGlobal.globalY);
+    const maxY = Math.max(sciGlobal.globalY, motherGlobal.globalY);
+    for (let y = minY + 1; y < maxY; y++) {
+      for (const tile of state.tiles) {
+        for (const space of tile.spaces) {
+          const spaceGlobal = localToGlobal(
+            tile.id,
+            space.coordinate.x,
+            space.coordinate.y,
+          );
+          if (
+            spaceGlobal.globalX === sciGlobal.globalX &&
+            spaceGlobal.globalY === y
+          ) {
+            // Check for mountain
+            if (space.hasMountain) return false;
+
+            // Check for standing (non-frightened) scientist
+            const pieceHere = state.pieces.find(
+              (p) =>
+                p.tileId === tile.id &&
+                p.x === space.coordinate.x &&
+                p.y === space.coordinate.y,
+            );
+            if (
+              pieceHere &&
+              pieceHere.type === "scientist" &&
+              !pieceHere.isFrightened
+            ) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+// Helper to find all fires connected to a starting fire (orthogonally)
+function getConnectedFires(
+  fireTokens: GameState["fireTokens"],
+  startTileId: number,
+  startX: number,
+  startY: number,
+): Array<{ id: string; tileId: number; x: number; y: number }> {
+  const connected: Array<{ id: string; tileId: number; x: number; y: number }> =
+    [];
+  const visited = new Set<string>();
+  const queue: Array<{ tileId: number; x: number; y: number }> = [
+    { tileId: startTileId, x: startX, y: startY },
+  ];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const currentGlobal = localToGlobal(current.tileId, current.x, current.y);
+    const key = `${currentGlobal.globalX},${currentGlobal.globalY}`;
+
+    if (visited.has(key)) continue;
+    visited.add(key);
+
+    // Find the fire at this position
+    const fire = fireTokens.find(
+      (f) =>
+        f.tileId === current.tileId && f.x === current.x && f.y === current.y,
+    );
+    if (!fire) continue;
+
+    connected.push(fire);
+
+    // Check all adjacent positions for more fires
+    const adjacentCoords = getAdjacentGlobalCoordinates(
+      currentGlobal.globalX,
+      currentGlobal.globalY,
+    );
+    for (const adj of adjacentCoords) {
+      const adjKey = `${adj.globalX},${adj.globalY}`;
+      if (visited.has(adjKey)) continue;
+
+      // Find any fire at this adjacent global position
+      const adjFire = fireTokens.find((f) => {
+        const fGlobal = localToGlobal(f.tileId, f.x, f.y);
+        return (
+          fGlobal.globalX === adj.globalX && fGlobal.globalY === adj.globalY
+        );
+      });
+
+      if (adjFire) {
+        queue.push({ tileId: adjFire.tileId, x: adjFire.x, y: adjFire.y });
+      }
+    }
+  }
+
+  return connected;
+}
+
+// Helper to check if two pieces are adjacent (orthogonally)
+function arePiecesAdjacent(
+  _tiles: GameState["tiles"],
+  piece1: PieceState,
+  piece2: PieceState,
+): boolean {
+  const global1 = localToGlobal(piece1.tileId, piece1.x, piece1.y);
+  const global2 = localToGlobal(piece2.tileId, piece2.x, piece2.y);
+  const adjacent = getAdjacentGlobalCoordinates(
+    global1.globalX,
+    global1.globalY,
+  );
+  return adjacent.some(
+    (adj) => adj.globalX === global2.globalX && adj.globalY === global2.globalY,
+  );
 }
 
 // Helper to check if a space is occupied
@@ -206,6 +413,62 @@ function transitionToActionPhase(state: GameState): Partial<GameState> {
     actionPoints,
     activePlayer,
   };
+}
+
+// Dev helper: auto-setup pieces if none placed
+function devAutoSetup(state: GameState): GameState {
+  if (state.pieces.length > 0) return state;
+
+  const newState = { ...state, pieces: [...state.pieces] };
+  const squareTiles = newState.tiles.filter((t) => t.shape === "square");
+  const lTiles = newState.tiles.filter((t) => t.shape === "L");
+
+  // Place mother on tile 2
+  const tile2 = squareTiles.find((t) => t.id === 2)!;
+  const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
+  newState.pieces.push({
+    id: "mother",
+    type: "mother",
+    tileId: 2,
+    x: motherSpace.coordinate.x,
+    y: motherSpace.coordinate.y,
+  });
+  newState.holdingPen = { ...newState.holdingPen, mother: 0 };
+
+  // Place babies on other square tiles
+  const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
+  let babyIndex = 0;
+  for (const tile of tilesForBabies) {
+    if (babyIndex >= 5) break;
+    const space = tile.spaces.find((s) => !s.hasMountain)!;
+    newState.pieces.push({
+      id: `baby-${babyIndex}`,
+      type: "baby",
+      tileId: tile.id,
+      x: space.coordinate.x,
+      y: space.coordinate.y,
+    });
+    babyIndex++;
+  }
+  newState.holdingPen = { ...newState.holdingPen, babies: 0 };
+
+  // Place scientists on L-tiles
+  let scientistIndex = 0;
+  for (const tile of lTiles) {
+    if (scientistIndex >= 4) break;
+    const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
+    newState.pieces.push({
+      id: `scientist-${scientistIndex}`,
+      type: "scientist",
+      tileId: tile.id,
+      x: space.coordinate.x,
+      y: space.coordinate.y,
+    });
+    scientistIndex++;
+  }
+  newState.holdingPen = { ...newState.holdingPen, scientists: 0 };
+
+  return newState;
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -491,6 +754,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         pieces: state.pieces.map((p) =>
           validTargets.includes(p.id) ? { ...p, isFrightened: true } : p,
         ),
+        frightenedThisRound: [...state.frightenedThisRound, ...validTargets],
       };
       return {
         ...newStateAfterFrighten,
@@ -519,6 +783,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         pieces: state.pieces.map((p) =>
           validTargets.includes(p.id) ? { ...p, isAsleep: true } : p,
         ),
+        asleepThisRound: [...state.asleepThisRound, ...validTargets],
       };
       return {
         ...newStateAfterSleep,
@@ -864,59 +1129,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "DEV_SKIP_TO_EFFECT": {
       // Dev-only: Skip directly to effect phase with specified cards
-      // Auto-setup pieces if needed
-      let newState = { ...state };
-
-      // If no pieces placed, do auto-setup
-      if (newState.pieces.length === 0) {
-        const squareTiles = newState.tiles.filter((t) => t.shape === "square");
-        const lTiles = newState.tiles.filter((t) => t.shape === "L");
-
-        // Place mother on tile 2
-        const tile2 = squareTiles.find((t) => t.id === 2)!;
-        const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
-        newState.pieces.push({
-          id: "mother",
-          type: "mother",
-          tileId: 2,
-          x: motherSpace.coordinate.x,
-          y: motherSpace.coordinate.y,
-        });
-        newState.holdingPen.mother = 0;
-
-        // Place babies on other square tiles
-        const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
-        let babyIndex = 0;
-        for (const tile of tilesForBabies) {
-          if (babyIndex >= 5) break;
-          const space = tile.spaces.find((s) => !s.hasMountain)!;
-          newState.pieces.push({
-            id: `baby-${babyIndex}`,
-            type: "baby",
-            tileId: tile.id,
-            x: space.coordinate.x,
-            y: space.coordinate.y,
-          });
-          babyIndex++;
-        }
-        newState.holdingPen.babies = 0;
-
-        // Place scientists on L-tiles
-        let scientistIndex = 0;
-        for (const tile of lTiles) {
-          if (scientistIndex >= 4) break;
-          const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
-          newState.pieces.push({
-            id: `scientist-${scientistIndex}`,
-            type: "scientist",
-            tileId: tile.id,
-            x: space.coordinate.x,
-            y: space.coordinate.y,
-          });
-          scientistIndex++;
-        }
-        newState.holdingPen.scientists = 0;
-      }
+      const newState = devAutoSetup(state);
 
       // Set cards and phase
       return {
@@ -936,6 +1149,33 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             (c) => c !== action.raptorCard,
           ),
         },
+      };
+    }
+
+    case "DEV_SKIP_TO_ACTION": {
+      // Dev-only: Skip directly to action phase with 8 action points for specified player
+      const newState = devAutoSetup(state);
+
+      // Set up action phase with 8 action points (9 - 1 = 8)
+      // Simulates: one player played 1, other played 9, effect skipped
+      const raptorCard = action.player === "raptor" ? 9 : 1;
+      const scientistCard = action.player === "scientist" ? 9 : 1;
+
+      return {
+        ...newState,
+        phase: "ACTION_PHASE",
+        scientistCards: {
+          ...newState.scientistCards,
+          played: scientistCard,
+          hand: newState.scientistCards.hand.filter((c) => c !== scientistCard),
+        },
+        raptorCards: {
+          ...newState.raptorCards,
+          played: raptorCard,
+          hand: newState.raptorCards.hand.filter((c) => c !== raptorCard),
+        },
+        actionPoints: 8,
+        activePlayer: action.player,
       };
     }
 
@@ -1061,6 +1301,299 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
+    case "ACTION_MOVE_MOTHER": {
+      // Validate: must be in action phase
+      if (state.phase !== "ACTION_PHASE") return state;
+
+      // Validate: raptor must be the active player
+      if (state.activePlayer !== "raptor") return state;
+
+      // Find the mother
+      const mother = state.pieces.find(
+        (p) => p.id === action.pieceId && p.type === "mother",
+      );
+      if (!mother) return state;
+
+      // Calculate wound cost: mother must pay AP = sleep tokens before first movement
+      const woundCost = state.motherPaidWoundCost ? 0 : state.motherSleepTokens;
+      const totalCost = woundCost + 1; // wound cost + 1 for the move itself
+
+      // Validate: must have enough action points
+      if (state.actionPoints < totalCost) return state;
+
+      // Validate the move using MotherRaptor class
+      const motherPiece = new MotherRaptor(
+        mother.id,
+        mother.tileId,
+        mother.x,
+        mother.y,
+      );
+      const validMoves = motherPiece.getValidMoves(
+        state.tiles,
+        state.pieces,
+        state.fireTokens,
+      );
+
+      const isValidMove = validMoves.some(
+        (m) =>
+          m.tileId === action.tileId && m.x === action.x && m.y === action.y,
+      );
+      if (!isValidMove) return state;
+
+      // Check target space is not occupied
+      if (isSpaceOccupied(state.pieces, action.tileId, action.x, action.y))
+        return state;
+
+      // Check mother can't end on fire
+      const hasFireAtTarget = state.fireTokens.some(
+        (f) =>
+          f.tileId === action.tileId && f.x === action.x && f.y === action.y,
+      );
+      if (hasFireAtTarget) return state;
+
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.pieceId
+            ? { ...p, tileId: action.tileId, x: action.x, y: action.y }
+            : p,
+        ),
+        actionPoints: state.actionPoints - totalCost,
+        motherPaidWoundCost: true, // Mark that wound cost has been paid
+      };
+    }
+
+    case "ACTION_MOTHER_KILL_SCIENTIST": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "raptor") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const mother = state.pieces.find((p) => p.type === "mother");
+      const scientist = state.pieces.find(
+        (p) => p.id === action.targetId && p.type === "scientist",
+      );
+      if (!mother || !scientist) return state;
+
+      // Must be adjacent
+      if (!arePiecesAdjacent(state.tiles, mother, scientist)) return state;
+
+      // Remove the scientist from the game (killed, not returned to reserve)
+      return {
+        ...state,
+        pieces: state.pieces.filter((p) => p.id !== action.targetId),
+        actionPoints: state.actionPoints - 1,
+      };
+    }
+
+    case "ACTION_MOTHER_WAKE_BABY": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "raptor") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const mother = state.pieces.find((p) => p.type === "mother");
+      const baby = state.pieces.find(
+        (p) => p.id === action.targetId && p.type === "baby",
+      );
+      if (!mother || !baby) return state;
+
+      // Baby must be asleep
+      if (!baby.isAsleep) return state;
+
+      // Can't wake up if put to sleep this round
+      if (state.asleepThisRound.includes(action.targetId)) return state;
+
+      // Must be adjacent
+      if (!arePiecesAdjacent(state.tiles, mother, baby)) return state;
+
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.targetId ? { ...p, isAsleep: false } : p,
+        ),
+        actionPoints: state.actionPoints - 1,
+      };
+    }
+
+    case "ACTION_MOTHER_EXTINGUISH_FIRE": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "raptor") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const mother = state.pieces.find((p) => p.type === "mother");
+      if (!mother) return state;
+
+      // Check if there's a fire at the target position
+      const targetFire = state.fireTokens.find(
+        (f) =>
+          f.tileId === action.tileId && f.x === action.x && f.y === action.y,
+      );
+      if (!targetFire) return state;
+
+      // Mother must be adjacent to the fire
+      const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
+      const fireGlobal = localToGlobal(action.tileId, action.x, action.y);
+      const adjacentCoords = getAdjacentGlobalCoordinates(
+        motherGlobal.globalX,
+        motherGlobal.globalY,
+      );
+      const isAdjacent = adjacentCoords.some(
+        (adj) =>
+          adj.globalX === fireGlobal.globalX &&
+          adj.globalY === fireGlobal.globalY,
+      );
+      if (!isAdjacent) return state;
+
+      // Get all connected fires and remove them
+      const connectedFires = getConnectedFires(
+        state.fireTokens,
+        action.tileId,
+        action.x,
+        action.y,
+      );
+      const connectedFireIds = new Set(connectedFires.map((f) => f.id));
+
+      return {
+        ...state,
+        fireTokens: state.fireTokens.filter((f) => !connectedFireIds.has(f.id)),
+        actionPoints: state.actionPoints - 1,
+      };
+    }
+
+    case "ACTION_SCIENTIST_SLEEP_BABY": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "scientist") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const scientist = state.pieces.find(
+        (p) => p.id === action.scientistId && p.type === "scientist",
+      );
+      const baby = state.pieces.find(
+        (p) => p.id === action.targetId && p.type === "baby",
+      );
+      if (!scientist || !baby) return state;
+
+      // Scientist can't act if frightened
+      if (scientist.isFrightened) return state;
+
+      // Scientist can only use one aggressive action per round
+      if (state.aggressiveActionsUsed.includes(action.scientistId))
+        return state;
+
+      // Baby must not already be asleep
+      if (baby.isAsleep) return state;
+
+      // Must be adjacent
+      if (!arePiecesAdjacent(state.tiles, scientist, baby)) return state;
+
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.targetId ? { ...p, isAsleep: true } : p,
+        ),
+        actionPoints: state.actionPoints - 1,
+        aggressiveActionsUsed: [
+          ...state.aggressiveActionsUsed,
+          action.scientistId,
+        ],
+      };
+    }
+
+    case "ACTION_SCIENTIST_CAPTURE_BABY": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "scientist") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const scientist = state.pieces.find(
+        (p) => p.id === action.scientistId && p.type === "scientist",
+      );
+      const baby = state.pieces.find(
+        (p) => p.id === action.targetId && p.type === "baby",
+      );
+      if (!scientist || !baby) return state;
+
+      // Scientist can't act if frightened
+      if (scientist.isFrightened) return state;
+
+      // Scientist can only use one aggressive action per round
+      if (state.aggressiveActionsUsed.includes(action.scientistId))
+        return state;
+
+      // Baby must be asleep to capture
+      if (!baby.isAsleep) return state;
+
+      // Must be adjacent
+      if (!arePiecesAdjacent(state.tiles, scientist, baby)) return state;
+
+      // Remove baby and increment captured count
+      return {
+        ...state,
+        pieces: state.pieces.filter((p) => p.id !== action.targetId),
+        capturedBabies: state.capturedBabies + 1,
+        actionPoints: state.actionPoints - 1,
+        aggressiveActionsUsed: [
+          ...state.aggressiveActionsUsed,
+          action.scientistId,
+        ],
+      };
+    }
+
+    case "ACTION_SCIENTIST_SHOOT_MOTHER": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "scientist") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const scientist = state.pieces.find(
+        (p) => p.id === action.scientistId && p.type === "scientist",
+      );
+      const mother = state.pieces.find((p) => p.type === "mother");
+      if (!scientist || !mother) return state;
+
+      // Scientist can't act if frightened
+      if (scientist.isFrightened) return state;
+
+      // Scientist can only use one aggressive action per round
+      if (state.aggressiveActionsUsed.includes(action.scientistId))
+        return state;
+
+      // Must have line of sight
+      if (!hasLineOfSight(state, scientist, mother)) return state;
+
+      return {
+        ...state,
+        motherSleepTokens: state.motherSleepTokens + 1,
+        actionPoints: state.actionPoints - 1,
+        aggressiveActionsUsed: [
+          ...state.aggressiveActionsUsed,
+          action.scientistId,
+        ],
+      };
+    }
+
+    case "ACTION_SCIENTIST_STAND_UP": {
+      if (state.phase !== "ACTION_PHASE") return state;
+      if (state.activePlayer !== "scientist") return state;
+      if (state.actionPoints <= 0) return state;
+
+      const scientist = state.pieces.find(
+        (p) => p.id === action.scientistId && p.type === "scientist",
+      );
+      if (!scientist) return state;
+
+      // Scientist must be frightened to stand up
+      if (!scientist.isFrightened) return state;
+
+      // Can't stand up if frightened this round
+      if (state.frightenedThisRound.includes(action.scientistId)) return state;
+
+      return {
+        ...state,
+        pieces: state.pieces.map((p) =>
+          p.id === action.scientistId ? { ...p, isFrightened: false } : p,
+        ),
+        actionPoints: state.actionPoints - 1,
+      };
+    }
+
     case "END_ACTION_PHASE": {
       if (state.phase !== "ACTION_PHASE") return state;
 
@@ -1070,6 +1603,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         phase: "SCIENTIST_READY",
         actionPoints: 0,
         activePlayer: null,
+        aggressiveActionsUsed: [], // Reset for next round
+        frightenedThisRound: [], // Reset for next round
+        asleepThisRound: [], // Reset for next round
+        motherPaidWoundCost: false, // Reset for next round
         // Clear played cards for new round
         scientistCards: {
           ...state.scientistCards,
