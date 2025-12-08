@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { gameReducer, getAllPieces } from "./gameReducer";
+import { gameReducer, getAllPieces, findById } from "./gameReducer";
 import { createInitialGameState, type GameState } from "../types/gameState";
 
 // Helper to complete raptor setup and transition to scientist setup phase
@@ -1213,12 +1213,12 @@ describe("Game Reducer - Card System", () => {
           pieceIds: [scientists[0].id, scientists[1].id],
         });
 
-        expect(
-          state.scientists.find((s) => s.id === scientists[0].id)!.isFrightened,
-        ).toBe(true);
-        expect(
-          state.scientists.find((s) => s.id === scientists[1].id)!.isFrightened,
-        ).toBe(true);
+        expect(findById(state.scientists, scientists[0].id)!.isFrightened).toBe(
+          true,
+        );
+        expect(findById(state.scientists, scientists[1].id)!.isFrightened).toBe(
+          true,
+        );
         expect(state.phase).toBe("ACTION_PHASE");
       });
 
@@ -1232,7 +1232,7 @@ describe("Game Reducer - Card System", () => {
         });
 
         expect(
-          newState.scientists.find((s) => s.id === scientist.id)!.isFrightened,
+          findById(newState.scientists, scientist.id)!.isFrightened,
         ).toBeFalsy();
         expect(newState.phase).toBe("EFFECT_PHASE");
       });
@@ -1248,12 +1248,10 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Scientist should be frightened, baby unchanged
-        expect(
-          newState.scientists.find((s) => s.id === scientist.id)!.isFrightened,
-        ).toBe(true);
-        expect(
-          newState.babies.find((b) => b.id === baby.id)!.isAsleep,
-        ).toBeFalsy();
+        expect(findById(newState.scientists, scientist.id)!.isFrightened).toBe(
+          true,
+        );
+        expect(findById(newState.babies, baby.id)!.isAsleep).toBeFalsy();
         expect(newState.phase).toBe("ACTION_PHASE");
       });
 
@@ -1279,12 +1277,10 @@ describe("Game Reducer - Card System", () => {
 
         // Both should now be frightened (first was already, second is new)
         expect(
-          newState.scientists.find((s) => s.id === scientists[0].id)!
-            .isFrightened,
+          findById(newState.scientists, scientists[0].id)!.isFrightened,
         ).toBe(true);
         expect(
-          newState.scientists.find((s) => s.id === scientists[1].id)!
-            .isFrightened,
+          findById(newState.scientists, scientists[1].id)!.isFrightened,
         ).toBe(true);
         expect(newState.phase).toBe("ACTION_PHASE");
       });
@@ -1305,7 +1301,7 @@ describe("Game Reducer - Card System", () => {
           pieceIds: [baby.id],
         });
 
-        const updatedBaby = state.babies.find((b) => b.id === baby.id)!;
+        const updatedBaby = findById(state.babies, baby.id)!;
         expect(updatedBaby.isAsleep).toBe(true);
         expect(state.phase).toBe("ACTION_PHASE");
       });
@@ -1320,12 +1316,8 @@ describe("Game Reducer - Card System", () => {
           pieceIds: [babies[0].id, babies[1].id],
         });
 
-        expect(state.babies.find((b) => b.id === babies[0].id)!.isAsleep).toBe(
-          true,
-        );
-        expect(state.babies.find((b) => b.id === babies[1].id)!.isAsleep).toBe(
-          true,
-        );
+        expect(findById(state.babies, babies[0].id)!.isAsleep).toBe(true);
+        expect(findById(state.babies, babies[1].id)!.isAsleep).toBe(true);
         expect(state.phase).toBe("ACTION_PHASE");
       });
 
@@ -1338,9 +1330,7 @@ describe("Game Reducer - Card System", () => {
           pieceIds: [baby.id],
         });
 
-        expect(
-          newState.babies.find((b) => b.id === baby.id)!.isAsleep,
-        ).toBeFalsy();
+        expect(findById(newState.babies, baby.id)!.isAsleep).toBeFalsy();
         expect(newState.phase).toBe("EFFECT_PHASE");
       });
 
@@ -1355,11 +1345,9 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Baby should be asleep, scientist unchanged
-        expect(newState.babies.find((b) => b.id === baby.id)!.isAsleep).toBe(
-          true,
-        );
+        expect(findById(newState.babies, baby.id)!.isAsleep).toBe(true);
         expect(
-          newState.scientists.find((s) => s.id === scientist.id)!.isFrightened,
+          findById(newState.scientists, scientist.id)!.isFrightened,
         ).toBeFalsy();
         expect(newState.phase).toBe("ACTION_PHASE");
       });
@@ -1385,12 +1373,8 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Both should now be asleep
-        expect(
-          newState.babies.find((b) => b.id === babies[0].id)!.isAsleep,
-        ).toBe(true);
-        expect(
-          newState.babies.find((b) => b.id === babies[1].id)!.isAsleep,
-        ).toBe(true);
+        expect(findById(newState.babies, babies[0].id)!.isAsleep).toBe(true);
+        expect(findById(newState.babies, babies[1].id)!.isAsleep).toBe(true);
         expect(newState.phase).toBe("ACTION_PHASE");
       });
     });
@@ -1433,7 +1417,7 @@ describe("Game Reducer - Card System", () => {
           ],
         });
 
-        const movedBaby = state.babies.find((b) => b.id === baby.id)!;
+        const movedBaby = findById(state.babies, baby.id)!;
         expect(movedBaby.tileId).toBe(mother.tileId);
         expect(movedBaby.x).toBe(emptySpace!.coordinate.x);
         expect(movedBaby.y).toBe(emptySpace!.coordinate.y);
@@ -1481,8 +1465,8 @@ describe("Game Reducer - Card System", () => {
           ],
         });
 
-        const movedBaby1 = state.babies.find((b) => b.id === babies[0].id)!;
-        const movedBaby2 = state.babies.find((b) => b.id === babies[1].id)!;
+        const movedBaby1 = findById(state.babies, babies[0].id)!;
+        const movedBaby2 = findById(state.babies, babies[1].id)!;
         expect(movedBaby1.tileId).toBe(mother.tileId);
         expect(movedBaby2.tileId).toBe(mother.tileId);
         expect(state.phase).toBe("ACTION_PHASE");
@@ -1506,7 +1490,7 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Baby should not have moved
-        const unmoved = newState.babies.find((b) => b.id === baby.id)!;
+        const unmoved = findById(newState.babies, baby.id)!;
         expect(unmoved.tileId).toBe(baby.tileId);
         expect(newState.phase).toBe("EFFECT_PHASE");
       });
@@ -1554,7 +1538,7 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Baby should have moved (second move was valid)
-        const movedBaby = newState.babies.find((b) => b.id === baby.id)!;
+        const movedBaby = findById(newState.babies, baby.id)!;
         expect(movedBaby.tileId).toBe(mother.tileId);
         expect(newState.phase).toBe("ACTION_PHASE");
       });
@@ -1915,7 +1899,7 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Scientist should not have moved
-        const unmoved = newState.scientists.find((s) => s.id === scientist.id)!;
+        const unmoved = findById(newState.scientists, scientist.id)!;
         expect(unmoved.x).toBe(originalX);
         expect(unmoved.y).toBe(originalY);
         expect(newState.phase).toBe("EFFECT_PHASE");

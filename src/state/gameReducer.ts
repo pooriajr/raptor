@@ -72,7 +72,7 @@ export type GameAction =
     };
 
 // Helper to find an item by id in an array
-function findById<T extends { id: string }>(
+export function findById<T extends { id: string }>(
   items: T[],
   id: string,
 ): T | undefined {
