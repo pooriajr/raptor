@@ -13,6 +13,7 @@ export type SetupAction =
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
   | { type: "REMOVE_PIECE"; pieceId: string }
+  | { type: "CONFIRM_RAPTOR_SETUP" }
   | { type: "START_GAME" };
 
 export function handlePlaceScientist(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
@@ -105,7 +106,7 @@ export function handlePlaceMother(state: GameState, action: { tileId: number; x:
     y: action.y,
   };
 
-  const newState = {
+  return {
     ...state,
     mother: newMother,
     babies: newBabies,
@@ -115,13 +116,6 @@ export function handlePlaceMother(state: GameState, action: { tileId: number; x:
       babies: newBabiesInHoldingPen,
     },
   };
-
-  // Transition to scientist setup if raptor setup is complete
-  if (isRaptorSetupComplete(newState)) {
-    return { ...newState, phase: "SCIENTIST_SETUP" as const };
-  }
-
-  return newState;
 }
 
 export function handlePlaceBaby(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
@@ -160,7 +154,7 @@ export function handlePlaceBaby(state: GameState, action: { tileId: number; x: n
     y: action.y,
   };
 
-  const newState = {
+  return {
     ...state,
     babies: [...state.babies, newBaby],
     holdingPen: {
@@ -168,13 +162,17 @@ export function handlePlaceBaby(state: GameState, action: { tileId: number; x: n
       babies: state.holdingPen.babies - 1,
     },
   };
+}
 
-  // Transition to scientist setup if raptor setup is complete
-  if (isRaptorSetupComplete(newState)) {
-    return { ...newState, phase: "SCIENTIST_SETUP" as const };
-  }
+export function handleConfirmRaptorSetup(state: GameState): GameState {
+  // Validate: must be in raptor setup phase with complete setup
+  if (state.phase !== "RAPTOR_SETUP") return state;
+  if (!isRaptorSetupComplete(state)) return state;
 
-  return newState;
+  return {
+    ...state,
+    phase: "SCIENTIST_SETUP",
+  };
 }
 
 export function handleStartGame(state: GameState): GameState {
@@ -242,5 +240,6 @@ export const setupHandlers = {
   PLACE_MOTHER: handlePlaceMother,
   PLACE_BABY: handlePlaceBaby,
   REMOVE_PIECE: handleRemovePiece,
+  CONFIRM_RAPTOR_SETUP: handleConfirmRaptorSetup,
   START_GAME: handleStartGame,
 };

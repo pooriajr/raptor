@@ -1,6 +1,6 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import SetupPanel from "./SetupPanel.tsx";
+import SetupPhaseBanner from "./SetupPhaseBanner.tsx";
 import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
 import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
@@ -1355,9 +1355,19 @@ function Board({ showCoordinates = false }: BoardProps) {
     return positions;
   })();
 
+  const handleSetupConfirm = () => {
+    if (state.phase === "RAPTOR_SETUP") {
+      dispatch({ type: "CONFIRM_RAPTOR_SETUP" });
+    } else if (state.phase === "SCIENTIST_SETUP") {
+      dispatch({ type: "START_GAME" });
+    }
+  };
+
   return (
     <>
-      <SetupPanel />
+      {(state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") && (
+        <SetupPhaseBanner onConfirm={handleSetupConfirm} />
+      )}
       {state.phase === "EFFECT_PHASE" && (
         <EffectPhaseBanner
           selectedTargets={selectedEffectTargets}

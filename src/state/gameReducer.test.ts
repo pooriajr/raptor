@@ -31,6 +31,9 @@ function completeRaptorSetup(initialState: GameState): GameState {
     });
   }
 
+  // Confirm raptor setup to transition to scientist setup
+  state = gameReducer(state, { type: "CONFIRM_RAPTOR_SETUP" });
+
   return state;
 }
 
@@ -92,7 +95,7 @@ function getToCardSelectionPhase(initialState: GameState, player: "scientist" | 
 
 describe("Game Reducer - Setup Rules", () => {
   describe("Scientist Placement", () => {
-    it("transitions to SCIENTIST_SETUP after raptor setup is complete", () => {
+    it("transitions to SCIENTIST_SETUP after raptor setup is confirmed", () => {
       let state = createInitialGameState();
       expect(state.phase).toBe("RAPTOR_SETUP");
 
@@ -126,7 +129,29 @@ describe("Game Reducer - Setup Rules", () => {
 
       expect(state.mother).not.toBeNull();
       expect(state.babies).toHaveLength(5);
-      expect(state.phase).toBe("SCIENTIST_SETUP"); // Should transition
+      expect(state.phase).toBe("RAPTOR_SETUP"); // Still raptor setup until confirmed
+
+      // Confirm raptor setup
+      state = gameReducer(state, { type: "CONFIRM_RAPTOR_SETUP" });
+      expect(state.phase).toBe("SCIENTIST_SETUP"); // Now transitions
+    });
+
+    it("rejects CONFIRM_RAPTOR_SETUP when setup is incomplete", () => {
+      let state = createInitialGameState();
+
+      // Place only mother, no babies
+      const tile2 = state.tiles.find((t) => t.id === 2)!;
+      const space = tile2.spaces.find((s) => !s.hasMountain)!;
+      state = gameReducer(state, {
+        type: "PLACE_MOTHER",
+        tileId: 2,
+        x: space.coordinate.x,
+        y: space.coordinate.y,
+      });
+
+      // Try to confirm - should be rejected
+      const state2 = gameReducer(state, { type: "CONFIRM_RAPTOR_SETUP" });
+      expect(state2.phase).toBe("RAPTOR_SETUP"); // Still in raptor setup
     });
 
     it("allows scientist placement on L-tile at non-exit space", () => {
@@ -601,6 +626,8 @@ describe("Game Reducer - Setup Rules", () => {
         });
       }
 
+      // Confirm raptor setup
+      state = gameReducer(state, { type: "CONFIRM_RAPTOR_SETUP" });
       expect(state.phase).toBe("SCIENTIST_SETUP");
 
       // Place a scientist
@@ -652,6 +679,9 @@ describe("Game Reducer - Setup Rules", () => {
           y: space.coordinate.y,
         });
       }
+
+      // Confirm raptor setup
+      state = gameReducer(state, { type: "CONFIRM_RAPTOR_SETUP" });
 
       // Place 4 scientists
       const lTiles = state.tiles.filter((t) => t.shape === "L");

@@ -1,0 +1,90 @@
+.SetupPhaseBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 12px 24px;
+}
+
+.SetupPhaseBanner.raptor {
+  background: linear-gradient(to bottom, rgba(60, 100, 60, 0.95), rgba(50, 90, 50, 0.85));
+  border-bottom: 3px solid #5a9c5a;
+}
+
+.SetupPhaseBanner.scientist {
+  background: linear-gradient(to bottom, rgba(60, 60, 100, 0.95), rgba(50, 50, 90, 0.85));
+  border-bottom: 3px solid #5a5a9c;
+}
+
+.SetupPhaseBanner .banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 24px;
+}
+
+.SetupPhaseBanner .banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setup-icon {
+  font-size: 2rem;
+}
+
+.setup-progress {
+  font-size: 1rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.SetupPhaseBanner .banner-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.SetupPhaseBanner .banner-player {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.SetupPhaseBanner .banner-instruction {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.SetupPhaseBanner .banner-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.SetupPhaseBanner .confirm-button {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(100, 100, 100, 0.4);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+  transition: all 0.2s;
+}
+
+.SetupPhaseBanner .confirm-button.active {
+  background: rgba(80, 160, 80, 0.6);
+  border-color: #5a9c5a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.SetupPhaseBanner .confirm-button.active:hover {
+  background: rgba(100, 180, 100, 0.7);
+  border-color: #7ac07a;
+}
