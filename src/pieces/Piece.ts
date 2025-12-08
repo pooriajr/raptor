@@ -24,17 +24,9 @@ export abstract class Piece {
   ): Array<{ tileId: number; x: number; y: number }>;
 
   // Common method to check if a move is valid
-  isValidMove(
-    tiles: Tile[],
-    pieces: PieceState[],
-    tileId: number,
-    x: number,
-    y: number,
-  ): boolean {
+  isValidMove(tiles: Tile[], pieces: PieceState[], tileId: number, x: number, y: number): boolean {
     const validMoves = this.getValidMoves(tiles, pieces);
-    return validMoves.some(
-      (move) => move.tileId === tileId && move.x === x && move.y === y,
-    );
+    return validMoves.some((move) => move.tileId === tileId && move.x === x && move.y === y);
   }
 
   // Abstract method to create a new instance with updated position

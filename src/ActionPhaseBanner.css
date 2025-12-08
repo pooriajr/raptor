@@ -8,20 +8,12 @@
 }
 
 .ActionPhaseBanner.raptor {
-  background: linear-gradient(
-    to bottom,
-    rgba(60, 100, 60, 0.95),
-    rgba(50, 90, 50, 0.85)
-  );
+  background: linear-gradient(to bottom, rgba(60, 100, 60, 0.95), rgba(50, 90, 50, 0.85));
   border-bottom: 3px solid #5a9c5a;
 }
 
 .ActionPhaseBanner.scientist {
-  background: linear-gradient(
-    to bottom,
-    rgba(60, 60, 100, 0.95),
-    rgba(50, 50, 90, 0.85)
-  );
+  background: linear-gradient(to bottom, rgba(60, 60, 100, 0.95), rgba(50, 50, 90, 0.85));
   border-bottom: 3px solid #5a5a9c;
 }
 

@@ -14,10 +14,7 @@ export type SetupAction =
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
   | { type: "START_GAME" };
 
-export function handlePlaceScientist(
-  state: GameState,
-  action: { tileId: number; x: number; y: number },
-): GameState {
+export function handlePlaceScientist(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in scientist setup phase
   if (state.phase !== "SCIENTIST_SETUP") return state;
 
@@ -29,9 +26,7 @@ export function handlePlaceScientist(
   if (!tile || tile.shape !== "L") return state;
 
   // Validate: not on exit or unusable space
-  const space = tile.spaces.find(
-    (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
-  );
+  const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
   if (!space || space.isExit || space.isUnusable) return state;
 
   // Validate: no mountain
@@ -61,10 +56,7 @@ export function handlePlaceScientist(
   };
 }
 
-export function handlePlaceMother(
-  state: GameState,
-  action: { tileId: number; x: number; y: number },
-): GameState {
+export function handlePlaceMother(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in raptor setup phase
   if (state.phase !== "RAPTOR_SETUP") return state;
 
@@ -74,8 +66,7 @@ export function handlePlaceMother(
   // Validate: must be a central square tile (2 or 7)
   const centralTiles = [2, 7];
   const tile = state.tiles.find((t) => t.id === action.tileId);
-  if (!tile || tile.shape !== "square" || !centralTiles.includes(action.tileId))
-    return state;
+  if (!tile || tile.shape !== "square" || !centralTiles.includes(action.tileId)) return state;
 
   // Validate: no mountain
   if (spaceHasMountain(state, action.tileId, action.x, action.y)) return state;
@@ -111,10 +102,7 @@ export function handlePlaceMother(
   return newState;
 }
 
-export function handlePlaceBaby(
-  state: GameState,
-  action: { tileId: number; x: number; y: number },
-): GameState {
+export function handlePlaceBaby(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in raptor setup phase
   if (state.phase !== "RAPTOR_SETUP") return state;
 
@@ -134,9 +122,7 @@ export function handlePlaceBaby(
   // Validate: must leave at least one central tile free for mother (if mother not yet placed)
   const centralTiles = [2, 7];
   if (centralTiles.includes(action.tileId) && !state.mother) {
-    const babiesOnCentralTiles = state.babies.filter((b) =>
-      centralTiles.includes(b.tileId),
-    );
+    const babiesOnCentralTiles = state.babies.filter((b) => centralTiles.includes(b.tileId));
     // If one central tile already has a baby, can't place on the other (must leave one for mother)
     if (babiesOnCentralTiles.length >= 1) return state;
   }

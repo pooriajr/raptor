@@ -13,9 +13,7 @@ describe("Board Generation", () => {
     it("creates spaces with correct coordinates", () => {
       const tile = createSquareTile(1);
       // Check that all 9 positions exist
-      const coords = tile.spaces.map(
-        (s) => `${s.coordinate.x},${s.coordinate.y}`,
-      );
+      const coords = tile.spaces.map((s) => `${s.coordinate.x},${s.coordinate.y}`);
       expect(coords).toContain("0,0");
       expect(coords).toContain("0,1");
       expect(coords).toContain("0,2");
@@ -50,12 +48,8 @@ describe("Board Generation", () => {
       const mountainsCount = tile.spaces.filter((s) => s.hasMountain).length;
       expect(mountainsCount).toBe(2);
 
-      const mountainSpace1 = tile.spaces.find(
-        (s) => s.coordinate.x === 0 && s.coordinate.y === 0,
-      );
-      const mountainSpace2 = tile.spaces.find(
-        (s) => s.coordinate.x === 2 && s.coordinate.y === 2,
-      );
+      const mountainSpace1 = tile.spaces.find((s) => s.coordinate.x === 0 && s.coordinate.y === 0);
+      const mountainSpace2 = tile.spaces.find((s) => s.coordinate.x === 2 && s.coordinate.y === 2);
       expect(mountainSpace1?.hasMountain).toBe(true);
       expect(mountainSpace2?.hasMountain).toBe(true);
     });
@@ -78,9 +72,7 @@ describe("Board Generation", () => {
       expect(exitSpace?.coordinate.y).toBe(0);
 
       // Should have 3 usable spaces in column 1
-      const usableSpaces = tile.spaces.filter(
-        (s) => !s.isExit && !s.isUnusable,
-      );
+      const usableSpaces = tile.spaces.filter((s) => !s.isExit && !s.isUnusable);
       expect(usableSpaces).toHaveLength(3);
       usableSpaces.forEach((s) => {
         expect(s.coordinate.x).toBe(1);
@@ -111,9 +103,7 @@ describe("Board Generation", () => {
       expect(exitSpace?.coordinate.y).toBe(0);
 
       // Should have 3 usable spaces in column 0
-      const usableSpaces = tile.spaces.filter(
-        (s) => !s.isExit && !s.isUnusable,
-      );
+      const usableSpaces = tile.spaces.filter((s) => !s.isExit && !s.isUnusable);
       expect(usableSpaces).toHaveLength(3);
       usableSpaces.forEach((s) => {
         expect(s.coordinate.x).toBe(0);
@@ -191,12 +181,8 @@ describe("Board Generation", () => {
       const tiles = createBoard();
       const lTiles = tiles.filter((t) => t.shape === "L");
 
-      const leftTiles = lTiles.filter(
-        (t) => t.shape === "L" && t.side === "left",
-      );
-      const rightTiles = lTiles.filter(
-        (t) => t.shape === "L" && t.side === "right",
-      );
+      const leftTiles = lTiles.filter((t) => t.shape === "L" && t.side === "left");
+      const rightTiles = lTiles.filter((t) => t.shape === "L" && t.side === "right");
 
       expect(leftTiles).toHaveLength(2);
       expect(rightTiles).toHaveLength(2);
@@ -266,12 +252,7 @@ describe("Board Generation", () => {
       const tile4 = tiles[4];
       const tile9 = tiles[9];
 
-      if (
-        tile0.shape === "L" &&
-        tile5.shape === "L" &&
-        tile4.shape === "L" &&
-        tile9.shape === "L"
-      ) {
+      if (tile0.shape === "L" && tile5.shape === "L" && tile4.shape === "L" && tile9.shape === "L") {
         // If tile0 has exit at top, then:
         // - tile5 should have exit at bottom (left side spread)
         // - tile4 should have exit at bottom (right side clustered)
@@ -341,9 +322,7 @@ describe("Board Generation", () => {
       const tiles = createBoard();
       const squareTiles = tiles.filter((t) => t.shape === "square");
 
-      const mountainCounts = squareTiles.map(
-        (tile) => tile.spaces.filter((s) => s.hasMountain).length,
-      );
+      const mountainCounts = squareTiles.map((tile) => tile.spaces.filter((s) => s.hasMountain).length);
       mountainCounts.sort();
 
       expect(mountainCounts).toEqual([0, 1, 1, 2, 2, 3]);

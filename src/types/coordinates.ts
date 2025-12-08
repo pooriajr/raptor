@@ -49,11 +49,7 @@ export function getTileOffset(tileId: number): {
 }
 
 // Convert local coordinates to global coordinates
-export function localToGlobal(
-  tileId: number,
-  localX: number,
-  localY: number,
-): GlobalCoordinate {
+export function localToGlobal(tileId: number, localX: number, localY: number): GlobalCoordinate {
   const { offsetX, offsetY } = getTileOffset(tileId);
   return {
     globalX: offsetX + localX,
@@ -63,11 +59,7 @@ export function localToGlobal(
 
 // Convert global coordinates to local coordinates
 // Returns null if the global coordinate is not on any tile
-export function globalToLocal(
-  tiles: Tile[],
-  globalX: number,
-  globalY: number,
-): LocalCoordinate | null {
+export function globalToLocal(tiles: Tile[], globalX: number, globalY: number): LocalCoordinate | null {
   for (const tile of tiles) {
     const { offsetX, offsetY } = getTileOffset(tile.id);
 
@@ -75,22 +67,12 @@ export function globalToLocal(
     const tileWidth = tile.shape === "square" ? 3 : 2;
     const tileHeight = 3;
 
-    if (
-      globalX >= offsetX &&
-      globalX < offsetX + tileWidth &&
-      globalY >= offsetY &&
-      globalY < offsetY + tileHeight
-    ) {
+    if (globalX >= offsetX && globalX < offsetX + tileWidth && globalY >= offsetY && globalY < offsetY + tileHeight) {
       const localX = globalX - offsetX;
       const localY = globalY - offsetY;
 
       // Verify this space actually exists and isn't unusable
-      const space = tile.spaces.find(
-        (s) =>
-          s.coordinate.x === localX &&
-          s.coordinate.y === localY &&
-          !s.isUnusable,
-      );
+      const space = tile.spaces.find((s) => s.coordinate.x === localX && s.coordinate.y === localY && !s.isUnusable);
 
       if (space) {
         return { tileId: tile.id, localX, localY };
@@ -102,10 +84,7 @@ export function globalToLocal(
 }
 
 // Get adjacent global coordinates (up, down, left, right)
-export function getAdjacentGlobalCoordinates(
-  globalX: number,
-  globalY: number,
-): GlobalCoordinate[] {
+export function getAdjacentGlobalCoordinates(globalX: number, globalY: number): GlobalCoordinate[] {
   return [
     { globalX, globalY: globalY - 1 }, // Up
     { globalX, globalY: globalY + 1 }, // Down

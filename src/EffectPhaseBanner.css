@@ -8,20 +8,12 @@
 }
 
 .EffectPhaseBanner.raptor {
-  background: linear-gradient(
-    to bottom,
-    rgba(40, 80, 40, 0.95),
-    rgba(40, 80, 40, 0.85)
-  );
+  background: linear-gradient(to bottom, rgba(40, 80, 40, 0.95), rgba(40, 80, 40, 0.85));
   border-bottom: 3px solid #4a7c4a;
 }
 
 .EffectPhaseBanner.scientist {
-  background: linear-gradient(
-    to bottom,
-    rgba(40, 40, 80, 0.95),
-    rgba(40, 40, 80, 0.85)
-  );
+  background: linear-gradient(to bottom, rgba(40, 40, 80, 0.95), rgba(40, 40, 80, 0.85));
   border-bottom: 3px solid #4a4a7c;
 }
 

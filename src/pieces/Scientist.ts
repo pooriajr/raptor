@@ -1,11 +1,7 @@
 import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
 import type { PieceState, FireToken } from "../types/gameState.ts";
-import {
-  localToGlobal,
-  globalToLocal,
-  getAdjacentGlobalCoordinates,
-} from "../types/coordinates.ts";
+import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 
 export class Scientist extends Piece {
   jeepMode: boolean = false;
@@ -31,16 +27,11 @@ export class Scientist extends Piece {
   }
 
   // Normal mode: move one space orthogonally (like baby raptor)
-  private getNormalMoves(
-    tiles: Tile[],
-  ): Array<{ tileId: number; x: number; y: number }> {
+  private getNormalMoves(tiles: Tile[]): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
     const globalPos = localToGlobal(this.tileId, this.localX, this.localY);
-    const adjacentPositions = getAdjacentGlobalCoordinates(
-      globalPos.globalX,
-      globalPos.globalY,
-    );
+    const adjacentPositions = getAdjacentGlobalCoordinates(globalPos.globalX, globalPos.globalY);
 
     for (const adjPos of adjacentPositions) {
       const localPos = globalToLocal(tiles, adjPos.globalX, adjPos.globalY);
@@ -57,10 +48,7 @@ export class Scientist extends Piece {
   }
 
   // Jeep mode: move in straight lines like mother raptor
-  private getJeepMoves(
-    tiles: Tile[],
-    pieces: PieceState[],
-  ): Array<{ tileId: number; x: number; y: number }> {
+  private getJeepMoves(tiles: Tile[], pieces: PieceState[]): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
     const globalPos = localToGlobal(this.tileId, this.localX, this.localY);
@@ -86,9 +74,7 @@ export class Scientist extends Piece {
         if (!targetTile) break;
 
         const targetSpace = targetTile.spaces.find(
-          (s) =>
-            s.coordinate.x === localPos.localX &&
-            s.coordinate.y === localPos.localY,
+          (s) => s.coordinate.x === localPos.localX && s.coordinate.y === localPos.localY,
         );
         if (!targetSpace) break;
 
@@ -97,11 +83,7 @@ export class Scientist extends Piece {
 
         // Stop if another piece is there
         const isOccupied = pieces.some(
-          (p) =>
-            p.id !== this.id &&
-            p.tileId === localPos.tileId &&
-            p.x === localPos.localX &&
-            p.y === localPos.localY,
+          (p) => p.id !== this.id && p.tileId === localPos.tileId && p.x === localPos.localX && p.y === localPos.localY,
         );
         if (isOccupied) break;
 

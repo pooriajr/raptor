@@ -1,15 +1,8 @@
 import type { GameState, PieceState } from "../types/gameState.ts";
-import {
-  getAllPieces,
-  isSpaceOccupied,
-  arePiecesAdjacent,
-} from "../utils/boardUtils.ts";
+import { getAllPieces, isSpaceOccupied, arePiecesAdjacent } from "../utils/boardUtils.ts";
 import { hasLineOfSight } from "../utils/lineOfSight.ts";
 import { getConnectedFires } from "../utils/fireUtils.ts";
-import {
-  localToGlobal,
-  getAdjacentGlobalCoordinates,
-} from "../types/coordinates.ts";
+import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 import { BabyRaptor } from "../pieces/BabyRaptor.ts";
 import { MotherRaptor } from "../pieces/MotherRaptor.ts";
 import { Scientist } from "../pieces/Scientist.ts";
@@ -94,9 +87,7 @@ export function handleActionMoveBaby(
   const babyPiece = new BabyRaptor(baby.id, baby.tileId, baby.x, baby.y);
   const validMoves = babyPiece.getValidMoves(state.tiles, allPieces);
 
-  const isValidMove = validMoves.some(
-    (m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y,
-  );
+  const isValidMove = validMoves.some((m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y);
   if (!isValidMove) return state;
 
   // Check target space is not occupied
@@ -104,9 +95,7 @@ export function handleActionMoveBaby(
 
   // Check if this is an exit space (baby escapes)
   const targetTile = state.tiles.find((t) => t.id === action.tileId);
-  const targetSpace = targetTile?.spaces.find(
-    (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
-  );
+  const targetSpace = targetTile?.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
   const isExit = targetSpace?.isExit ?? false;
 
   if (isExit) {
@@ -123,9 +112,7 @@ export function handleActionMoveBaby(
   return {
     ...state,
     babies: state.babies.map((b) =>
-      b.id === action.pieceId
-        ? { ...b, tileId: action.tileId, x: action.x, y: action.y }
-        : b,
+      b.id === action.pieceId ? { ...b, tileId: action.tileId, x: action.x, y: action.y } : b,
     ),
     actionPoints: state.actionPoints - 1,
   };
@@ -153,17 +140,10 @@ export function handleActionMoveScientist(
 
   // Validate the move using Scientist class (normal mode, not jeep)
   const allPieces = getAllPieces(state);
-  const scientistPiece = new Scientist(
-    scientist.id,
-    scientist.tileId,
-    scientist.x,
-    scientist.y,
-  );
+  const scientistPiece = new Scientist(scientist.id, scientist.tileId, scientist.x, scientist.y);
   const validMoves = scientistPiece.getValidMoves(state.tiles, allPieces);
 
-  const isValidMove = validMoves.some(
-    (m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y,
-  );
+  const isValidMove = validMoves.some((m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y);
   if (!isValidMove) return state;
 
   // Check target space is not occupied
@@ -178,9 +158,7 @@ export function handleActionMoveScientist(
   return {
     ...state,
     scientists: state.scientists.map((s) =>
-      s.id === action.pieceId
-        ? { ...s, tileId: action.tileId, x: action.x, y: action.y }
-        : s,
+      s.id === action.pieceId ? { ...s, tileId: action.tileId, x: action.x, y: action.y } : s,
     ),
     actionPoints: state.actionPoints - 1,
   };
@@ -208,21 +186,10 @@ export function handleActionMoveMother(
 
   // Validate the move using MotherRaptor class
   const allPieces = getAllPieces(state);
-  const motherPiece = new MotherRaptor(
-    state.mother.id,
-    state.mother.tileId,
-    state.mother.x,
-    state.mother.y,
-  );
-  const validMoves = motherPiece.getValidMoves(
-    state.tiles,
-    allPieces,
-    state.fireTokens,
-  );
+  const motherPiece = new MotherRaptor(state.mother.id, state.mother.tileId, state.mother.x, state.mother.y);
+  const validMoves = motherPiece.getValidMoves(state.tiles, allPieces, state.fireTokens);
 
-  const isValidMove = validMoves.some(
-    (m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y,
-  );
+  const isValidMove = validMoves.some((m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y);
   if (!isValidMove) return state;
 
   // Check target space is not occupied
@@ -247,10 +214,7 @@ export function handleActionMoveMother(
   };
 }
 
-export function handleMotherKillScientist(
-  state: GameState,
-  action: { targetId: string },
-): GameState {
+export function handleMotherKillScientist(state: GameState, action: { targetId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "raptor") return state;
   if (state.actionPoints <= 0) return state;
@@ -270,10 +234,7 @@ export function handleMotherKillScientist(
   };
 }
 
-export function handleMotherWakeBaby(
-  state: GameState,
-  action: { targetId: string },
-): GameState {
+export function handleMotherWakeBaby(state: GameState, action: { targetId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "raptor") return state;
   if (state.actionPoints <= 0) return state;
@@ -293,9 +254,7 @@ export function handleMotherWakeBaby(
 
   return {
     ...state,
-    babies: state.babies.map((b) =>
-      b.id === action.targetId ? { ...b, isAsleep: false } : b,
-    ),
+    babies: state.babies.map((b) => (b.id === action.targetId ? { ...b, isAsleep: false } : b)),
     actionPoints: state.actionPoints - 1,
   };
 }
@@ -312,31 +271,20 @@ export function handleMotherExtinguishFire(
   if (!mother) return state;
 
   // Check if there's a fire at the target position
-  const targetFire = state.fireTokens.find(
-    (f) => f.tileId === action.tileId && f.x === action.x && f.y === action.y,
-  );
+  const targetFire = state.fireTokens.find((f) => f.tileId === action.tileId && f.x === action.x && f.y === action.y);
   if (!targetFire) return state;
 
   // Mother must be adjacent to the fire
   const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
   const fireGlobal = localToGlobal(action.tileId, action.x, action.y);
-  const adjacentCoords = getAdjacentGlobalCoordinates(
-    motherGlobal.globalX,
-    motherGlobal.globalY,
-  );
+  const adjacentCoords = getAdjacentGlobalCoordinates(motherGlobal.globalX, motherGlobal.globalY);
   const isAdjacent = adjacentCoords.some(
-    (adj) =>
-      adj.globalX === fireGlobal.globalX && adj.globalY === fireGlobal.globalY,
+    (adj) => adj.globalX === fireGlobal.globalX && adj.globalY === fireGlobal.globalY,
   );
   if (!isAdjacent) return state;
 
   // Get all connected fires and remove them
-  const connectedFires = getConnectedFires(
-    state.fireTokens,
-    action.tileId,
-    action.x,
-    action.y,
-  );
+  const connectedFires = getConnectedFires(state.fireTokens, action.tileId, action.x, action.y);
   const connectedFireIds = new Set(connectedFires.map((f) => f.id));
 
   return {
@@ -372,9 +320,7 @@ export function handleScientistSleepBaby(
 
   return {
     ...state,
-    babies: state.babies.map((b) =>
-      b.id === action.targetId ? { ...b, isAsleep: true } : b,
-    ),
+    babies: state.babies.map((b) => (b.id === action.targetId ? { ...b, isAsleep: true } : b)),
     actionPoints: state.actionPoints - 1,
     aggressiveActionsUsed: [...state.aggressiveActionsUsed, action.scientistId],
   };
@@ -414,10 +360,7 @@ export function handleScientistCaptureBaby(
   };
 }
 
-export function handleScientistShootMother(
-  state: GameState,
-  action: { scientistId: string },
-): GameState {
+export function handleScientistShootMother(state: GameState, action: { scientistId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
@@ -443,10 +386,7 @@ export function handleScientistShootMother(
   };
 }
 
-export function handleScientistStandUp(
-  state: GameState,
-  action: { scientistId: string },
-): GameState {
+export function handleScientistStandUp(state: GameState, action: { scientistId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
@@ -462,9 +402,7 @@ export function handleScientistStandUp(
 
   return {
     ...state,
-    scientists: state.scientists.map((s) =>
-      s.id === action.scientistId ? { ...s, isFrightened: false } : s,
-    ),
+    scientists: state.scientists.map((s) => (s.id === action.scientistId ? { ...s, isFrightened: false } : s)),
     actionPoints: state.actionPoints - 1,
   };
 }
@@ -494,10 +432,7 @@ export function handleEndActionPhase(state: GameState): GameState {
   };
 }
 
-export function handleResetActionPhase(
-  state: GameState,
-  action: { savedState: ActionPhaseSavedState },
-): GameState {
+export function handleResetActionPhase(state: GameState, action: { savedState: ActionPhaseSavedState }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
 
   // Restore the saved state from the start of the action phase

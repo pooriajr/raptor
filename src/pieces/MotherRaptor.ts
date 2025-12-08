@@ -45,9 +45,7 @@ export class MotherRaptor extends Piece {
         if (!targetTile) break;
 
         const targetSpace = targetTile.spaces.find(
-          (s) =>
-            s.coordinate.x === localPos.localX &&
-            s.coordinate.y === localPos.localY,
+          (s) => s.coordinate.x === localPos.localX && s.coordinate.y === localPos.localY,
         );
         if (!targetSpace) break;
 
@@ -56,20 +54,13 @@ export class MotherRaptor extends Piece {
 
         // Stop if another piece is there
         const isOccupied = pieces.some(
-          (p) =>
-            p.id !== this.id &&
-            p.tileId === localPos.tileId &&
-            p.x === localPos.localX &&
-            p.y === localPos.localY,
+          (p) => p.id !== this.id && p.tileId === localPos.tileId && p.x === localPos.localX && p.y === localPos.localY,
         );
         if (isOccupied) break;
 
         // Stop if fire is there (mother can't pass through fire)
         const hasFire = fireTokens.some(
-          (f) =>
-            f.tileId === localPos.tileId &&
-            f.x === localPos.localX &&
-            f.y === localPos.localY,
+          (f) => f.tileId === localPos.tileId && f.x === localPos.localX && f.y === localPos.localY,
         );
         if (hasFire) break;
 

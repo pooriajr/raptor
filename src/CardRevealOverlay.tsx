@@ -9,11 +9,7 @@ interface CardRevealOverlayProps {
   onConfirm: () => void;
 }
 
-function CardRevealOverlay({
-  scientistCard,
-  raptorCard,
-  onConfirm,
-}: CardRevealOverlayProps) {
+function CardRevealOverlay({ scientistCard, raptorCard, onConfirm }: CardRevealOverlayProps) {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -27,19 +23,11 @@ function CardRevealOverlay({
   const winner = scientistWins ? "Scientist" : "Raptor";
   const actionPoints = `${difference} action point${difference > 1 ? "s" : ""}`;
 
-  const renderEffectBox = (
-    player: "scientist" | "raptor",
-    card: number,
-    isWinner: boolean,
-  ) => (
+  const renderEffectBox = (player: "scientist" | "raptor", card: number, isWinner: boolean) => (
     <div className={`effect-box ${isWinner ? "winner" : "loser"}`}>
-      <div className="effect-player">
-        {player === "scientist" ? "Scientist" : "Raptor"}
-      </div>
+      <div className="effect-player">{player === "scientist" ? "Scientist" : "Raptor"}</div>
       <div className="effect-text">
-        {isWinner
-          ? `Uses card effect: ${getCardEffect(player, card)}`
-          : `Gets ${actionPoints}`}
+        {isWinner ? `Uses card effect: ${getCardEffect(player, card)}` : `Gets ${actionPoints}`}
       </div>
     </div>
   );
@@ -53,11 +41,7 @@ function CardRevealOverlay({
           <div className="reveal-card-section">
             <div className="player-label scientist">Scientist</div>
             <div className="reveal-card-wrapper">
-              <Card
-                value={scientistCard}
-                player="scientist"
-                faceUp={revealed}
-              />
+              <Card value={scientistCard} player="scientist" faceUp={revealed} />
             </div>
           </div>
 
@@ -76,9 +60,7 @@ function CardRevealOverlay({
             {sameCards ? (
               <div className="result-section same-cards">
                 <div className="result-title">Same Cards!</div>
-                <div className="result-description">
-                  Nothing happens this round.
-                </div>
+                <div className="result-description">Nothing happens this round.</div>
               </div>
             ) : (
               <div className="result-section">

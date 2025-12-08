@@ -56,12 +56,7 @@ type DevAction =
   | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" };
 
 // Combined action type
-export type GameAction =
-  | SetupAction
-  | CardAction
-  | EffectAction
-  | ActionPhaseAction
-  | DevAction;
+export type GameAction = SetupAction | CardAction | EffectAction | ActionPhaseAction | DevAction;
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
@@ -209,16 +204,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         scientistCards: {
           ...newState.scientistCards,
           played: action.scientistCard,
-          hand: newState.scientistCards.hand.filter(
-            (c) => c !== action.scientistCard,
-          ),
+          hand: newState.scientistCards.hand.filter((c) => c !== action.scientistCard),
         },
         raptorCards: {
           ...newState.raptorCards,
           played: action.raptorCard,
-          hand: newState.raptorCards.hand.filter(
-            (c) => c !== action.raptorCard,
-          ),
+          hand: newState.raptorCards.hand.filter((c) => c !== action.raptorCard),
         },
       };
     }

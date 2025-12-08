@@ -4,11 +4,7 @@ import { localToGlobal } from "../types/coordinates.ts";
 // Helper to check if a scientist has line of sight to the mother
 // LOS is blocked by: Rocks, Active (standing) scientists
 // Can shoot through: Frightened scientists, fire tokens, baby raptors
-export function hasLineOfSight(
-  state: GameState,
-  scientist: PieceState,
-  mother: PieceState,
-): boolean {
+export function hasLineOfSight(state: GameState, scientist: PieceState, mother: PieceState): boolean {
   const sciGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
   const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
 
@@ -29,24 +25,14 @@ export function hasLineOfSight(
       // We need to convert back to local coords to check
       for (const tile of state.tiles) {
         for (const space of tile.spaces) {
-          const spaceGlobal = localToGlobal(
-            tile.id,
-            space.coordinate.x,
-            space.coordinate.y,
-          );
-          if (
-            spaceGlobal.globalX === x &&
-            spaceGlobal.globalY === sciGlobal.globalY
-          ) {
+          const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
+          if (spaceGlobal.globalX === x && spaceGlobal.globalY === sciGlobal.globalY) {
             // Check for mountain
             if (space.hasMountain) return false;
 
             // Check for standing (non-frightened) scientist
             const pieceHere = state.scientists.find(
-              (s) =>
-                s.tileId === tile.id &&
-                s.x === space.coordinate.x &&
-                s.y === space.coordinate.y,
+              (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
             );
             if (pieceHere && !pieceHere.isFrightened) {
               return false;
@@ -62,24 +48,14 @@ export function hasLineOfSight(
     for (let y = minY + 1; y < maxY; y++) {
       for (const tile of state.tiles) {
         for (const space of tile.spaces) {
-          const spaceGlobal = localToGlobal(
-            tile.id,
-            space.coordinate.x,
-            space.coordinate.y,
-          );
-          if (
-            spaceGlobal.globalX === sciGlobal.globalX &&
-            spaceGlobal.globalY === y
-          ) {
+          const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
+          if (spaceGlobal.globalX === sciGlobal.globalX && spaceGlobal.globalY === y) {
             // Check for mountain
             if (space.hasMountain) return false;
 
             // Check for standing (non-frightened) scientist
             const pieceHere = state.scientists.find(
-              (s) =>
-                s.tileId === tile.id &&
-                s.x === space.coordinate.x &&
-                s.y === space.coordinate.y,
+              (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
             );
             if (pieceHere && !pieceHere.isFrightened) {
               return false;

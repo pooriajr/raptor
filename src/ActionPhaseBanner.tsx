@@ -7,11 +7,7 @@ interface ActionPhaseBannerProps {
   hasActions: boolean; // Whether any actions have been taken (for reset button)
 }
 
-function ActionPhaseBanner({
-  onEndTurn,
-  onReset,
-  hasActions,
-}: ActionPhaseBannerProps) {
+function ActionPhaseBanner({ onEndTurn, onReset, hasActions }: ActionPhaseBannerProps) {
   const { state } = useGame();
 
   if (state.phase !== "ACTION_PHASE" || state.activePlayer === null) {
@@ -39,9 +35,7 @@ function ActionPhaseBanner({
           <span className="action-points-label">AP</span>
         </div>
         <div className="banner-center">
-          <span className="banner-player">
-            {activePlayer === "raptor" ? "Raptor" : "Scientist"} Action Phase
-          </span>
+          <span className="banner-player">{activePlayer === "raptor" ? "Raptor" : "Scientist"} Action Phase</span>
           <span className="banner-instruction">{getInstruction()}</span>
         </div>
         <div className="banner-buttons">

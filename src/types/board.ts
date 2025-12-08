@@ -10,13 +10,7 @@ export interface Space {
   isUnusable: boolean;
 }
 
-export function createSpace(
-  x: number,
-  y: number,
-  hasMountain = false,
-  isExit = false,
-  isUnusable = false,
-): Space {
+export function createSpace(x: number, y: number, hasMountain = false, isExit = false, isUnusable = false): Space {
   return {
     coordinate: { x, y },
     hasMountain,
@@ -71,27 +65,18 @@ const MOUNTAIN_PATTERNS: MountainPattern[] = [
   ],
 ];
 
-export function createSquareTile(
-  id: number,
-  mountainPattern: MountainPattern = [],
-): SquareTile {
+export function createSquareTile(id: number, mountainPattern: MountainPattern = []): SquareTile {
   const spaces: Space[] = [];
   for (let y = 0; y < 3; y++) {
     for (let x = 0; x < 3; x++) {
-      const hasMountain = mountainPattern.some(
-        (mountain) => mountain.x === x && mountain.y === y,
-      );
+      const hasMountain = mountainPattern.some((mountain) => mountain.x === x && mountain.y === y);
       spaces.push(createSpace(x, y, hasMountain));
     }
   }
   return { id, shape: "square", spaces };
 }
 
-export function createLShapedTile(
-  id: number,
-  side: "left" | "right",
-  exitPosition: "top" | "bottom",
-): LTile {
+export function createLShapedTile(id: number, side: "left" | "right", exitPosition: "top" | "bottom"): LTile {
   const spaces: Space[] = [];
   const exitCol = side === "left" ? 0 : 1;
   const exitRow = exitPosition === "top" ? 0 : 2;
@@ -114,9 +99,7 @@ export function createBoard(): Tile[] {
   const rightBottom = leftExitAtTop ? "top" : "bottom";
 
   // Shuffle mountain patterns and assign to the 6 square tiles
-  const shuffledPatterns = [...MOUNTAIN_PATTERNS].sort(
-    () => Math.random() - 0.5,
-  );
+  const shuffledPatterns = [...MOUNTAIN_PATTERNS].sort(() => Math.random() - 0.5);
 
   return [
     createLShapedTile(0, "left", leftExitAtTop ? "top" : "bottom"),

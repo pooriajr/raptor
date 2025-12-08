@@ -38,9 +38,7 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
 
       for (const tile of tilesForBabies) {
         if (babiesPlaced >= 5) break;
-        const hasRaptor =
-          state.mother?.tileId === tile.id ||
-          state.babies.some((b) => b.tileId === tile.id);
+        const hasRaptor = state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id);
         if (hasRaptor) continue;
 
         const space = tile.spaces.find((s) => !s.hasMountain)!;
@@ -83,8 +81,7 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
     );
   }
 
-  const isSetupPhase =
-    state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
+  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
 
   return (
     <div className="DevPanel">
@@ -102,11 +99,7 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
 
       <div className="section">
         <label>
-          <input
-            type="checkbox"
-            checked={showCoordinates}
-            onChange={(e) => onToggleCoordinates(e.target.checked)}
-          />
+          <input type="checkbox" checked={showCoordinates} onChange={(e) => onToggleCoordinates(e.target.checked)} />
           Show coordinates
         </label>
       </div>

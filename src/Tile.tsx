@@ -66,12 +66,7 @@ interface TileProps {
   friendlyFirePositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
   onDrop: (tileId: number, localX: number, localY: number) => void;
-  onSpaceClick: (
-    tileId: number,
-    x: number,
-    y: number,
-    pieceId: string | null,
-  ) => void;
+  onSpaceClick: (tileId: number, x: number, y: number, pieceId: string | null) => void;
 }
 
 function Tile({
@@ -137,95 +132,60 @@ function Tile({
       {/* Render all spaces in this tile */}
       <div className="spaces-grid">
         {tile.spaces.map((space, index) => {
-          const pieceOnSpace = pieces.find(
-            (p) =>
-              p.localX === space.coordinate.x &&
-              p.localY === space.coordinate.y,
-          );
+          const pieceOnSpace = pieces.find((p) => p.localX === space.coordinate.x && p.localY === space.coordinate.y);
 
-          const isDragOver =
-            dragOverSpace === `${space.coordinate.x},${space.coordinate.y}`;
+          const isDragOver = dragOverSpace === `${space.coordinate.x},${space.coordinate.y}`;
 
           // Check if this space is a valid move
-          const isValidMove = validMoves.some(
-            (move) =>
-              move.x === space.coordinate.x && move.y === space.coordinate.y,
-          );
+          const isValidMove = validMoves.some((move) => move.x === space.coordinate.x && move.y === space.coordinate.y);
 
           // Check if this space is an effect destination (e.g., Mother's Call)
           const isEffectDestination = effectDestinations.some(
-            (dest) =>
-              dest.tileId === tile.id &&
-              dest.x === space.coordinate.x &&
-              dest.y === space.coordinate.y,
+            (dest) => dest.tileId === tile.id && dest.x === space.coordinate.x && dest.y === space.coordinate.y,
           );
 
           // Check if this space is a pending destination (baby moving here)
           const pendingMoveToHere = pendingMoves.find(
-            (m) =>
-              m.toTileId === tile.id &&
-              m.toX === space.coordinate.x &&
-              m.toY === space.coordinate.y,
+            (m) => m.toTileId === tile.id && m.toX === space.coordinate.x && m.toY === space.coordinate.y,
           );
           const isPendingDestination = !!pendingMoveToHere;
 
           // Check if this space is where a baby is moving FROM (show footprint)
           const pendingMoveFromHere = pendingMoves.find(
-            (m) =>
-              m.fromTileId === tile.id &&
-              m.fromX === space.coordinate.x &&
-              m.fromY === space.coordinate.y,
+            (m) => m.fromTileId === tile.id && m.fromX === space.coordinate.x && m.fromY === space.coordinate.y,
           );
           const isBabyOrigin = !!pendingMoveFromHere;
 
           // Check if this space is part of a path trail
           const isPathTrail = pathTrailPositions.some(
-            (pos) =>
-              pos.tileId === tile.id &&
-              pos.x === space.coordinate.x &&
-              pos.y === space.coordinate.y,
+            (pos) => pos.tileId === tile.id && pos.x === space.coordinate.x && pos.y === space.coordinate.y,
           );
 
           // Check if this space has a pending reinforcement placement
           const pendingReinforcement = pendingReinforcementPlacements.find(
-            (p) =>
-              p.tileId === tile.id &&
-              p.x === space.coordinate.x &&
-              p.y === space.coordinate.y,
+            (p) => p.tileId === tile.id && p.x === space.coordinate.x && p.y === space.coordinate.y,
           );
           const isPendingReinforcement = !!pendingReinforcement;
 
           // Check if this space has an existing fire token
           const hasFireToken = fireTokens.some(
-            (f) =>
-              f.tileId === tile.id &&
-              f.x === space.coordinate.x &&
-              f.y === space.coordinate.y,
+            (f) => f.tileId === tile.id && f.x === space.coordinate.x && f.y === space.coordinate.y,
           );
 
           // Check if this fire can be extinguished (friendly fire target for mother)
           const isFriendlyFireTarget = friendlyFirePositions.some(
-            (f) =>
-              f.tileId === tile.id &&
-              f.x === space.coordinate.x &&
-              f.y === space.coordinate.y,
+            (f) => f.tileId === tile.id && f.x === space.coordinate.x && f.y === space.coordinate.y,
           );
 
           // Check if this space has a pending fire placement
           const isPendingFire = pendingFirePlacements.some(
-            (p) =>
-              p.tileId === tile.id &&
-              p.x === space.coordinate.x &&
-              p.y === space.coordinate.y,
+            (p) => p.tileId === tile.id && p.x === space.coordinate.x && p.y === space.coordinate.y,
           );
 
           // Check if this space is a jeep destination (scientist moving here)
           // Find ALL moves that end at this space
           const jeepMovesToHere = pendingJeepMoves.filter(
-            (m) =>
-              m.toTileId === tile.id &&
-              m.toX === space.coordinate.x &&
-              m.toY === space.coordinate.y,
+            (m) => m.toTileId === tile.id && m.toX === space.coordinate.x && m.toY === space.coordinate.y,
           );
 
           // Find the move that makes this a FINAL destination (if any)
@@ -244,26 +204,17 @@ function Tile({
 
           // Intermediate destinations (where a scientist stopped but then moved again)
           // Only show as intermediate if there's NO final destination here
-          const isIntermediateJeepStop =
-            jeepMovesToHere.length > 0 && !isFinalJeepDestination;
+          const isIntermediateJeepStop = jeepMovesToHere.length > 0 && !isFinalJeepDestination;
 
           // Check if this space is where a scientist is moving FROM via jeep
           const pendingJeepFromHere = pendingJeepMoves.find(
-            (m) =>
-              m.fromTileId === tile.id &&
-              m.fromX === space.coordinate.x &&
-              m.fromY === space.coordinate.y,
+            (m) => m.fromTileId === tile.id && m.fromX === space.coordinate.x && m.fromY === space.coordinate.y,
           );
           const isJeepOrigin = !!pendingJeepFromHere;
 
           // Check if this space is part of a jeep path (smoke trail)
           const isJeepPath = pendingJeepMoves.some((m) =>
-            m.path.some(
-              (p) =>
-                p.tileId === tile.id &&
-                p.x === space.coordinate.x &&
-                p.y === space.coordinate.y,
-            ),
+            m.path.some((p) => p.tileId === tile.id && p.x === space.coordinate.x && p.y === space.coordinate.y),
           );
 
           return (
@@ -276,25 +227,16 @@ function Tile({
               data-drag-over={isDragOver}
               data-valid-move={isValidMove}
               data-effect-destination={isEffectDestination}
-              data-pending-destination={
-                isPendingDestination || isPendingReinforcement || isPendingFire
-              }
+              data-pending-destination={isPendingDestination || isPendingReinforcement || isPendingFire}
               data-has-fire={hasFireToken}
               data-path-trail={isPathTrail}
               data-has-effect-target={
-                (pieceOnSpace &&
-                  !isJeepOrigin &&
-                  effectTargetIds.includes(pieceOnSpace.id)) ||
-                (isFinalJeepDestination &&
-                  finalJeepMoveHere &&
-                  effectTargetIds.includes(finalJeepMoveHere.scientistId))
+                (pieceOnSpace && !isJeepOrigin && effectTargetIds.includes(pieceOnSpace.id)) ||
+                (isFinalJeepDestination && finalJeepMoveHere && effectTargetIds.includes(finalJeepMoveHere.scientistId))
               }
-              data-hostile-target={
-                pieceOnSpace && hostileTargetIds.includes(pieceOnSpace.id)
-              }
+              data-hostile-target={pieceOnSpace && hostileTargetIds.includes(pieceOnSpace.id)}
               data-friendly-target={
-                (pieceOnSpace && friendlyTargetIds.includes(pieceOnSpace.id)) ||
-                isFriendlyFireTarget
+                (pieceOnSpace && friendlyTargetIds.includes(pieceOnSpace.id)) || isFriendlyFireTarget
               }
               onDragOver={(e) =>
                 handleDragOver(
@@ -307,17 +249,8 @@ function Tile({
                 )
               }
               onDragLeave={handleDragLeave}
-              onDrop={(e) =>
-                handleDrop(e, space.coordinate.x, space.coordinate.y)
-              }
-              onClick={() =>
-                onSpaceClick(
-                  tile.id,
-                  space.coordinate.x,
-                  space.coordinate.y,
-                  pieceOnSpace?.id ?? null,
-                )
-              }
+              onDrop={(e) => handleDrop(e, space.coordinate.x, space.coordinate.y)}
+              onClick={() => onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y, pieceOnSpace?.id ?? null)}
             >
               {/* Show coordinates for debugging */}
               {showCoordinates && (
@@ -350,12 +283,8 @@ function Tile({
                       }}
                     >
                       {pieceOnSpace.getEmoji()}
-                      {pieceOnSpace.isAsleep && (
-                        <span className="status-icon">💤</span>
-                      )}
-                      {pieceOnSpace.isFrightened && (
-                        <span className="status-icon">😨</span>
-                      )}
+                      {pieceOnSpace.isAsleep && <span className="status-icon">💤</span>}
+                      {pieceOnSpace.isFrightened && <span className="status-icon">😨</span>}
                     </motion.span>
                   );
                 }
@@ -382,9 +311,7 @@ function Tile({
                 }
 
                 if (isFinalJeepDestination && finalJeepMoveHere) {
-                  return (
-                    <span className="piece pending-piece jeep-car">🚙</span>
-                  );
+                  return <span className="piece pending-piece jeep-car">🚙</span>;
                 }
 
                 // Priority 5: Trail markers

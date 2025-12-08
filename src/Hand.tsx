@@ -43,9 +43,7 @@ function Hand({
     }
 
     setAnimatedCards([]);
-    const timeouts = cards.map((card, i) =>
-      setTimeout(() => setAnimatedCards((prev) => [...prev, card]), i * 100),
-    );
+    const timeouts = cards.map((card, i) => setTimeout(() => setAnimatedCards((prev) => [...prev, card]), i * 100));
     return () => timeouts.forEach(clearTimeout);
   }, [cards, isNewDraw]);
 
@@ -57,9 +55,7 @@ function Hand({
 
   return (
     <div className={`Hand ${player}`}>
-      <div className="hand-label">
-        {player === "raptor" ? "Raptor" : "Scientist"} Hand
-      </div>
+      <div className="hand-label">{player === "raptor" ? "Raptor" : "Scientist"} Hand</div>
 
       <div className="hand-cards">
         {animatedCards.map((value, index) => {
@@ -73,18 +69,12 @@ function Hand({
                 value={value}
                 player={player}
                 faceUp={!faceDown}
-                onClick={
-                  !faceDown && onCardSelect
-                    ? () => onCardSelect(value)
-                    : undefined
-                }
+                onClick={!faceDown && onCardSelect ? () => onCardSelect(value) : undefined}
                 selected={isElevated}
                 selectedOffsetX={isElevated ? getElevatedOffset(index) : 0}
                 initialPosition={isNewDraw ? deckPosition : undefined}
                 animationDelay={isNewDraw ? index * 0.15 : 0}
-                onSelectionComplete={
-                  isSelected ? () => setShowConfirmButton(true) : undefined
-                }
+                onSelectionComplete={isSelected ? () => setShowConfirmButton(true) : undefined}
               />
             </div>
           );

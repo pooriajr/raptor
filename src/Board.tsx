@@ -21,11 +21,7 @@ import {
   type Position,
   type PathResult,
 } from "./utils/pathfinding.ts";
-import {
-  localToGlobal,
-  globalToLocal,
-  getAdjacentGlobalCoordinates,
-} from "./types/coordinates.ts";
+import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "./types/coordinates.ts";
 
 // Effect types for the current card
 type EffectType =
@@ -56,9 +52,7 @@ function getScientistEffectivePosition(
   scientist: PieceState,
   pendingMoves: PendingJeepMove[],
 ): { tileId: number; x: number; y: number } {
-  const movesForThis = pendingMoves.filter(
-    (m) => m.scientistId === scientist.id,
-  );
+  const movesForThis = pendingMoves.filter((m) => m.scientistId === scientist.id);
   if (movesForThis.length > 0) {
     const last = movesForThis[movesForThis.length - 1];
     return { tileId: last.toTileId, x: last.toX, y: last.toY };
@@ -93,24 +87,14 @@ function hasLineOfSight(
     for (let x = minX + 1; x < maxX; x++) {
       for (const tile of tiles) {
         for (const space of tile.spaces) {
-          const spaceGlobal = localToGlobal(
-            tile.id,
-            space.coordinate.x,
-            space.coordinate.y,
-          );
-          if (
-            spaceGlobal.globalX === x &&
-            spaceGlobal.globalY === sciGlobal.globalY
-          ) {
+          const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
+          if (spaceGlobal.globalX === x && spaceGlobal.globalY === sciGlobal.globalY) {
             // Check for mountain
             if (space.hasMountain) return false;
 
             // Check for standing (non-frightened) scientist
             const pieceHere = scientists.find(
-              (s) =>
-                s.tileId === tile.id &&
-                s.x === space.coordinate.x &&
-                s.y === space.coordinate.y,
+              (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
             );
             if (pieceHere && !pieceHere.isFrightened) {
               return false;
@@ -126,24 +110,14 @@ function hasLineOfSight(
     for (let y = minY + 1; y < maxY; y++) {
       for (const tile of tiles) {
         for (const space of tile.spaces) {
-          const spaceGlobal = localToGlobal(
-            tile.id,
-            space.coordinate.x,
-            space.coordinate.y,
-          );
-          if (
-            spaceGlobal.globalX === sciGlobal.globalX &&
-            spaceGlobal.globalY === y
-          ) {
+          const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
+          if (spaceGlobal.globalX === sciGlobal.globalX && spaceGlobal.globalY === y) {
             // Check for mountain
             if (space.hasMountain) return false;
 
             // Check for standing (non-frightened) scientist
             const pieceHere = scientists.find(
-              (s) =>
-                s.tileId === tile.id &&
-                s.x === space.coordinate.x &&
-                s.y === space.coordinate.y,
+              (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
             );
             if (pieceHere && !pieceHere.isFrightened) {
               return false;
@@ -213,9 +187,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
     if (isScientistSelection || isRaptorSelection) {
       const player = isScientistSelection ? "scientist" : "raptor";
-      const setNewDraw = isScientistSelection
-        ? setIsScientistNewDraw
-        : setIsRaptorNewDraw;
+      const setNewDraw = isScientistSelection ? setIsScientistNewDraw : setIsRaptorNewDraw;
 
       dispatch({ type: "DRAW_CARDS", player });
       setNewDraw(true);
@@ -223,15 +195,10 @@ function Board({ showCoordinates = false }: BoardProps) {
       return () => clearTimeout(timeout);
     }
   }, [state.phase, dispatch]);
-  const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
-    useState<PieceType | null>(null);
-  const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>(
-    [],
-  );
+  const [draggedHoldingPieceType, setDraggedHoldingPieceType] = useState<PieceType | null>(null);
+  const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>([]);
   // For Mother's Call: track selected baby and pending moves
-  const [selectedBabyForCall, setSelectedBabyForCall] = useState<string | null>(
-    null,
-  );
+  const [selectedBabyForCall, setSelectedBabyForCall] = useState<string | null>(null);
   const [pendingMothersCallMoves, setPendingMothersCallMoves] = useState<
     Array<{
       babyId: string;
@@ -242,29 +209,21 @@ function Board({ showCoordinates = false }: BoardProps) {
     }>
   >([]);
   // Cache the path results for the currently selected baby
-  const [selectedBabyPathResults, setSelectedBabyPathResults] = useState<
-    PathResult[]
-  >([]);
+  const [selectedBabyPathResults, setSelectedBabyPathResults] = useState<PathResult[]>([]);
   // For Reinforcements: track pending placements with stable IDs for animation
-  const [pendingReinforcementPlacements, setPendingReinforcementPlacements] =
-    useState<Array<{ id: number; tileId: number; x: number; y: number }>>([]);
+  const [pendingReinforcementPlacements, setPendingReinforcementPlacements] = useState<
+    Array<{ id: number; tileId: number; x: number; y: number }>
+  >([]);
   const [reinforcementIdCounter, setReinforcementIdCounter] = useState(0);
   // For Fire: track pending placements
-  const [pendingFirePlacements, setPendingFirePlacements] = useState<
-    Array<{ tileId: number; x: number; y: number }>
-  >([]);
-  // For Jeep: track selected scientist and pending moves
-  const [selectedScientistForJeep, setSelectedScientistForJeep] = useState<
-    string | null
-  >(null);
-  const [pendingJeepMoves, setPendingJeepMoves] = useState<PendingJeepMove[]>(
+  const [pendingFirePlacements, setPendingFirePlacements] = useState<Array<{ tileId: number; x: number; y: number }>>(
     [],
   );
+  // For Jeep: track selected scientist and pending moves
+  const [selectedScientistForJeep, setSelectedScientistForJeep] = useState<string | null>(null);
+  const [pendingJeepMoves, setPendingJeepMoves] = useState<PendingJeepMove[]>([]);
   // Cache jeep destinations for the currently selected scientist
-  const [
-    selectedScientistJeepDestinations,
-    setSelectedScientistJeepDestinations,
-  ] = useState<
+  const [selectedScientistJeepDestinations, setSelectedScientistJeepDestinations] = useState<
     Array<{
       tileId: number;
       x: number;
@@ -274,9 +233,7 @@ function Board({ showCoordinates = false }: BoardProps) {
   >([]);
 
   // Action phase state
-  const [selectedActionPieceId, setSelectedActionPieceId] = useState<
-    string | null
-  >(null);
+  const [selectedActionPieceId, setSelectedActionPieceId] = useState<string | null>(null);
   const [actionPhaseSavedState, setActionPhaseSavedState] = useState<{
     mother: PieceState | null;
     babies: PieceState[];
@@ -353,12 +310,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         }
       }
     }
-  }, [
-    state.phase,
-    state.scientistCards.played,
-    state.raptorCards.played,
-    dispatch,
-  ]);
+  }, [state.phase, state.scientistCards.played, state.raptorCards.played, dispatch]);
 
   // Determine the current effect type based on played cards
   const getCurrentEffectType = (): EffectType => {
@@ -489,15 +441,11 @@ function Board({ showCoordinates = false }: BoardProps) {
 
         if (piece.type === "baby") {
           // Check if this baby already has a pending move
-          const hasPendingMove = pendingMothersCallMoves.some(
-            (m) => m.babyId === pieceId,
-          );
+          const hasPendingMove = pendingMothersCallMoves.some((m) => m.babyId === pieceId);
 
           if (hasPendingMove) {
             // Remove the pending move (undo)
-            setPendingMothersCallMoves((prev) =>
-              prev.filter((m) => m.babyId !== pieceId),
-            );
+            setPendingMothersCallMoves((prev) => prev.filter((m) => m.babyId !== pieceId));
             return true;
           }
 
@@ -513,12 +461,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           if (pendingMothersCallMoves.length >= limit) return false;
 
           // Check if baby can reach mother's tile and get paths
-          const pathResults = getReachableDestinationsOnMotherTileWithPaths(
-            state.tiles,
-            getAllPieces(),
-            piece,
-            mother,
-          );
+          const pathResults = getReachableDestinationsOnMotherTileWithPaths(state.tiles, getAllPieces(), piece, mother);
 
           // Filter out destinations that are already pending from other babies
           const availablePathResults = pathResults.filter(
@@ -559,10 +502,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           if (pendingJeepMoves.length >= limit) return false;
 
           // Get the scientist's effective position (considering pending moves)
-          const currentPos = getScientistEffectivePosition(
-            piece,
-            pendingJeepMoves,
-          );
+          const currentPos = getScientistEffectivePosition(piece, pendingJeepMoves);
 
           // Create a temporary piece state for pathfinding
           const tempPiece = {
@@ -626,28 +566,16 @@ function Board({ showCoordinates = false }: BoardProps) {
         const selectedPiece = findPieceById(selectedActionPieceId);
         if (selectedPiece) {
           // Check if this is a valid target for the selected piece
-          const selectedGlobal = localToGlobal(
-            selectedPiece.tileId,
-            selectedPiece.x,
-            selectedPiece.y,
-          );
+          const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
           const targetGlobal = localToGlobal(piece.tileId, piece.x, piece.y);
-          const adjacentCoords = getAdjacentGlobalCoordinates(
-            selectedGlobal.globalX,
-            selectedGlobal.globalY,
-          );
+          const adjacentCoords = getAdjacentGlobalCoordinates(selectedGlobal.globalX, selectedGlobal.globalY);
           const isAdjacent = adjacentCoords.some(
-            (adj) =>
-              adj.globalX === targetGlobal.globalX &&
-              adj.globalY === targetGlobal.globalY,
+            (adj) => adj.globalX === targetGlobal.globalX && adj.globalY === targetGlobal.globalY,
           );
 
           if (isAdjacent) {
             // Mother actions
-            if (
-              selectedPiece.type === "mother" &&
-              state.activePlayer === "raptor"
-            ) {
+            if (selectedPiece.type === "mother" && state.activePlayer === "raptor") {
               if (piece.type === "scientist") {
                 dispatch({
                   type: "ACTION_MOTHER_KILL_SCIENTIST",
@@ -695,14 +623,7 @@ function Board({ showCoordinates = false }: BoardProps) {
             !state.aggressiveActionsUsed.includes(selectedPiece.id) &&
             piece.type === "mother"
           ) {
-            if (
-              hasLineOfSight(
-                state.tiles,
-                state.scientists,
-                selectedPiece,
-                piece,
-              )
-            ) {
+            if (hasLineOfSight(state.tiles, state.scientists, selectedPiece, piece)) {
               dispatch({
                 type: "ACTION_SCIENTIST_SHOOT_MOTHER",
                 scientistId: selectedActionPieceId,
@@ -715,8 +636,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Check if this piece can be controlled by the active player
       const canControl =
-        (state.activePlayer === "raptor" &&
-          (piece.type === "baby" || piece.type === "mother")) ||
+        (state.activePlayer === "raptor" && (piece.type === "baby" || piece.type === "mother")) ||
         (state.activePlayer === "scientist" && piece.type === "scientist");
 
       if (!canControl) return false;
@@ -727,10 +647,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       // Frightened scientist clicking themselves to stand up
       // (can't stand up if frightened this round)
       if (piece.type === "scientist" && piece.isFrightened) {
-        if (
-          state.actionPoints > 0 &&
-          !state.frightenedThisRound.includes(pieceId)
-        ) {
+        if (state.actionPoints > 0 && !state.frightenedThisRound.includes(pieceId)) {
           // Stand up and select
           dispatch({
             type: "ACTION_SCIENTIST_STAND_UP",
@@ -840,12 +757,7 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   // Unified space click handler - handles all interactions on a tile space
-  const handleSpaceClick = (
-    tileId: number,
-    x: number,
-    y: number,
-    pieceId: string | null,
-  ) => {
+  const handleSpaceClick = (tileId: number, x: number, y: number, pieceId: string | null) => {
     // If there's a piece on this space, handle piece-related interactions first
     if (pieceId) {
       const handled = handlePieceInteraction(pieceId);
@@ -916,10 +828,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Find the path for this destination from cached results
       const pathResult = selectedBabyPathResults.find(
-        (pr) =>
-          pr.position.tileId === tileId &&
-          pr.position.x === x &&
-          pr.position.y === y,
+        (pr) => pr.position.tileId === tileId && pr.position.x === x && pr.position.y === y,
       );
 
       // Add to pending moves with path
@@ -937,9 +846,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       setSelectedBabyPathResults([]);
     } else if (effectType === "reinforcements") {
       // Check if already selected (toggle off)
-      const alreadySelected = pendingReinforcementPlacements.some(
-        (p) => p.tileId === tileId && p.x === x && p.y === y,
-      );
+      const alreadySelected = pendingReinforcementPlacements.some((p) => p.tileId === tileId && p.x === x && p.y === y);
 
       if (alreadySelected) {
         // Remove from pending
@@ -953,18 +860,12 @@ function Board({ showCoordinates = false }: BoardProps) {
         if (atLimit) {
           // Reuse the ID of the oldest placement so Framer Motion animates the move
           const oldestId = pendingReinforcementPlacements[0].id;
-          setPendingReinforcementPlacements((prev) => [
-            ...prev.slice(1),
-            { id: oldestId, tileId, x, y },
-          ]);
+          setPendingReinforcementPlacements((prev) => [...prev.slice(1), { id: oldestId, tileId, x, y }]);
         } else {
           // New placement gets a fresh ID
           const newId = reinforcementIdCounter;
           setReinforcementIdCounter((c) => c + 1);
-          setPendingReinforcementPlacements((prev) => [
-            ...prev,
-            { id: newId, tileId, x, y },
-          ]);
+          setPendingReinforcementPlacements((prev) => [...prev, { id: newId, tileId, x, y }]);
         }
       }
     } else if (effectType === "fire") {
@@ -982,19 +883,14 @@ function Board({ showCoordinates = false }: BoardProps) {
       if (selectedScientistForJeep === null) return;
 
       // Find the destination with path from cached results
-      const destination = selectedScientistJeepDestinations.find(
-        (d) => d.tileId === tileId && d.x === x && d.y === y,
-      );
+      const destination = selectedScientistJeepDestinations.find((d) => d.tileId === tileId && d.x === x && d.y === y);
       if (!destination) return;
 
       // Get the scientist's effective position (start of this move)
       const scientist = findPieceById(selectedScientistForJeep);
       if (!scientist) return;
 
-      const fromPos = getScientistEffectivePosition(
-        scientist,
-        pendingJeepMoves,
-      );
+      const fromPos = getScientistEffectivePosition(scientist, pendingJeepMoves);
 
       // Add the move
       setPendingJeepMoves((prev) => [
@@ -1039,30 +935,19 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   // Get the valid moves for the currently selected piece on the board
-  const activePieceId =
-    state.phase === "ACTION_PHASE" ? selectedActionPieceId : null;
+  const activePieceId = state.phase === "ACTION_PHASE" ? selectedActionPieceId : null;
   const activePiece = activePieceId ? findPieceById(activePieceId) : null;
 
   // Calculate valid placement spaces for pieces from holding pen
   // Helper to check if a space is occupied by any piece
   const isSpaceOccupied = (tileId: number, x: number, y: number): boolean => {
-    if (
-      state.mother?.tileId === tileId &&
-      state.mother.x === x &&
-      state.mother.y === y
-    ) {
+    if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) {
       return true;
     }
-    if (
-      state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)
-    ) {
+    if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) {
       return true;
     }
-    if (
-      state.scientists.some(
-        (s) => s.tileId === tileId && s.x === x && s.y === y,
-      )
-    ) {
+    if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y)) {
       return true;
     }
     return false;
@@ -1074,9 +959,7 @@ function Board({ showCoordinates = false }: BoardProps) {
     return state.babies.some((b) => b.tileId === tileId);
   };
 
-  const getValidPlacementSpaces = (
-    pieceType: PieceType,
-  ): Array<{ tileId: number; x: number; y: number }> => {
+  const getValidPlacementSpaces = (pieceType: PieceType): Array<{ tileId: number; x: number; y: number }> => {
     const validSpaces: Array<{ tileId: number; x: number; y: number }> = [];
 
     if (pieceType === "scientist") {
@@ -1103,9 +986,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       }
     } else if (pieceType === "mother") {
       const centralTiles = [2, 7];
-      const squareTiles = state.tiles.filter(
-        (t) => t.shape === "square" && centralTiles.includes(t.id),
-      );
+      const squareTiles = state.tiles.filter((t) => t.shape === "square" && centralTiles.includes(t.id));
 
       for (const tile of squareTiles) {
         if (tileHasRaptor(tile.id)) continue;
@@ -1130,19 +1011,13 @@ function Board({ showCoordinates = false }: BoardProps) {
       const motherPlaced = state.mother !== null;
 
       // Only restrict central tiles if mother hasn't been placed yet
-      const babiesOnCentralTiles = state.babies.filter((b) =>
-        centralTiles.includes(b.tileId),
-      );
+      const babiesOnCentralTiles = state.babies.filter((b) => centralTiles.includes(b.tileId));
 
       for (const tile of squareTiles) {
         if (tileHasRaptor(tile.id)) continue;
 
         // If mother not placed and one central tile has a baby, skip the other central tile
-        if (
-          centralTiles.includes(tile.id) &&
-          !motherPlaced &&
-          babiesOnCentralTiles.length >= 1
-        ) {
+        if (centralTiles.includes(tile.id) && !motherPlaced && babiesOnCentralTiles.length >= 1) {
           continue;
         }
 
@@ -1176,9 +1051,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
         // Mother must pay wound cost (= sleep tokens) before first movement
         if (state.phase === "ACTION_PHASE" && activePiece.type === "mother") {
-          const woundCost = state.motherPaidWoundCost
-            ? 0
-            : state.motherSleepTokens;
+          const woundCost = state.motherPaidWoundCost ? 0 : state.motherSleepTokens;
           const totalCost = woundCost + 1; // wound cost + 1 for the move
           if (state.actionPoints < totalCost) {
             return [];
@@ -1187,42 +1060,31 @@ function Board({ showCoordinates = false }: BoardProps) {
 
         const allPieces = getAllPieces();
         const pieceInstance = createPieceFromState(activePiece);
-        return pieceInstance
-          .getValidMoves(state.tiles, allPieces, state.fireTokens)
-          .filter((move) => {
-            const targetTile = state.tiles.find((t) => t.id === move.tileId);
-            if (!targetTile) return false;
+        return pieceInstance.getValidMoves(state.tiles, allPieces, state.fireTokens).filter((move) => {
+          const targetTile = state.tiles.find((t) => t.id === move.tileId);
+          if (!targetTile) return false;
 
-            const targetSpace = targetTile.spaces.find(
-              (s) => s.coordinate.x === move.x && s.coordinate.y === move.y,
-            );
-            if (!targetSpace) return false;
+          const targetSpace = targetTile.spaces.find((s) => s.coordinate.x === move.x && s.coordinate.y === move.y);
+          if (!targetSpace) return false;
 
-            if (targetSpace.hasMountain) return false;
+          if (targetSpace.hasMountain) return false;
 
-            const isOccupied = allPieces.some(
-              (p) =>
-                p.id !== activePieceId &&
-                p.tileId === move.tileId &&
-                p.x === move.x &&
-                p.y === move.y,
-            );
-            if (isOccupied) return false;
+          const isOccupied = allPieces.some(
+            (p) => p.id !== activePieceId && p.tileId === move.tileId && p.x === move.x && p.y === move.y,
+          );
+          if (isOccupied) return false;
 
-            // Check for fire at destination
-            const hasFire = state.fireTokens.some(
-              (f) =>
-                f.tileId === move.tileId && f.x === move.x && f.y === move.y,
-            );
-            if (hasFire) {
-              // Raptors cannot move onto fire at all
-              // Scientists can pass through fire but cannot end on it
-              // (for now, both block since this is the final destination)
-              return false;
-            }
+          // Check for fire at destination
+          const hasFire = state.fireTokens.some((f) => f.tileId === move.tileId && f.x === move.x && f.y === move.y);
+          if (hasFire) {
+            // Raptors cannot move onto fire at all
+            // Scientists can pass through fire but cannot end on it
+            // (for now, both block since this is the final destination)
+            return false;
+          }
 
-            return true;
-          });
+          return true;
+        });
       })()
     : draggedHoldingPieceType
       ? // Piece from holding pen - use placement rules
@@ -1242,11 +1104,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       }>,
     };
 
-    if (
-      state.phase !== "ACTION_PHASE" ||
-      !selectedActionPieceId ||
-      state.actionPoints <= 0
-    ) {
+    if (state.phase !== "ACTION_PHASE" || !selectedActionPieceId || state.actionPoints <= 0) {
       return result;
     }
 
@@ -1254,25 +1112,15 @@ function Board({ showCoordinates = false }: BoardProps) {
     if (!selectedPiece) return result;
 
     // Get global coordinates for selected piece
-    const selectedGlobal = localToGlobal(
-      selectedPiece.tileId,
-      selectedPiece.x,
-      selectedPiece.y,
-    );
-    const adjacentCoords = getAdjacentGlobalCoordinates(
-      selectedGlobal.globalX,
-      selectedGlobal.globalY,
-    );
+    const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
+    const adjacentCoords = getAdjacentGlobalCoordinates(selectedGlobal.globalX, selectedGlobal.globalY);
 
     // Find adjacent pieces
     const allPieces = getAllPieces();
     const adjacentPieces = allPieces.filter((p) => {
       if (p.id === selectedActionPieceId) return false;
       const pGlobal = localToGlobal(p.tileId, p.x, p.y);
-      return adjacentCoords.some(
-        (adj) =>
-          adj.globalX === pGlobal.globalX && adj.globalY === pGlobal.globalY,
-      );
+      return adjacentCoords.some((adj) => adj.globalX === pGlobal.globalX && adj.globalY === pGlobal.globalY);
     });
 
     if (selectedPiece.type === "mother" && state.activePlayer === "raptor") {
@@ -1280,11 +1128,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       for (const adj of adjacentPieces) {
         if (adj.type === "scientist") {
           result.hostileTargets.push(adj.id);
-        } else if (
-          adj.type === "baby" &&
-          adj.isAsleep &&
-          !state.asleepThisRound.includes(adj.id)
-        ) {
+        } else if (adj.type === "baby" && adj.isAsleep && !state.asleepThisRound.includes(adj.id)) {
           result.friendlyTargets.push(adj.id);
         }
       }
@@ -1293,9 +1137,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       for (const fire of state.fireTokens) {
         const fireGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
         const isAdjacent = adjacentCoords.some(
-          (adj) =>
-            adj.globalX === fireGlobal.globalX &&
-            adj.globalY === fireGlobal.globalY,
+          (adj) => adj.globalX === fireGlobal.globalX && adj.globalY === fireGlobal.globalY,
         );
         if (isAdjacent) {
           result.friendlyFirePositions.push({
@@ -1321,10 +1163,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Scientist can also shoot the mother if they have line of sight
       const mother = state.mother;
-      if (
-        mother &&
-        hasLineOfSight(state.tiles, state.scientists, selectedPiece, mother)
-      ) {
+      if (mother && hasLineOfSight(state.tiles, state.scientists, selectedPiece, mother)) {
         result.hostileTargets.push(mother.id);
       }
     }
@@ -1380,11 +1219,7 @@ function Board({ showCoordinates = false }: BoardProps) {
       }
 
       return state.babies
-        .filter(
-          (b) =>
-            !pendingBabyIds.includes(b.id) &&
-            canBabyReachMotherTile(state.tiles, getAllPieces(), b, mother),
-        )
+        .filter((b) => !pendingBabyIds.includes(b.id) && canBabyReachMotherTile(state.tiles, getAllPieces(), b, mother))
         .map((b) => b.id);
     } else if (effectType === "jeep") {
       // Show all scientists as selectable (they can move multiple times)
@@ -1434,9 +1269,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Check all 3 spaces on the long edge (x = 0, 1, 2)
       for (let x = 0; x < 3; x++) {
-        const space = tile.spaces.find(
-          (s) => s.coordinate.x === x && s.coordinate.y === edgeY,
-        );
+        const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === edgeY);
         if (!space || space.hasMountain) continue;
 
         // Check not occupied by a piece
@@ -1474,10 +1307,7 @@ function Board({ showCoordinates = false }: BoardProps) {
     const scientistAdjacents = new Set<string>();
     for (const scientist of state.scientists) {
       const pGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
-      for (const adj of getAdjacentGlobalCoordinates(
-        pGlobal.globalX,
-        pGlobal.globalY,
-      )) {
+      for (const adj of getAdjacentGlobalCoordinates(pGlobal.globalX, pGlobal.globalY)) {
         scientistAdjacents.add(`${adj.globalX},${adj.globalY}`);
       }
     }
@@ -1487,10 +1317,7 @@ function Board({ showCoordinates = false }: BoardProps) {
     const fireAdjacents = new Set<string>();
     for (const fire of allFire) {
       const fGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
-      for (const adj of getAdjacentGlobalCoordinates(
-        fGlobal.globalX,
-        fGlobal.globalY,
-      )) {
+      for (const adj of getAdjacentGlobalCoordinates(fGlobal.globalX, fGlobal.globalY)) {
         fireAdjacents.add(`${adj.globalX},${adj.globalY}`);
       }
     }
@@ -1507,23 +1334,14 @@ function Board({ showCoordinates = false }: BoardProps) {
       const tile = state.tiles.find((t) => t.id === local.tileId);
       if (!tile) continue;
 
-      const space = tile.spaces.find(
-        (s) =>
-          s.coordinate.x === local.localX && s.coordinate.y === local.localY,
-      );
-      if (!space || space.hasMountain || space.isUnusable || space.isExit)
-        continue;
+      const space = tile.spaces.find((s) => s.coordinate.x === local.localX && s.coordinate.y === local.localY);
+      if (!space || space.hasMountain || space.isUnusable || space.isExit) continue;
 
       // Check no piece at this location
       if (isSpaceOccupied(local.tileId, local.localX, local.localY)) continue;
 
       // Check no fire already at this location (including pending)
-      const hasFire = allFire.some(
-        (f) =>
-          f.tileId === local.tileId &&
-          f.x === local.localX &&
-          f.y === local.localY,
-      );
+      const hasFire = allFire.some((f) => f.tileId === local.tileId && f.x === local.localX && f.y === local.localY);
       if (hasFire) continue;
 
       destinations.push({
@@ -1563,10 +1381,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   return (
     <>
-      <SetupPanel
-        onDragStart={handleHoldingPenDragStart}
-        onDragEnd={handleDragEnd}
-      />
+      <SetupPanel onDragStart={handleHoldingPenDragStart} onDragEnd={handleDragEnd} />
       {state.phase === "EFFECT_PHASE" && (
         <EffectPhaseBanner
           selectedTargets={selectedEffectTargets}
@@ -1588,20 +1403,14 @@ function Board({ showCoordinates = false }: BoardProps) {
         <ActionPhaseBanner
           onEndTurn={() => dispatch({ type: "END_ACTION_PHASE" })}
           onReset={handleActionReset}
-          hasActions={
-            actionPhaseSavedState !== null &&
-            state.actionPoints < actionPhaseSavedState.actionPoints
-          }
+          hasActions={actionPhaseSavedState !== null && state.actionPoints < actionPhaseSavedState.actionPoints}
         />
       )}
       <div className="game-layout">
         {/* Raptor player area (top) */}
         <div className="player-area raptor-area" ref={raptorDeckRef}>
           <div className="deck-section">
-            <CardDeck
-              player="raptor"
-              cardCount={state.raptorCards.deck.length}
-            />
+            <CardDeck player="raptor" cardCount={state.raptorCards.deck.length} />
           </div>
           <div className="hand-section">
             {state.phase === "RAPTOR_CARD_SELECTION" && (
@@ -1615,15 +1424,14 @@ function Board({ showCoordinates = false }: BoardProps) {
                 selectedCard={selectedCard}
               />
             )}
-            {state.phase === "SCIENTIST_CARD_SELECTION" &&
-              state.raptorCards.hand.length > 0 && (
-                <Hand
-                  cards={state.raptorCards.hand}
-                  player="raptor"
-                  faceDown={true}
-                  playedCard={state.raptorCards.played}
-                />
-              )}
+            {state.phase === "SCIENTIST_CARD_SELECTION" && state.raptorCards.hand.length > 0 && (
+              <Hand
+                cards={state.raptorCards.hand}
+                player="raptor"
+                faceDown={true}
+                playedCard={state.raptorCards.played}
+              />
+            )}
           </div>
           <div className="discard-section">
             <div className="discard-placeholder">Discard</div>
@@ -1633,10 +1441,7 @@ function Board({ showCoordinates = false }: BoardProps) {
               <span className="baby-tracker-label">Escaped:</span>
               <span className="baby-tracker-count">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`baby-pip ${i < state.escapedBabies ? "filled" : "empty"}`}
-                  >
+                  <span key={i} className={`baby-pip ${i < state.escapedBabies ? "filled" : "empty"}`}>
                     🦎
                   </span>
                 ))}
@@ -1648,10 +1453,7 @@ function Board({ showCoordinates = false }: BoardProps) {
               <span className="sleep-tokens-label">Mother Sleep Tokens:</span>
               <span className="sleep-tokens-count">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`sleep-token-pip ${i < state.motherSleepTokens ? "filled" : "empty"}`}
-                  >
+                  <span key={i} className={`sleep-token-pip ${i < state.motherSleepTokens ? "filled" : "empty"}`}>
                     💉
                   </span>
                 ))}
@@ -1664,12 +1466,8 @@ function Board({ showCoordinates = false }: BoardProps) {
         <LayoutGroup>
           <div className="Board">
             {state.tiles.map((tile) => {
-              const piecesOnTile = adaptedPieces.filter(
-                (p) => p.tileId === tile.id,
-              );
-              const validMovesOnTile = validMoves.filter(
-                (move) => move.tileId === tile.id,
-              );
+              const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
+              const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
               return (
                 <Tile
                   key={tile.id}
@@ -1698,9 +1496,7 @@ function Board({ showCoordinates = false }: BoardProps) {
                   pendingFirePlacements={pendingFirePlacements}
                   fireTokens={state.fireTokens}
                   pendingJeepMoves={pendingJeepMoves}
-                  pendingReinforcementPlacements={
-                    pendingReinforcementPlacements
-                  }
+                  pendingReinforcementPlacements={pendingReinforcementPlacements}
                   pendingMoves={pendingMothersCallMoves.map((m) => {
                     const baby = state.babies.find((b) => b.id === m.babyId);
                     return {
@@ -1730,10 +1526,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         {/* Scientist player area (bottom) */}
         <div className="player-area scientist-area" ref={scientistDeckRef}>
           <div className="deck-section">
-            <CardDeck
-              player="scientist"
-              cardCount={state.scientistCards.deck.length}
-            />
+            <CardDeck player="scientist" cardCount={state.scientistCards.deck.length} />
           </div>
           <div className="hand-section">
             {state.phase === "SCIENTIST_CARD_SELECTION" && (
@@ -1747,18 +1540,14 @@ function Board({ showCoordinates = false }: BoardProps) {
                 selectedCard={selectedCard}
               />
             )}
-            {state.phase === "RAPTOR_CARD_SELECTION" &&
-              state.scientistCards.played !== null && (
-                <Hand
-                  cards={[
-                    ...state.scientistCards.hand,
-                    state.scientistCards.played,
-                  ]}
-                  player="scientist"
-                  faceDown={true}
-                  playedCard={state.scientistCards.played}
-                />
-              )}
+            {state.phase === "RAPTOR_CARD_SELECTION" && state.scientistCards.played !== null && (
+              <Hand
+                cards={[...state.scientistCards.hand, state.scientistCards.played]}
+                player="scientist"
+                faceDown={true}
+                playedCard={state.scientistCards.played}
+              />
+            )}
           </div>
           <div className="discard-section">
             {/* Scientist discard will go here */}
@@ -1769,10 +1558,7 @@ function Board({ showCoordinates = false }: BoardProps) {
               <span className="baby-tracker-label">Captured:</span>
               <span className="baby-tracker-count">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`baby-pip ${i < state.capturedBabies ? "filled" : "empty"}`}
-                  >
+                  <span key={i} className={`baby-pip ${i < state.capturedBabies ? "filled" : "empty"}`}>
                     🦎
                   </span>
                 ))}

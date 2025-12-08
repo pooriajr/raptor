@@ -1,11 +1,7 @@
 import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
 import type { PieceState, FireToken } from "../types/gameState.ts";
-import {
-  localToGlobal,
-  globalToLocal,
-  getAdjacentGlobalCoordinates,
-} from "../types/coordinates.ts";
+import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 
 export class BabyRaptor extends Piece {
   getEmoji(): string {
@@ -23,10 +19,7 @@ export class BabyRaptor extends Piece {
     const globalPos = localToGlobal(this.tileId, this.localX, this.localY);
 
     // Get adjacent global positions (up, down, left, right)
-    const adjacentPositions = getAdjacentGlobalCoordinates(
-      globalPos.globalX,
-      globalPos.globalY,
-    );
+    const adjacentPositions = getAdjacentGlobalCoordinates(globalPos.globalX, globalPos.globalY);
 
     // Convert each adjacent position back to local coordinates
     for (const adjPos of adjacentPositions) {

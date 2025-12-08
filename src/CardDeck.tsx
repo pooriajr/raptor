@@ -22,9 +22,7 @@ function CardDeck({ player, cardCount }: CardDeckProps) {
               zIndex: stackLayers - index,
             }}
           >
-            <div className="card-pattern">
-              {player === "raptor" ? "🦖" : "🔬"}
-            </div>
+            <div className="card-pattern">{player === "raptor" ? "🦖" : "🔬"}</div>
           </div>
         ))}
       </div>

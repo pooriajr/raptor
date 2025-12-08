@@ -10,9 +10,7 @@ function createTestPieces(): PieceState[] {
 }
 
 // Helper to find a valid space on a tile (not mountain, not exit, not unusable)
-function findValidSpace(
-  tile: Tile,
-): { x: number; y: number } | null {
+function findValidSpace(tile: Tile): { x: number; y: number } | null {
   for (const space of tile.spaces) {
     if (!space.hasMountain && !space.isExit && !space.isUnusable) {
       return { x: space.coordinate.x, y: space.coordinate.y };
@@ -22,11 +20,7 @@ function findValidSpace(
 }
 
 // Helper to find a space adjacent to a given space on the same tile
-function findAdjacentSpace(
-  tile: Tile,
-  fromX: number,
-  fromY: number,
-): { x: number; y: number } | null {
+function findAdjacentSpace(tile: Tile, fromX: number, fromY: number): { x: number; y: number } | null {
   const directions = [
     { dx: 0, dy: -1 },
     { dx: 0, dy: 1 },
@@ -38,12 +32,7 @@ function findAdjacentSpace(
     const newX = fromX + dir.dx;
     const newY = fromY + dir.dy;
     const space = tile.spaces.find(
-      (s) =>
-        s.coordinate.x === newX &&
-        s.coordinate.y === newY &&
-        !s.hasMountain &&
-        !s.isExit &&
-        !s.isUnusable,
+      (s) => s.coordinate.x === newX && s.coordinate.y === newY && !s.hasMountain && !s.isExit && !s.isUnusable,
     );
     if (space) {
       return { x: newX, y: newY };
@@ -71,12 +60,7 @@ describe("Jeep Pathfinding", () => {
         y: startSpace.y,
       };
 
-      const destinations = getJeepDestinationsWithPaths(
-        tiles,
-        [scientist, ...pieces],
-        fireTokens,
-        scientist,
-      );
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientist, ...pieces], fireTokens, scientist);
 
       expect(destinations.length).toBeGreaterThan(0);
 
@@ -110,14 +94,10 @@ describe("Jeep Pathfinding", () => {
       const fireTokens: FireToken[] = [];
 
       // Find a tile with a mountain and place scientist adjacent to it
-      const tileWithMountain = tiles.find((t) =>
-        t.spaces.some((s) => s.hasMountain),
-      );
+      const tileWithMountain = tiles.find((t) => t.spaces.some((s) => s.hasMountain));
       expect(tileWithMountain).toBeDefined();
 
-      const mountainSpace = tileWithMountain!.spaces.find(
-        (s) => s.hasMountain,
-      )!;
+      const mountainSpace = tileWithMountain!.spaces.find((s) => s.hasMountain)!;
 
       // Find a space adjacent to the mountain
       const adjacentSpace = findAdjacentSpace(
@@ -135,12 +115,7 @@ describe("Jeep Pathfinding", () => {
           y: adjacentSpace.y,
         };
 
-        const destinations = getJeepDestinationsWithPaths(
-          tiles,
-          [scientist],
-          fireTokens,
-          scientist,
-        );
+        const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
 
         // Mountain space should not be in destinations
         const hasMountainDest = destinations.some(
@@ -160,11 +135,7 @@ describe("Jeep Pathfinding", () => {
       // Place scientist and a blocking piece in a line
       const tile = tiles.find((t) => t.id === 2)!;
       const startSpace = tile.spaces.find(
-        (s) =>
-          s.coordinate.x === 0 &&
-          s.coordinate.y === 1 &&
-          !s.hasMountain &&
-          !s.isUnusable,
+        (s) => s.coordinate.x === 0 && s.coordinate.y === 1 && !s.hasMountain && !s.isUnusable,
       );
 
       if (!startSpace) return; // Skip if this specific space isn't available
@@ -186,26 +157,15 @@ describe("Jeep Pathfinding", () => {
         y: 1,
       };
 
-      const destinations = getJeepDestinationsWithPaths(
-        tiles,
-        [scientist, blockingPiece],
-        fireTokens,
-        scientist,
-      );
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientist, blockingPiece], fireTokens, scientist);
 
       // x=1, y=1 should be reachable (between scientist and blocker)
-      const canReachMiddle = destinations.some(
-        (d) => d.tileId === tile.id && d.x === 1 && d.y === 1,
-      );
+      const canReachMiddle = destinations.some((d) => d.tileId === tile.id && d.x === 1 && d.y === 1);
       // x=2, y=1 should NOT be reachable (blocked)
-      const canReachBlocked = destinations.some(
-        (d) => d.tileId === tile.id && d.x === 2 && d.y === 1,
-      );
+      const canReachBlocked = destinations.some((d) => d.tileId === tile.id && d.x === 2 && d.y === 1);
 
       // Only check if the middle space exists and isn't a mountain
-      const middleSpace = tile.spaces.find(
-        (s) => s.coordinate.x === 1 && s.coordinate.y === 1,
-      );
+      const middleSpace = tile.spaces.find((s) => s.coordinate.x === 1 && s.coordinate.y === 1);
       if (middleSpace && !middleSpace.hasMountain) {
         expect(canReachMiddle).toBe(true);
       }
@@ -218,9 +178,7 @@ describe("Jeep Pathfinding", () => {
 
       // Find an L-tile (has exits) and place scientist near the exit
       const lTile = tiles.find((t) => t.shape === "L")!;
-      const nonExitSpace = lTile.spaces.find(
-        (s) => !s.isExit && !s.isUnusable && !s.hasMountain,
-      );
+      const nonExitSpace = lTile.spaces.find((s) => !s.isExit && !s.isUnusable && !s.hasMountain);
 
       if (!nonExitSpace) return;
 
@@ -232,19 +190,12 @@ describe("Jeep Pathfinding", () => {
         y: nonExitSpace.coordinate.y,
       };
 
-      const destinations = getJeepDestinationsWithPaths(
-        tiles,
-        [scientist],
-        fireTokens,
-        scientist,
-      );
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
 
       // No destination should be an exit space
       for (const dest of destinations) {
         const destTile = tiles.find((t) => t.id === dest.tileId);
-        const destSpace = destTile?.spaces.find(
-          (s) => s.coordinate.x === dest.x && s.coordinate.y === dest.y,
-        );
+        const destSpace = destTile?.spaces.find((s) => s.coordinate.x === dest.x && s.coordinate.y === dest.y);
         expect(destSpace?.isExit).not.toBe(true);
       }
     });
@@ -276,24 +227,13 @@ describe("Jeep Pathfinding", () => {
       };
 
       // Place fire at x=1
-      const fireTokens: FireToken[] = [
-        { id: "fire-1", tileId: tile.id, x: 1, y: validRow },
-      ];
+      const fireTokens: FireToken[] = [{ id: "fire-1", tileId: tile.id, x: 1, y: validRow }];
 
-      const destinations = getJeepDestinationsWithPaths(
-        tiles,
-        [scientist],
-        fireTokens,
-        scientist,
-      );
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
 
       // Should be able to reach x=1 (fire) and x=2 (beyond fire)
-      const canReachFire = destinations.some(
-        (d) => d.tileId === tile.id && d.x === 1 && d.y === validRow,
-      );
-      const canReachBeyond = destinations.some(
-        (d) => d.tileId === tile.id && d.x === 2 && d.y === validRow,
-      );
+      const canReachFire = destinations.some((d) => d.tileId === tile.id && d.x === 1 && d.y === validRow);
+      const canReachBeyond = destinations.some((d) => d.tileId === tile.id && d.x === 2 && d.y === validRow);
 
       expect(canReachFire).toBe(true);
       expect(canReachBeyond).toBe(true);
@@ -325,17 +265,10 @@ describe("Jeep Pathfinding", () => {
         y: validRow,
       };
 
-      const destinations = getJeepDestinationsWithPaths(
-        tiles,
-        [scientist],
-        fireTokens,
-        scientist,
-      );
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
 
       // Find destination at x=2 (should have path through x=1)
-      const farDest = destinations.find(
-        (d) => d.tileId === tile.id && d.x === 2 && d.y === validRow,
-      );
+      const farDest = destinations.find((d) => d.tileId === tile.id && d.x === 2 && d.y === validRow);
 
       if (farDest) {
         expect(farDest.path.length).toBe(1);
@@ -399,13 +332,9 @@ describe("Jeep Pathfinding", () => {
       );
 
       // Should be able to reach x=1 (scientist2 moved away)
-      const canReachX1 = destinations.some(
-        (d) => d.tileId === tile.id && d.x === 1 && d.y === validRow,
-      );
+      const canReachX1 = destinations.some((d) => d.tileId === tile.id && d.x === 1 && d.y === validRow);
       // Should NOT be able to reach x=2 (scientist2's new position)
-      const canReachX2 = destinations.some(
-        (d) => d.tileId === tile.id && d.x === 2 && d.y === validRow,
-      );
+      const canReachX2 = destinations.some((d) => d.tileId === tile.id && d.x === 2 && d.y === validRow);
 
       expect(canReachX1).toBe(true);
       expect(canReachX2).toBe(false);
@@ -427,17 +356,10 @@ describe("Jeep Pathfinding", () => {
         y: startSpace.y,
       };
 
-      const destinations = getJeepDestinationsWithPaths(
-        tiles,
-        [scientist],
-        fireTokens,
-        scientist,
-      );
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
 
       // Should have destinations on other tiles
-      const otherTileDestinations = destinations.filter(
-        (d) => d.tileId !== tile.id,
-      );
+      const otherTileDestinations = destinations.filter((d) => d.tileId !== tile.id);
       expect(otherTileDestinations.length).toBeGreaterThan(0);
     });
   });

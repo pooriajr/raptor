@@ -1,10 +1,7 @@
 import type { GameState, PieceState } from "../types/gameState.ts";
 import { findById, getAllPieces, isSpaceOccupied } from "../utils/boardUtils.ts";
 import { getReachableDestinationsOnMotherTile } from "../utils/pathfinding.ts";
-import {
-  localToGlobal,
-  getAdjacentGlobalCoordinates,
-} from "../types/coordinates.ts";
+import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 import { transitionToActionPhase } from "./cardActions.ts";
 
 // Action types for effect phase
@@ -53,16 +50,12 @@ export type EffectAction =
   | { type: "WAKE_BABIES"; pieceIds: string[] }
   | { type: "END_EFFECT_PHASE" };
 
-export function handleFrightenScientists(
-  state: GameState,
-  action: { pieceIds: string[] },
-): GameState {
+export function handleFrightenScientists(state: GameState, action: { pieceIds: string[] }): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
 
   // Must be raptor's effect (raptor had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (raptorCards.played >= scientistCards.played) return state;
 
   // Validate all targets are valid scientists
@@ -74,9 +67,7 @@ export function handleFrightenScientists(
   // Frighten the scientists
   const newStateAfterFrighten = {
     ...state,
-    scientists: state.scientists.map((s) =>
-      validTargets.includes(s.id) ? { ...s, isFrightened: true } : s,
-    ),
+    scientists: state.scientists.map((s) => (validTargets.includes(s.id) ? { ...s, isFrightened: true } : s)),
     frightenedThisRound: [...state.frightenedThisRound, ...validTargets],
   };
   return {
@@ -85,16 +76,12 @@ export function handleFrightenScientists(
   };
 }
 
-export function handlePutBabiesToSleep(
-  state: GameState,
-  action: { pieceIds: string[] },
-): GameState {
+export function handlePutBabiesToSleep(state: GameState, action: { pieceIds: string[] }): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
 
   // Must be scientist's effect (scientist had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (scientistCards.played >= raptorCards.played) return state;
 
   // Validate all targets are valid babies
@@ -106,9 +93,7 @@ export function handlePutBabiesToSleep(
   // Put the babies to sleep
   const newStateAfterSleep = {
     ...state,
-    babies: state.babies.map((b) =>
-      validTargets.includes(b.id) ? { ...b, isAsleep: true } : b,
-    ),
+    babies: state.babies.map((b) => (validTargets.includes(b.id) ? { ...b, isAsleep: true } : b)),
     asleepThisRound: [...state.asleepThisRound, ...validTargets],
   };
   return {
@@ -132,8 +117,7 @@ export function handleMothersCall(
 
   // Must be raptor's effect (raptor had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (raptorCards.played >= scientistCards.played) return state;
 
   // Find mother
@@ -152,18 +136,10 @@ export function handleMothersCall(
 
     // Validate the destination is reachable via pathfinding
     const allPieces = getAllPieces({ ...state, babies: updatedBabies });
-    const reachable = getReachableDestinationsOnMotherTile(
-      state.tiles,
-      allPieces,
-      baby,
-      state.mother,
-    );
+    const reachable = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
 
     const isValidDestination = reachable.some(
-      (pos) =>
-        pos.tileId === move.destinationTileId &&
-        pos.x === move.destinationX &&
-        pos.y === move.destinationY,
+      (pos) => pos.tileId === move.destinationTileId && pos.x === move.destinationX && pos.y === move.destinationY,
     );
 
     if (!isValidDestination) continue;
@@ -196,8 +172,7 @@ export function handleDisappearance(state: GameState): GameState {
 
   // Must be raptor's effect (raptor had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (raptorCards.played >= scientistCards.played) return state;
 
   // Mother must exist
@@ -214,16 +189,12 @@ export function handleDisappearance(state: GameState): GameState {
   };
 }
 
-export function handleWakeBabies(
-  state: GameState,
-  action: { pieceIds: string[] },
-): GameState {
+export function handleWakeBabies(state: GameState, action: { pieceIds: string[] }): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
 
   // Must be raptor's effect (raptor had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (raptorCards.played >= scientistCards.played) return state;
 
   // Validate all targets are sleeping babies
@@ -235,9 +206,7 @@ export function handleWakeBabies(
   // Wake up the babies
   const newStateAfterWake = {
     ...state,
-    babies: state.babies.map((b) =>
-      validTargets.includes(b.id) ? { ...b, isAsleep: false } : b,
-    ),
+    babies: state.babies.map((b) => (validTargets.includes(b.id) ? { ...b, isAsleep: false } : b)),
   };
   return {
     ...newStateAfterWake,
@@ -259,8 +228,7 @@ export function handleReinforcements(
 
   // Must be scientist's effect (scientist had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (scientistCards.played >= raptorCards.played) return state;
 
   // Check if we have scientists in reserve
@@ -290,15 +258,12 @@ export function handleReinforcements(
     if (placement.y !== requiredY) continue;
 
     // Check space is valid
-    const space = tile.spaces.find(
-      (s) => s.coordinate.x === placement.x && s.coordinate.y === placement.y,
-    );
+    const space = tile.spaces.find((s) => s.coordinate.x === placement.x && s.coordinate.y === placement.y);
     if (!space || space.hasMountain) continue;
 
     // Check space is not occupied
     const tempState = { ...state, scientists: updatedScientists };
-    if (isSpaceOccupied(tempState, placement.tileId, placement.x, placement.y))
-      continue;
+    if (isSpaceOccupied(tempState, placement.tileId, placement.x, placement.y)) continue;
 
     // Place the scientist
     const newScientist: PieceState = {
@@ -337,8 +302,7 @@ export function handlePlaceFire(
 
   // Must be scientist's effect (scientist had lower card)
   const { scientistCards, raptorCards } = state;
-  if (scientistCards.played === null || raptorCards.played === null)
-    return state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
   if (scientistCards.played >= raptorCards.played) return state;
 
   // Validate and place each fire token
@@ -349,46 +313,27 @@ export function handlePlaceFire(
     if (!tile) continue;
 
     // Check space is valid (not mountain, not unusable, not exit)
-    const space = tile.spaces.find(
-      (s) => s.coordinate.x === placement.x && s.coordinate.y === placement.y,
-    );
-    if (!space || space.hasMountain || space.isUnusable || space.isExit)
-      continue;
+    const space = tile.spaces.find((s) => s.coordinate.x === placement.x && s.coordinate.y === placement.y);
+    if (!space || space.hasMountain || space.isUnusable || space.isExit) continue;
 
     // Check no fire already at this location
     const hasFireAlready = updatedFireTokens.some(
-      (f) =>
-        f.tileId === placement.tileId &&
-        f.x === placement.x &&
-        f.y === placement.y,
+      (f) => f.tileId === placement.tileId && f.x === placement.x && f.y === placement.y,
     );
     if (hasFireAlready) continue;
 
     // Check placement is adjacent to a scientist or existing fire (using global coords for cross-tile adjacency)
-    const placementGlobal = localToGlobal(
-      placement.tileId,
-      placement.x,
-      placement.y,
-    );
-    const adjacentGlobals = getAdjacentGlobalCoordinates(
-      placementGlobal.globalX,
-      placementGlobal.globalY,
-    );
+    const placementGlobal = localToGlobal(placement.tileId, placement.x, placement.y);
+    const adjacentGlobals = getAdjacentGlobalCoordinates(placementGlobal.globalX, placementGlobal.globalY);
 
     const isAdjacentToScientist = state.scientists.some((s) => {
       const sGlobal = localToGlobal(s.tileId, s.x, s.y);
-      return adjacentGlobals.some(
-        (adj) =>
-          adj.globalX === sGlobal.globalX && adj.globalY === sGlobal.globalY,
-      );
+      return adjacentGlobals.some((adj) => adj.globalX === sGlobal.globalX && adj.globalY === sGlobal.globalY);
     });
 
     const isAdjacentToFire = updatedFireTokens.some((f) => {
       const fGlobal = localToGlobal(f.tileId, f.x, f.y);
-      return adjacentGlobals.some(
-        (adj) =>
-          adj.globalX === fGlobal.globalX && adj.globalY === fGlobal.globalY,
-      );
+      return adjacentGlobals.some((adj) => adj.globalX === fGlobal.globalX && adj.globalY === fGlobal.globalY);
     });
 
     if (!isAdjacentToScientist && !isAdjacentToFire) continue;
@@ -441,20 +386,13 @@ export function handleJeepMoves(
   for (const move of action.moves) {
     // Move the scientist to the destination
     updatedScientists = updatedScientists.map((s) =>
-      s.id === move.scientistId
-        ? { ...s, tileId: move.toTileId, x: move.toX, y: move.toY }
-        : s,
+      s.id === move.scientistId ? { ...s, tileId: move.toTileId, x: move.toX, y: move.toY } : s,
     );
 
     // Extinguish fires along the path (including destination)
-    const allPositions = [
-      ...move.path,
-      { tileId: move.toTileId, x: move.toX, y: move.toY },
-    ];
+    const allPositions = [...move.path, { tileId: move.toTileId, x: move.toX, y: move.toY }];
     for (const pos of allPositions) {
-      updatedFireTokens = updatedFireTokens.filter(
-        (f) => !(f.tileId === pos.tileId && f.x === pos.x && f.y === pos.y),
-      );
+      updatedFireTokens = updatedFireTokens.filter((f) => !(f.tileId === pos.tileId && f.x === pos.x && f.y === pos.y));
     }
   }
 

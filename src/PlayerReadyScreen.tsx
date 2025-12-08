@@ -17,9 +17,7 @@ function PlayerReadyScreen({ player, onReady }: PlayerReadyScreenProps) {
         <div className="ready-emoji">{emoji}</div>
         <h2 className="ready-title">{currentPlayer} Player</h2>
         <p className="ready-subtitle">Card Selection Phase</p>
-        <p className="ready-warning">
-          {otherPlayer} player must look away from the screen!
-        </p>
+        <p className="ready-warning">{otherPlayer} player must look away from the screen!</p>
         <button className="ready-button" onClick={onReady}>
           I'm Ready
         </button>

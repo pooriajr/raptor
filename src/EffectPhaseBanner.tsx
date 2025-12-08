@@ -102,14 +102,10 @@ function EffectPhaseBanner({
       <div className="banner-content">
         <div className="banner-left">
           <span className="effect-card-value">{effectCard}</span>
-          <span className="effect-card-name">
-            {getCardEffect(activePlayer, effectCard)}
-          </span>
+          <span className="effect-card-name">{getCardEffect(activePlayer, effectCard)}</span>
         </div>
         <div className="banner-center">
-          <span className="banner-player">
-            {activePlayer === "raptor" ? "Raptor" : "Scientist"}
-          </span>
+          <span className="banner-player">{activePlayer === "raptor" ? "Raptor" : "Scientist"}</span>
           <span className="banner-instruction">{getInstruction()}</span>
         </div>
         <div className="banner-buttons">

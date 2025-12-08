@@ -65,10 +65,7 @@ export function transitionToActionPhase(state: GameState): Partial<GameState> {
   };
 }
 
-export function handlePlayerReady(
-  state: GameState,
-  action: { player: "raptor" | "scientist" },
-): GameState {
+export function handlePlayerReady(state: GameState, action: { player: "raptor" | "scientist" }): GameState {
   if (action.player === "scientist" && state.phase === "SCIENTIST_READY") {
     return {
       ...state,
@@ -84,10 +81,7 @@ export function handlePlayerReady(
   return state;
 }
 
-export function handleDrawCards(
-  state: GameState,
-  action: { player: "raptor" | "scientist" },
-): GameState {
+export function handleDrawCards(state: GameState, action: { player: "raptor" | "scientist" }): GameState {
   if (action.player === "raptor") {
     return {
       ...state,
@@ -101,14 +95,8 @@ export function handleDrawCards(
   }
 }
 
-export function handlePlayCard(
-  state: GameState,
-  action: { player: "raptor" | "scientist"; card: number },
-): GameState {
-  if (
-    action.player === "scientist" &&
-    state.phase === "SCIENTIST_CARD_SELECTION"
-  ) {
+export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: number }): GameState {
+  if (action.player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") {
     // Remove card from hand and set as played
     const newHand = state.scientistCards.hand.filter((c) => c !== action.card);
     return {

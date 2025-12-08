@@ -1,14 +1,8 @@
 import type { GameState, PieceState } from "../types/gameState.ts";
-import {
-  localToGlobal,
-  getAdjacentGlobalCoordinates,
-} from "../types/coordinates.ts";
+import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 
 // Helper to find an item by id in an array
-export function findById<T extends { id: string }>(
-  items: T[],
-  id: string,
-): T | undefined {
+export function findById<T extends { id: string }>(items: T[], id: string): T | undefined {
   return items.find((item) => item.id === id);
 }
 
@@ -44,26 +38,10 @@ export function isSpaceOccupied(
   ) {
     return true;
   }
-  if (
-    state.babies.some(
-      (b) =>
-        b.tileId === tileId &&
-        b.x === x &&
-        b.y === y &&
-        b.id !== excludePieceId,
-    )
-  ) {
+  if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y && b.id !== excludePieceId)) {
     return true;
   }
-  if (
-    state.scientists.some(
-      (s) =>
-        s.tileId === tileId &&
-        s.x === x &&
-        s.y === y &&
-        s.id !== excludePieceId,
-    )
-  ) {
+  if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y && s.id !== excludePieceId)) {
     return true;
   }
   return false;
@@ -81,17 +59,10 @@ export function tileHasScientist(state: GameState, tileId: number): boolean {
 }
 
 // Helper to check if a space has a mountain
-export function spaceHasMountain(
-  state: GameState,
-  tileId: number,
-  x: number,
-  y: number,
-): boolean {
+export function spaceHasMountain(state: GameState, tileId: number, x: number, y: number): boolean {
   const tile = state.tiles.find((t) => t.id === tileId);
   if (!tile) return true; // Invalid tile, treat as blocked
-  const space = tile.spaces.find(
-    (s) => s.coordinate.x === x && s.coordinate.y === y,
-  );
+  const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
   if (!space) return true; // Invalid space, treat as blocked
   return space.hasMountain;
 }
@@ -102,17 +73,9 @@ export function isRaptorSetupComplete(state: GameState): boolean {
 }
 
 // Helper to check if two pieces are adjacent (orthogonally)
-export function arePiecesAdjacent(
-  piece1: PieceState,
-  piece2: PieceState,
-): boolean {
+export function arePiecesAdjacent(piece1: PieceState, piece2: PieceState): boolean {
   const global1 = localToGlobal(piece1.tileId, piece1.x, piece1.y);
   const global2 = localToGlobal(piece2.tileId, piece2.x, piece2.y);
-  const adjacent = getAdjacentGlobalCoordinates(
-    global1.globalX,
-    global1.globalY,
-  );
-  return adjacent.some(
-    (adj) => adj.globalX === global2.globalX && adj.globalY === global2.globalY,
-  );
+  const adjacent = getAdjacentGlobalCoordinates(global1.globalX, global1.globalY);
+  return adjacent.some((adj) => adj.globalX === global2.globalX && adj.globalY === global2.globalY);
 }
