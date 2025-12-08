@@ -411,3 +411,16 @@ export function handleEndEffectPhase(state: GameState, _action: unknown): GameSt
   if (state.phase !== "EFFECT_PHASE") return state;
   return { ...state, ...transitionToActionPhase(state) };
 }
+
+// Handler map for effect actions
+export const effectHandlers = {
+  FRIGHTEN_SCIENTISTS: handleFrightenScientists,
+  PUT_BABIES_TO_SLEEP: handlePutBabiesToSleep,
+  MOTHERS_CALL: handleMothersCall,
+  DISAPPEARANCE: handleDisappearance,
+  WAKE_BABIES: handleWakeBabies,
+  REINFORCEMENTS: handleReinforcements,
+  PLACE_FIRE: handlePlaceFire,
+  JEEP_MOVES: handleJeepMoves,
+  END_EFFECT_PHASE: handleEndEffectPhase,
+};

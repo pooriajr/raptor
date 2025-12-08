@@ -143,3 +143,11 @@ export function handleConfirmReveal(state: GameState, _action: unknown): GameSta
 
   return state;
 }
+
+// Handler map for card actions
+export const cardHandlers = {
+  PLAYER_READY: handlePlayerReady,
+  DRAW_CARDS: handleDrawCards,
+  PLAY_CARD: handlePlayCard,
+  CONFIRM_REVEAL: handleConfirmReveal,
+};

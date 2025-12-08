@@ -166,3 +166,11 @@ export function handleStartGame(state: GameState, _action: unknown): GameState {
     phase: "SCIENTIST_READY",
   };
 }
+
+// Handler map for setup actions
+export const setupHandlers = {
+  PLACE_SCIENTIST: handlePlaceScientist,
+  PLACE_MOTHER: handlePlaceMother,
+  PLACE_BABY: handlePlaceBaby,
+  START_GAME: handleStartGame,
+};

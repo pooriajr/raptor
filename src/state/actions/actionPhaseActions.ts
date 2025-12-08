@@ -445,3 +445,19 @@ export function handleResetActionPhase(state: GameState, action: { savedState: A
     actionPoints: action.savedState.actionPoints,
   };
 }
+
+// Handler map for action phase actions
+export const actionPhaseHandlers = {
+  ACTION_MOVE_BABY: handleActionMoveBaby,
+  ACTION_MOVE_SCIENTIST: handleActionMoveScientist,
+  ACTION_MOVE_MOTHER: handleActionMoveMother,
+  ACTION_MOTHER_KILL_SCIENTIST: handleMotherKillScientist,
+  ACTION_MOTHER_WAKE_BABY: handleMotherWakeBaby,
+  ACTION_MOTHER_EXTINGUISH_FIRE: handleMotherExtinguishFire,
+  ACTION_SCIENTIST_SLEEP_BABY: handleScientistSleepBaby,
+  ACTION_SCIENTIST_CAPTURE_BABY: handleScientistCaptureBaby,
+  ACTION_SCIENTIST_SHOOT_MOTHER: handleScientistShootMother,
+  ACTION_SCIENTIST_STAND_UP: handleScientistStandUp,
+  END_ACTION_PHASE: handleEndActionPhase,
+  RESET_ACTION_PHASE: handleResetActionPhase,
+};

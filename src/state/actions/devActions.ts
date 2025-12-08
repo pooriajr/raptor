@@ -117,3 +117,9 @@ export function handleDevSkipToAction(state: GameState, action: { player: "scien
     activePlayer: action.player,
   };
 }
+
+// Handler map for dev actions
+export const devHandlers = {
+  DEV_SKIP_TO_EFFECT: handleDevSkipToEffect,
+  DEV_SKIP_TO_ACTION: handleDevSkipToAction,
+};
