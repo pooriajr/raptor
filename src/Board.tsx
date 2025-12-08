@@ -1626,6 +1626,21 @@ function Board({ showCoordinates = false }: BoardProps) {
           <div className="discard-section">
             <div className="discard-placeholder">Discard</div>
           </div>
+          <div className="baby-tracker-section">
+            <div className="baby-tracker escaped">
+              <span className="baby-tracker-label">Escaped:</span>
+              <span className="baby-tracker-count">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`baby-pip ${i < state.escapedBabies ? "filled" : "empty"}`}
+                  >
+                    🦎
+                  </span>
+                ))}
+              </span>
+            </div>
+          </div>
           <div className="sleep-tokens-section">
             <div className="sleep-tokens-display">
               <span className="sleep-tokens-label">Mother Sleep Tokens:</span>
@@ -1744,6 +1759,21 @@ function Board({ showCoordinates = false }: BoardProps) {
           <div className="discard-section">
             {/* Scientist discard will go here */}
             <div className="discard-placeholder">Discard</div>
+          </div>
+          <div className="baby-tracker-section">
+            <div className="baby-tracker captured">
+              <span className="baby-tracker-label">Captured:</span>
+              <span className="baby-tracker-count">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`baby-pip ${i < state.capturedBabies ? "filled" : "empty"}`}
+                  >
+                    🦎
+                  </span>
+                ))}
+              </span>
+            </div>
           </div>
         </div>
       </div>
