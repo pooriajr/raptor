@@ -1,15 +1,13 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import SetupPhaseBanner from "./SetupPhaseBanner.tsx";
-import CardDeck from "./CardDeck.tsx";
-import Hand from "./Hand.tsx";
+import PlayerArea from "./PlayerArea.tsx";
 import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
 import ActionPhaseBanner from "./ActionPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
-import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
+import { getPieceEmoji, isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
@@ -1405,9 +1403,6 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   return (
     <>
-      {(state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") && (
-        <SetupPhaseBanner onConfirm={handleSetupConfirm} />
-      )}
       {state.phase === "EFFECT_PHASE" && (
         <EffectPhaseBanner
           selectedTargets={selectedEffectTargets}
@@ -1434,193 +1429,220 @@ function Board({ showCoordinates = false }: BoardProps) {
       )}
       <div className="game-layout">
         {/* Raptor player area (top) */}
-        <div className="player-area raptor-area" ref={raptorDeckRef}>
-          <div className="deck-section">
-            <CardDeck player="raptor" cardCount={state.raptorCards.deck.length} />
-          </div>
-          <div className="hand-section">
-            {state.phase === "RAPTOR_CARD_SELECTION" && (
-              <Hand
-                cards={state.raptorCards.hand}
-                player="raptor"
-                isNewDraw={isRaptorNewDraw}
-                deckPosition={{ x: -300, y: 0 }}
-                onCardSelect={handleCardSelect}
-                onConfirm={handleCardConfirm}
-                selectedCard={selectedCard}
-              />
-            )}
-            {state.phase === "SCIENTIST_CARD_SELECTION" && state.raptorCards.hand.length > 0 && (
-              <Hand
-                cards={state.raptorCards.hand}
-                player="raptor"
-                faceDown={true}
-                playedCard={state.raptorCards.played}
-              />
-            )}
-          </div>
-          <div className="discard-section">
-            <div className="discard-placeholder">Discard</div>
-          </div>
-          <div className="baby-tracker-section">
-            <div className="baby-tracker escaped">
-              <span className="baby-tracker-label">Escaped:</span>
-              <span className="baby-tracker-count">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <span key={i} className={`baby-pip ${i < state.escapedBabies ? "filled" : "empty"}`}>
-                    🦎
-                  </span>
-                ))}
-              </span>
-            </div>
-          </div>
-          <div className="sleep-tokens-section">
-            <div className="sleep-tokens-display">
-              <span className="sleep-tokens-label">Mother Sleep Tokens:</span>
-              <span className="sleep-tokens-count">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className={`sleep-token-pip ${i < state.motherSleepTokens ? "filled" : "empty"}`}>
-                    💉
-                  </span>
-                ))}
-              </span>
-            </div>
-          </div>
-        </div>
+        <PlayerArea
+          ref={raptorDeckRef}
+          player="raptor"
+          deckCount={state.raptorCards.deck.length}
+          handCards={state.raptorCards.hand}
+          playedCard={state.raptorCards.played}
+          selectedCard={state.phase === "RAPTOR_CARD_SELECTION" ? selectedCard : state.raptorCards.played}
+          onCardSelect={handleCardSelect}
+          isNewDraw={isRaptorNewDraw}
+          showHand={state.phase === "RAPTOR_CARD_SELECTION" || state.phase === "EFFECT_PHASE"}
+          handFaceDown={false}
+          hideUnselectedCards={state.phase === "EFFECT_PHASE"}
+          escapedBabies={state.escapedBabies}
+          motherSleepTokens={state.motherSleepTokens}
+          actionInfo={
+            state.phase === "RAPTOR_SETUP"
+              ? {
+                  phaseLabel: "Raptor Setup",
+                  progress: (
+                    <>
+                      <span>🦖 {isMotherPlaced(state) ? "1" : "0"}/1</span>
+                      <span>🦎 {countPlacedBabies(state)}/5</span>
+                    </>
+                  ),
+                  instruction: !isMotherPlaced(state)
+                    ? "Place mother on center tile"
+                    : countPlacedBabies(state) < 5
+                      ? "Place babies on square tiles"
+                      : "Setup complete!",
+                }
+              : state.phase === "RAPTOR_CARD_SELECTION"
+                ? {
+                    phaseLabel: "Pick a Card",
+                    instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
+                  }
+                : undefined
+          }
+          actionButton={
+            state.phase === "RAPTOR_SETUP"
+              ? {
+                  label: "Done",
+                  disabled: !isMotherPlaced(state) || countPlacedBabies(state) < 5,
+                  onClick: handleSetupConfirm,
+                }
+              : state.phase === "RAPTOR_CARD_SELECTION"
+                ? {
+                    label: "Confirm",
+                    disabled: selectedCard === null,
+                    onClick: handleCardConfirm,
+                  }
+                : {
+                    label: "✓",
+                    disabled: true,
+                    onClick: () => {},
+                    isDone: true,
+                  }
+          }
+        />
 
         {/* Game board */}
-        <LayoutGroup>
-          <div className="Board">
-            {state.tiles.map((tile) => {
-              const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
-              const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
-              const setupPlacementsOnTile = setupPlacementSpaces.filter((s) => s.tileId === tile.id);
-              const isValidSetupTile = validSetupTileIds.has(tile.id);
+        <div className="board-container">
+          <LayoutGroup>
+            <div className="Board">
+              {state.tiles.map((tile) => {
+                const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
+                const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
+                const setupPlacementsOnTile = setupPlacementSpaces.filter((s) => s.tileId === tile.id);
+                const isValidSetupTile = validSetupTileIds.has(tile.id);
 
-              // Calculate valid move targets for tiles that already have a piece during setup
-              const setupMoveTargetsOnTile: Array<{ x: number; y: number }> = (() => {
-                if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return [];
+                // Calculate valid move targets for tiles that already have a piece during setup
+                const setupMoveTargetsOnTile: Array<{ x: number; y: number }> = (() => {
+                  if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return [];
 
-                // Check if this tile has a piece that can be moved
-                const hasPieceOnTile =
-                  state.phase === "RAPTOR_SETUP"
-                    ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
-                    : state.scientists.some((s) => s.tileId === tile.id);
+                  // Check if this tile has a piece that can be moved
+                  const hasPieceOnTile =
+                    state.phase === "RAPTOR_SETUP"
+                      ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
+                      : state.scientists.some((s) => s.tileId === tile.id);
 
-                if (!hasPieceOnTile) return [];
+                  if (!hasPieceOnTile) return [];
 
-                // Return valid spaces on this tile (excluding occupied, mountains, unusable, exits for scientists)
-                return tile.spaces
-                  .filter((space) => {
-                    if (space.hasMountain || space.isUnusable) return false;
-                    if (state.phase === "SCIENTIST_SETUP" && space.isExit) return false;
-                    // Exclude spaces with pieces
-                    if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) return false;
-                    return true;
-                  })
-                  .map((space) => ({ x: space.coordinate.x, y: space.coordinate.y }));
-              })();
+                  // Return valid spaces on this tile (excluding occupied, mountains, unusable, exits for scientists)
+                  return tile.spaces
+                    .filter((space) => {
+                      if (space.hasMountain || space.isUnusable) return false;
+                      if (state.phase === "SCIENTIST_SETUP" && space.isExit) return false;
+                      // Exclude spaces with pieces
+                      if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) return false;
+                      return true;
+                    })
+                    .map((space) => ({ x: space.coordinate.x, y: space.coordinate.y }));
+                })();
 
-              return (
-                <Tile
-                  key={tile.id}
-                  tile={tile}
-                  pieces={piecesOnTile}
-                  validMoves={validMovesOnTile}
-                  setupPlacements={setupPlacementsOnTile}
-                  setupMoveTargets={setupMoveTargetsOnTile}
-                  isValidSetupTile={isValidSetupTile}
-                  effectTargetIds={effectTargetIds}
-                  selectedEffectTargets={
-                    getCurrentEffectType() === "mothers_call"
-                      ? [
-                          ...pendingMothersCallMoves.map((m) => m.babyId),
-                          ...(selectedBabyForCall ? [selectedBabyForCall] : []),
-                        ]
-                      : selectedEffectTargets
-                  }
-                  effectDestinations={[
-                    ...mothersCallDestinations,
-                    ...reinforcementDestinations,
-                    ...fireDestinations,
-                    ...selectedScientistJeepDestinations.map((d) => ({
-                      tileId: d.tileId,
-                      x: d.x,
-                      y: d.y,
-                    })),
-                  ]}
-                  pendingFirePlacements={pendingFirePlacements}
-                  fireTokens={state.fireTokens}
-                  pendingJeepMoves={pendingJeepMoves}
-                  pendingReinforcementPlacements={pendingReinforcementPlacements}
-                  pendingMoves={pendingMothersCallMoves.map((m) => {
-                    const baby = state.babies.find((b) => b.id === m.babyId);
-                    return {
-                      babyId: m.babyId,
-                      fromTileId: baby?.tileId ?? 0,
-                      fromX: baby?.x ?? 0,
-                      fromY: baby?.y ?? 0,
-                      toTileId: m.destinationTileId,
-                      toX: m.destinationX,
-                      toY: m.destinationY,
-                    };
-                  })}
-                  pathTrailPositions={pathTrailPositions}
-                  selectedActionPieceId={selectedActionPieceId}
-                  hostileTargetIds={actionTargets.hostileTargets}
-                  friendlyTargetIds={actionTargets.friendlyTargets}
-                  friendlyFirePositions={actionTargets.friendlyFirePositions}
-                  showCoordinates={showCoordinates}
-                  onSpaceClick={handleSpaceClick}
-                />
-              );
-            })}
-          </div>
-        </LayoutGroup>
+                return (
+                  <Tile
+                    key={tile.id}
+                    tile={tile}
+                    pieces={piecesOnTile}
+                    validMoves={validMovesOnTile}
+                    setupPlacements={setupPlacementsOnTile}
+                    setupMoveTargets={setupMoveTargetsOnTile}
+                    isValidSetupTile={isValidSetupTile}
+                    effectTargetIds={effectTargetIds}
+                    selectedEffectTargets={
+                      getCurrentEffectType() === "mothers_call"
+                        ? [
+                            ...pendingMothersCallMoves.map((m) => m.babyId),
+                            ...(selectedBabyForCall ? [selectedBabyForCall] : []),
+                          ]
+                        : selectedEffectTargets
+                    }
+                    effectDestinations={[
+                      ...mothersCallDestinations,
+                      ...reinforcementDestinations,
+                      ...fireDestinations,
+                      ...selectedScientistJeepDestinations.map((d) => ({
+                        tileId: d.tileId,
+                        x: d.x,
+                        y: d.y,
+                      })),
+                    ]}
+                    pendingFirePlacements={pendingFirePlacements}
+                    fireTokens={state.fireTokens}
+                    pendingJeepMoves={pendingJeepMoves}
+                    pendingReinforcementPlacements={pendingReinforcementPlacements}
+                    pendingMoves={pendingMothersCallMoves.map((m) => {
+                      const baby = state.babies.find((b) => b.id === m.babyId);
+                      return {
+                        babyId: m.babyId,
+                        fromTileId: baby?.tileId ?? 0,
+                        fromX: baby?.x ?? 0,
+                        fromY: baby?.y ?? 0,
+                        toTileId: m.destinationTileId,
+                        toX: m.destinationX,
+                        toY: m.destinationY,
+                      };
+                    })}
+                    pathTrailPositions={pathTrailPositions}
+                    selectedActionPieceId={selectedActionPieceId}
+                    hostileTargetIds={actionTargets.hostileTargets}
+                    friendlyTargetIds={actionTargets.friendlyTargets}
+                    friendlyFirePositions={actionTargets.friendlyFirePositions}
+                    showCoordinates={showCoordinates}
+                    onSpaceClick={handleSpaceClick}
+                  />
+                );
+              })}
+            </div>
+          </LayoutGroup>
+        </div>
 
         {/* Scientist player area (bottom) */}
-        <div className="player-area scientist-area" ref={scientistDeckRef}>
-          <div className="deck-section">
-            <CardDeck player="scientist" cardCount={state.scientistCards.deck.length} />
-          </div>
-          <div className="hand-section">
-            {state.phase === "SCIENTIST_CARD_SELECTION" && (
-              <Hand
-                cards={state.scientistCards.hand}
-                player="scientist"
-                isNewDraw={isScientistNewDraw}
-                deckPosition={{ x: -300, y: 0 }}
-                onCardSelect={handleCardSelect}
-                onConfirm={handleCardConfirm}
-                selectedCard={selectedCard}
-              />
-            )}
-            {state.phase === "RAPTOR_CARD_SELECTION" && state.scientistCards.played !== null && (
-              <Hand
-                cards={[...state.scientistCards.hand, state.scientistCards.played]}
-                player="scientist"
-                faceDown={true}
-                playedCard={state.scientistCards.played}
-              />
-            )}
-          </div>
-          <div className="discard-section">
-            {/* Scientist discard will go here */}
-            <div className="discard-placeholder">Discard</div>
-          </div>
-          <div className="baby-tracker-section">
-            <div className="baby-tracker captured">
-              <span className="baby-tracker-label">Captured:</span>
-              <span className="baby-tracker-count">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <span key={i} className={`baby-pip ${i < state.capturedBabies ? "filled" : "empty"}`}>
-                    🦎
-                  </span>
-                ))}
-              </span>
-            </div>
-          </div>
-        </div>
+        <PlayerArea
+          ref={scientistDeckRef}
+          player="scientist"
+          deckCount={state.scientistCards.deck.length}
+          handCards={
+            state.phase === "RAPTOR_CARD_SELECTION" && state.scientistCards.played !== null
+              ? [...state.scientistCards.hand, state.scientistCards.played]
+              : state.scientistCards.hand
+          }
+          playedCard={state.phase === "RAPTOR_CARD_SELECTION" ? null : state.scientistCards.played}
+          selectedCard={state.phase === "SCIENTIST_CARD_SELECTION" ? selectedCard : null}
+          floatingCard={state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null}
+          onCardSelect={handleCardSelect}
+          isNewDraw={isScientistNewDraw}
+          showHand={
+            state.phase === "SCIENTIST_CARD_SELECTION" ||
+            state.phase === "RAPTOR_CARD_SELECTION" ||
+            state.phase === "EFFECT_PHASE"
+          }
+          handFaceDown={state.phase === "RAPTOR_CARD_SELECTION"}
+          hideUnselectedCards={state.phase === "EFFECT_PHASE"}
+          capturedBabies={state.capturedBabies}
+          actionInfo={
+            state.phase === "SCIENTIST_SETUP"
+              ? {
+                  phaseLabel: "Scientist Setup",
+                  progress: <span>🧑‍🔬 {countPlacedScientists(state)}/4</span>,
+                  instruction: countPlacedScientists(state) < 4 ? "Place scientists on L-tiles" : "Setup complete!",
+                }
+              : state.phase === "SCIENTIST_CARD_SELECTION"
+                ? {
+                    phaseLabel: "Pick a Card",
+                    instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
+                  }
+                : undefined
+          }
+          actionButton={
+            state.phase === "SCIENTIST_SETUP"
+              ? {
+                  label: "Done",
+                  disabled: countPlacedScientists(state) < 4,
+                  onClick: handleSetupConfirm,
+                }
+              : state.phase === "SCIENTIST_CARD_SELECTION"
+                ? {
+                    label: "Confirm",
+                    disabled: selectedCard === null,
+                    onClick: handleCardConfirm,
+                  }
+                : {
+                    label: (
+                      <>
+                        End
+                        <br />
+                        Turn
+                      </>
+                    ),
+                    disabled: true,
+                    onClick: () => {},
+                  }
+          }
+        />
       </div>
     </>
   );

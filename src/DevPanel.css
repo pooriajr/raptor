@@ -93,6 +93,14 @@
   background-color: #3a4558;
 }
 
+.DevPanel .section-label {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
 .DevPanel .skip-buttons {
   display: flex;
   flex-direction: column;
@@ -102,18 +110,44 @@
 .DevPanel .skip-btn {
   width: 100%;
   padding: 0.3rem 0.5rem;
-  background-color: #2d4a3d;
   border: none;
   border-radius: 4px;
-  color: #9ed6b8;
   cursor: pointer;
   font-size: 0.75rem;
 }
 
-.DevPanel .skip-btn:hover {
+.DevPanel .skip-btn.card-btn {
+  background-color: #4a4a2d;
+  color: #d6d69e;
+}
+
+.DevPanel .skip-btn.card-btn:hover {
+  background-color: #5a5a3d;
+}
+
+.DevPanel .skip-btn.action-btn {
+  background-color: #4a3d2d;
+  color: #d6b89e;
+}
+
+.DevPanel .skip-btn.action-btn:hover {
+  background-color: #5a4d3d;
+}
+
+.DevPanel .skip-btn.raptor-effect {
+  background-color: #2d4a3d;
+  color: #9ed6b8;
+}
+
+.DevPanel .skip-btn.raptor-effect:hover {
   background-color: #3d5a4d;
 }
 
-.DevPanel .skip-btn:active {
-  background-color: #1d3a2d;
+.DevPanel .skip-btn.scientist-effect {
+  background-color: #2d3d4a;
+  color: #9eb8d6;
+}
+
+.DevPanel .skip-btn.scientist-effect:hover {
+  background-color: #3d4d5a;
 }

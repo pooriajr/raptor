@@ -1,58 +1,18 @@
 .game-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  margin: 20px auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.player-area {
+.board-container {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 2rem;
-  width: 100%;
-  max-width: 900px;
-  padding: 1rem;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.raptor-area {
-  border: 2px solid #3d6a37;
-}
-
-.scientist-area {
-  border: 2px solid #2a4a6c;
-}
-
-.deck-section {
-  flex: 0 0 auto;
-}
-
-.hand-section {
+  align-items: center;
   flex: 1;
-  display: flex;
-  justify-content: center;
-  min-height: 150px;
-}
-
-.discard-section {
-  flex: 0 0 auto;
-  min-width: 100px;
-}
-
-.discard-placeholder {
-  width: 50px;
-  height: 70px;
-  border: 2px dashed #555;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  font-size: 10px;
-  text-transform: uppercase;
+  overflow: auto;
 }
 
 .Board {
@@ -114,86 +74,4 @@
 .Tile:nth-child(10) {
   grid-column: 5;
   grid-row: 2;
-}
-
-/* Sleep tokens indicator for mother raptor */
-.sleep-tokens-section {
-  flex: 0 0 auto;
-  min-width: 150px;
-}
-
-.sleep-tokens-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-}
-
-.sleep-tokens-label {
-  font-size: 11px;
-  color: #aaa;
-  text-transform: uppercase;
-}
-
-.sleep-tokens-count {
-  display: flex;
-  gap: 4px;
-}
-
-.sleep-token-pip {
-  font-size: 20px;
-  opacity: 0.3;
-  filter: grayscale(1);
-  transition:
-    opacity 0.3s,
-    filter 0.3s;
-}
-
-.sleep-token-pip.filled {
-  opacity: 1;
-  filter: none;
-}
-
-/* Baby tracker (escaped/captured) */
-.baby-tracker-section {
-  flex: 0 0 auto;
-  min-width: 120px;
-}
-
-.baby-tracker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-}
-
-.baby-tracker-label {
-  font-size: 11px;
-  color: #aaa;
-  text-transform: uppercase;
-}
-
-.baby-tracker-count {
-  display: flex;
-  gap: 4px;
-}
-
-.baby-pip {
-  font-size: 20px;
-  opacity: 0.3;
-  filter: grayscale(1);
-  transition:
-    opacity 0.3s,
-    filter 0.3s;
-}
-
-.baby-pip.filled {
-  opacity: 1;
-  filter: none;
 }

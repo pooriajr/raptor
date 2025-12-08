@@ -43,6 +43,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "RESET_ACTION_PHASE": return h.handleResetActionPhase(state, action);
     case "DEV_SKIP_TO_EFFECT": return h.handleDevSkipToEffect(state, action);
     case "DEV_SKIP_TO_ACTION": return h.handleDevSkipToAction(state, action);
+    case "DEV_SKIP_TO_CARD_SELECTION": return h.handleDevSkipToCardSelection(state, action);
     default: return state;
   }
 }

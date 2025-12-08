@@ -24,10 +24,18 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #242424;
+  transition: background-color 0.25s ease;
+}
+
+body.active-raptor {
+  background-color: #1a3518;
+}
+
+body.active-scientist {
+  background-color: #181a35;
 }
 
 h1 {

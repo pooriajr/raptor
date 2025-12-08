@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import "./Card.css";
-import { getCardEffect } from "./utils/cardEffects";
+import { getCardEffect, getCardIcon, getCardDescription } from "./utils/cardEffects";
 
 interface CardProps {
   value: number;
@@ -8,10 +9,10 @@ interface CardProps {
   faceUp?: boolean;
   onClick?: () => void;
   selected?: boolean;
-  selectedOffsetX?: number;
+  dimmed?: boolean; // When another card is selected, this card should be dimmed
+  floating?: boolean; // Gentle up/down animation to indicate this card was played
   initialPosition?: { x: number; y: number };
   animationDelay?: number;
-  onSelectionComplete?: () => void;
 }
 
 function Card({
@@ -20,17 +21,27 @@ function Card({
   faceUp = false,
   onClick,
   selected = false,
-  selectedOffsetX = 0,
+  dimmed = false,
+  floating = false,
   initialPosition,
   animationDelay = 0,
-  onSelectionComplete,
 }: CardProps) {
   const isInteractive = onClick && !selected;
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Determine scale based on selection state
+  const getScale = () => {
+    if (selected) return 1.15;
+    if (dimmed) return 0.9;
+    return 1;
+  };
 
   return (
     <motion.div
-      className={`Card ${player} ${selected ? "selected" : ""}`}
+      className={`Card ${player} ${selected ? "selected" : ""} ${dimmed ? "dimmed" : ""}`}
       onClick={onClick}
+      onMouseEnter={() => faceUp && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
       initial={
         initialPosition
           ? {
@@ -42,27 +53,42 @@ function Card({
           : { rotateY: faceUp ? 0 : 180, scale: 1 }
       }
       animate={{
-        x: selected ? selectedOffsetX : 0,
-        y: selected ? -140 : 0,
+        x: 0,
+        y: floating ? [0, -10, 0] : 0,
         rotateY: faceUp ? 0 : 180,
-        scale: selected ? 1.2 : 1,
-        zIndex: selected ? 10 : 0,
+        scale: floating ? 1.15 : getScale(),
+        zIndex: selected || floating ? 10 : 0,
       }}
-      transition={{
-        duration: selected ? 0.2 : 0.6,
-        delay: animationDelay,
-        type: "spring",
-        stiffness: selected ? 300 : 100,
-        damping: selected ? 25 : 15,
-      }}
-      whileHover={isInteractive ? { scale: 1.05, y: -5 } : undefined}
+      transition={
+        floating
+          ? {
+              y: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              },
+              default: {
+                duration: 0.25,
+                delay: animationDelay,
+                type: "tween",
+                ease: "easeOut",
+              },
+            }
+          : {
+              duration: 0.25,
+              delay: animationDelay,
+              type: "tween",
+              ease: "easeOut",
+            }
+      }
+      whileHover={isInteractive ? { scale: 1.05 } : undefined}
       whileTap={isInteractive ? { scale: 0.98 } : undefined}
-      onAnimationComplete={() => selected && onSelectionComplete?.()}
       style={{ transformStyle: "preserve-3d" }}
     >
       {/* Front face - shows the card value */}
       <div className="card-face card-front">
         <div className="card-value">{value}</div>
+        <div className="card-icon">{getCardIcon(player, value)}</div>
         <div className="card-effect">{getCardEffect(player, value)}</div>
       </div>
 
@@ -70,6 +96,14 @@ function Card({
       <div className="card-face card-back">
         <div className="card-pattern">{player === "raptor" ? "🦖" : "🔬"}</div>
       </div>
+
+      {/* Tooltip */}
+      {showTooltip && (
+        <div className={`card-tooltip ${player === "raptor" ? "tooltip-below" : "tooltip-above"}`}>
+          <div className="tooltip-title">{getCardEffect(player, value)}</div>
+          <div className="tooltip-description">{getCardDescription(player, value)}</div>
+        </div>
+      )}
     </motion.div>
   );
 }

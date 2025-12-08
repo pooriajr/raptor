@@ -13,18 +13,20 @@ function CardDeck({ player, cardCount }: CardDeckProps) {
     <div className={`CardDeck ${player}`}>
       <div className="deck-label">{player === "raptor" ? "Raptor" : "Scientist"}</div>
       <div className="deck-stack">
-        {Array.from({ length: stackLayers }).map((_, index) => (
-          <div
-            key={index}
-            className="card card-back"
-            style={{
-              transform: `translate(${index * 2}px, ${index * 2}px)`,
-              zIndex: stackLayers - index,
-            }}
-          >
-            <div className="card-pattern">{player === "raptor" ? "🦖" : "🔬"}</div>
-          </div>
-        ))}
+        <div className="deck-stack-inner">
+          {Array.from({ length: stackLayers }).map((_, index) => (
+            <div
+              key={index}
+              className="card card-back"
+              style={{
+                transform: `translate(${index * 2}px, ${index * 2}px)`,
+                zIndex: stackLayers - index,
+              }}
+            >
+              <div className="card-pattern">{player === "raptor" ? "🦖" : "🔬"}</div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="card-count">{cardCount} cards</div>
     </div>

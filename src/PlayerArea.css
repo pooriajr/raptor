@@ -1,0 +1,228 @@
+.player-area {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.player-area-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2rem;
+}
+
+.player-area-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.player-area-action {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.5rem;
+  height: 100%;
+  padding-right: 3rem;
+}
+
+.action-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.action-phase-label {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.action-progress {
+  display: flex;
+  gap: 1rem;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.action-instruction {
+  font-size: 1.1rem;
+  color: #ddd;
+  text-align: right;
+}
+
+.end-turn-button {
+  width: 120px;
+  height: 120px;
+  padding: 1rem;
+  font-size: 1.6rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.2;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #5fcf5f 0%, #4caf50 40%, #388e3c 100%) !important;
+  background-color: #4caf50 !important;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 8px 0 #2d7030,
+    0 12px 20px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+
+.end-turn-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.end-turn-button.done,
+.end-turn-button.done:disabled {
+  background: linear-gradient(180deg, #3a8a3a 0%, #2d6d2d 40%, #1f4f1f 100%) !important;
+  box-shadow:
+    0 8px 0 #1a3a1a,
+    0 12px 20px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  font-size: 3rem;
+  opacity: 0.6;
+}
+
+.end-turn-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 0 #2d7030,
+    0 16px 25px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.end-turn-button:not(:disabled):active {
+  transform: translateY(4px);
+  box-shadow:
+    0 4px 0 #2d7030,
+    0 6px 10px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+.raptor-area {
+  border-bottom: 2px solid #3d6a37;
+}
+
+.scientist-area {
+  border-top: 2px solid #2a4a6c;
+}
+
+.deck-section {
+  flex: 0 0 auto;
+}
+
+.discard-section {
+  flex: 0 0 auto;
+  min-width: 100px;
+}
+
+.discard-placeholder {
+  width: 50px;
+  height: 70px;
+  border: 2px dashed #555;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+/* Sleep tokens indicator for mother raptor */
+.sleep-tokens-section {
+  flex: 0 0 auto;
+  min-width: 150px;
+}
+
+.sleep-tokens-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.sleep-tokens-label {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+}
+
+.sleep-tokens-count {
+  display: flex;
+  gap: 4px;
+}
+
+.sleep-token-pip {
+  font-size: 20px;
+  opacity: 0.3;
+  filter: grayscale(1);
+  transition:
+    opacity 0.3s,
+    filter 0.3s;
+}
+
+.sleep-token-pip.filled {
+  opacity: 1;
+  filter: none;
+}
+
+/* Baby tracker (escaped/captured) */
+.baby-tracker-section {
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+.baby-tracker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.baby-tracker-label {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+}
+
+.baby-tracker-count {
+  display: flex;
+  gap: 4px;
+}
+
+.baby-pip {
+  font-size: 20px;
+  opacity: 0.3;
+  filter: grayscale(1);
+  transition:
+    opacity 0.3s,
+    filter 0.3s;
+}
+
+.baby-pip.filled {
+  opacity: 1;
+  filter: none;
+}

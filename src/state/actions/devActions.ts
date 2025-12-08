@@ -3,7 +3,8 @@ import type { GameState } from "@/types/gameState.ts";
 // Dev action types
 export type DevAction =
   | { type: "DEV_SKIP_TO_EFFECT"; raptorCard: number; scientistCard: number }
-  | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" };
+  | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" }
+  | { type: "DEV_SKIP_TO_CARD_SELECTION"; player: "scientist" | "raptor" };
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
@@ -113,8 +114,28 @@ export function handleDevSkipToAction(state: GameState, action: { player: "scien
   };
 }
 
+export function handleDevSkipToCardSelection(state: GameState, action: { player: "scientist" | "raptor" }): GameState {
+  const newState = devAutoSetup(state);
+  const phase = action.player === "scientist" ? "SCIENTIST_CARD_SELECTION" : "RAPTOR_CARD_SELECTION";
+
+  return {
+    ...newState,
+    phase,
+    // Reset played cards for a fresh selection
+    scientistCards: {
+      ...newState.scientistCards,
+      played: action.player === "raptor" ? newState.scientistCards.hand[0] : null,
+    },
+    raptorCards: {
+      ...newState.raptorCards,
+      played: null,
+    },
+  };
+}
+
 // Handler map for dev actions
 export const devHandlers = {
   DEV_SKIP_TO_EFFECT: handleDevSkipToEffect,
   DEV_SKIP_TO_ACTION: handleDevSkipToAction,
+  DEV_SKIP_TO_CARD_SELECTION: handleDevSkipToCardSelection,
 };

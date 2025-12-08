@@ -10,7 +10,7 @@ interface DevPanelProps {
 
 function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
   const { state, dispatch } = useGame();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const handleAutoSetup = () => {
     if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") {
@@ -114,26 +114,35 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
       )}
 
       <div className="section">
+        <div className="section-label">Card Selection</div>
+        <div className="skip-buttons">
+          <button
+            className="skip-btn card-btn"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_CARD_SELECTION", player: "scientist" })}
+          >
+            Scientist Cards
+          </button>
+          <button
+            className="skip-btn card-btn"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_CARD_SELECTION", player: "raptor" })}
+          >
+            Raptor Cards
+          </button>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-label">Action Phase</div>
         <div className="skip-buttons">
           <button
             className="skip-btn action-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_ACTION",
-                player: "scientist",
-              });
-            }}
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_ACTION", player: "scientist" })}
           >
             Scientist Actions (8)
           </button>
           <button
             className="skip-btn action-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_ACTION",
-                player: "raptor",
-              });
-            }}
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_ACTION", player: "raptor" })}
           >
             Raptor Actions (8)
           </button>
@@ -141,148 +150,83 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
       </div>
 
       <div className="section">
+        <div className="section-label">Raptor Effects</div>
         <div className="skip-buttons">
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 1,
-                scientistCard: 5,
-              });
-            }}
+            className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 1, scientistCard: 5 })}
           >
             Mother's Call (1)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 4,
-                scientistCard: 5,
-              });
-            }}
+            className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 4, scientistCard: 5 })}
           >
             Mother's Call (2)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 2,
-                scientistCard: 5,
-              });
-            }}
+            className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 2, scientistCard: 5 })}
           >
             Disappearance
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 3,
-                scientistCard: 5,
-              });
-            }}
+            className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 3, scientistCard: 5 })}
           >
             Fear (1)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 5,
-                scientistCard: 9,
-              });
-            }}
+            className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 9 })}
           >
             Recovery (2)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 7,
-                scientistCard: 9,
-              });
-            }}
+            className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 7, scientistCard: 9 })}
           >
             Recovery (3)
           </button>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-label">Scientist Effects</div>
+        <div className="skip-buttons">
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 5,
-                scientistCard: 1,
-              });
-            }}
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 1 })}
           >
             Sleep Gas (1)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 5,
-                scientistCard: 2,
-              });
-            }}
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 2 })}
           >
             Reinforcements
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 9,
-                scientistCard: 5,
-              });
-            }}
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 5 })}
           >
             Fire (2)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 9,
-                scientistCard: 7,
-              });
-            }}
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 7 })}
           >
             Fire (3)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 9,
-                scientistCard: 3,
-              });
-            }}
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 3 })}
           >
             Jeep (2)
           </button>
           <button
-            className="skip-btn"
-            onClick={() => {
-              dispatch({
-                type: "DEV_SKIP_TO_EFFECT",
-                raptorCard: 9,
-                scientistCard: 8,
-              });
-            }}
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 8 })}
           >
             Jeep (4)
           </button>

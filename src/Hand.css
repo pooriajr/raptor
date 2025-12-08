@@ -16,52 +16,37 @@
   border: 2px solid #2a4a6c;
 }
 
-.hand-label {
-  font-size: 14px;
-  font-weight: bold;
-  color: #ccc;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
 .hand-cards {
   display: flex;
   gap: 12px;
   perspective: 1000px;
   position: relative;
-  padding-top: 120px;
 }
 
 .card-wrapper {
   position: relative;
 }
 
-.hand-cards > .confirm-button {
-  position: absolute;
-  top: 35px;
-  left: 50%;
-  transform: translateX(80px);
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
-  font-weight: bold;
-  border: none;
+.card-wrapper.hidden {
+  visibility: hidden;
+}
+
+/* Placeholder mode - dimmed appearance */
+.Hand.placeholder-mode {
+  opacity: 0.4;
+}
+
+.card-placeholder {
+  width: 100px;
+  height: 140px;
   border-radius: 8px;
-  cursor: pointer;
-  background: linear-gradient(145deg, #4a9a4a, #3a7a3a);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(74, 154, 74, 0.3);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-  white-space: nowrap;
-  z-index: 20;
+  border: 2px dashed #555;
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.hand-cards > .confirm-button:hover {
-  transform: translateX(80px) scale(1.05);
-  box-shadow: 0 6px 20px rgba(74, 154, 74, 0.4);
-}
-
-.hand-cards > .confirm-button:active {
-  transform: translateX(80px) scale(0.98);
+.card-placeholder-under {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
 }
