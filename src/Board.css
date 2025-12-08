@@ -63,8 +63,6 @@
   grid-template-rows: repeat(2, 200px);
   gap: 4px;
   padding: 20px;
-  background-color: #2a2a2a;
-  border-radius: 8px;
   width: fit-content;
 
   /* 3D perspective effect */
