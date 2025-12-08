@@ -1002,7 +1002,7 @@ describe("Game Reducer - Card System", () => {
     });
 
     it("is ignored during non-CARD_REVEAL phase", () => {
-      let state = getToCardSelectionPhase(
+      const state = getToCardSelectionPhase(
         createInitialGameState(),
         "scientist",
       );
@@ -1223,7 +1223,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("is rejected when scientist has lower card", () => {
-        let state = getToEffectPhaseScientistLower();
+        const state = getToEffectPhaseScientistLower();
         const scientist = state.scientists[0];
 
         const newState = gameReducer(state, {
@@ -1238,7 +1238,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("filters out invalid targets (non-scientists)", () => {
-        let state = getToEffectPhaseRaptorLower();
+        const state = getToEffectPhaseRaptorLower();
         const scientist = state.scientists[0];
         const baby = state.babies[0];
 
@@ -1322,7 +1322,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("is rejected when raptor has lower card", () => {
-        let state = getToEffectPhaseRaptorLower();
+        const state = getToEffectPhaseRaptorLower();
         const baby = state.babies[0];
 
         const newState = gameReducer(state, {
@@ -1335,7 +1335,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("filters out invalid targets (non-babies)", () => {
-        let state = getToEffectPhaseScientistLower();
+        const state = getToEffectPhaseScientistLower();
         const baby = state.babies[0];
         const scientist = state.scientists[0];
 
@@ -1473,7 +1473,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("is rejected when scientist has lower card", () => {
-        let state = getToEffectPhaseScientistLower();
+        const state = getToEffectPhaseScientistLower();
         const mother = state.mother!;
         const baby = state.babies.find((b) => b.tileId !== mother.tileId)!;
 
@@ -1496,7 +1496,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("skips invalid moves but processes valid ones", () => {
-        let state = getToEffectPhaseRaptorLower();
+        const state = getToEffectPhaseRaptorLower();
         const mother = state.mother!;
         const baby = state.babies.find((b) => b.tileId !== mother.tileId)!;
 
@@ -1873,7 +1873,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("is rejected when raptor has lower card", () => {
-        let state = getToEffectPhaseRaptorLower();
+        const state = getToEffectPhaseRaptorLower();
         expect(state.raptorCards.played).toBeLessThan(
           state.scientistCards.played!,
         );
@@ -1906,7 +1906,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("is rejected outside of EFFECT_PHASE", () => {
-        let state = getToCardSelectionPhase(
+        const state = getToCardSelectionPhase(
           createInitialGameState(),
           "scientist",
         );
@@ -1945,7 +1945,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       it("is ignored during non-EFFECT_PHASE", () => {
-        let state = getToCardSelectionPhase(
+        const state = getToCardSelectionPhase(
           createInitialGameState(),
           "scientist",
         );
@@ -2381,7 +2381,7 @@ describe("Game Reducer - Action Phase", () => {
     });
 
     it("is ignored during non-ACTION_PHASE", () => {
-      let state = getToCardSelectionPhase(
+      const state = getToCardSelectionPhase(
         createInitialGameState(),
         "scientist",
       );
