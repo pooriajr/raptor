@@ -171,11 +171,9 @@
   cursor: pointer;
 }
 
-/* Selected effect target - solid green glow instead of pulsing yellow */
+/* Selected effect target */
 .piece.effect-selected {
   cursor: pointer;
-  filter: drop-shadow(0 0 12px rgba(100, 255, 100, 1));
-  animation: none;
   transform: scale(1.1);
   transition: transform 0.15s ease;
 }
@@ -183,18 +181,8 @@
 /* Action phase selected piece */
 .piece.action-selected {
   cursor: pointer;
-  filter: drop-shadow(0 0 12px rgba(255, 200, 100, 1));
-  animation: pulse-action-selected 1s ease-in-out infinite;
-}
-
-@keyframes pulse-action-selected {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 10px rgba(255, 200, 100, 0.8));
-  }
-  50% {
-    filter: drop-shadow(0 0 18px rgba(255, 200, 100, 1));
-  }
+  transform: scale(1.1);
+  transition: transform 0.15s ease;
 }
 
 /* Hostile target - red tile highlight (scientist can act on baby, mother can kill scientist) */
@@ -251,8 +239,7 @@
 
 /* Pending piece - baby shown at its destination before confirming */
 .piece.pending-piece {
-  filter: drop-shadow(0 0 8px rgba(100, 255, 100, 0.8));
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
 /* Fire token styling */
@@ -294,5 +281,4 @@
 
 /* Jeep car at destination */
 .jeep-car {
-  filter: drop-shadow(0 0 8px rgba(100, 150, 255, 0.8));
 }
