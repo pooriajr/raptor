@@ -23,7 +23,6 @@ function App() {
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>
-      <h1>Raptor Game</h1>
       <Board showCoordinates={showCoordinates} />
       <DevPanel
         showCoordinates={showCoordinates}

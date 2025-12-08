@@ -1,7 +1,8 @@
 .Tile {
-  background-color: #7a9d88;
+  background-color: #e1e5ce;
   padding: 8px;
   position: relative;
+  border-radius: 4px;
 }
 
 /* Label showing tile number */
@@ -21,7 +22,7 @@
 /* Grid of spaces within each tile */
 .spaces-grid {
   display: grid;
-  gap: 4px;
+  gap: 6px;
 }
 
 /* Square tiles have 3×3 grid of spaces */
@@ -41,9 +42,8 @@
 
 /* Individual space styling */
 .space {
-  background-color: #a8c4b8;
-  border: 2px solid #8aa89c;
-  border-radius: 4px;
+  background-color: #fffdf2;
+  border-radius: 3px;
   min-height: 50px;
   display: flex;
   flex-direction: column;
