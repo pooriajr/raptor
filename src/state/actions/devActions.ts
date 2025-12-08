@@ -1,4 +1,4 @@
-import type { GameState, PieceState } from "@/types/gameState.ts";
+import type { GameState } from "@/types/gameState.ts";
 
 // Dev action types
 export type DevAction =
@@ -7,7 +7,8 @@ export type DevAction =
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
-  if (state.mother || state.babies.length > 0) return state;
+  // Check if already set up (mother placed)
+  if (state.mother.tileId !== -1) return state;
 
   let newState = { ...state };
   const squareTiles = newState.tiles.filter((t) => t.shape === "square");
@@ -19,56 +20,50 @@ function devAutoSetup(state: GameState): GameState {
   newState = {
     ...newState,
     mother: {
-      id: "mother",
-      type: "mother",
+      ...newState.mother,
       tileId: 2,
       x: motherSpace.coordinate.x,
       y: motherSpace.coordinate.y,
     },
-    holdingPen: { ...newState.holdingPen, mother: 0 },
   };
 
   // Place babies on other square tiles
   const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
-  const newBabies: PieceState[] = [];
+  const newBabies = [...newState.babies];
   let babyIndex = 0;
   for (const tile of tilesForBabies) {
     if (babyIndex >= 5) break;
     const space = tile.spaces.find((s) => !s.hasMountain)!;
-    newBabies.push({
-      id: `baby-${babyIndex}`,
-      type: "baby",
+    newBabies[babyIndex] = {
+      ...newBabies[babyIndex],
       tileId: tile.id,
       x: space.coordinate.x,
       y: space.coordinate.y,
-    });
+    };
     babyIndex++;
   }
   newState = {
     ...newState,
     babies: newBabies,
-    holdingPen: { ...newState.holdingPen, babies: 0 },
   };
 
   // Place scientists on L-tiles
-  const newScientists: PieceState[] = [];
+  const newScientists = [...newState.scientists];
   let scientistIndex = 0;
   for (const tile of lTiles) {
     if (scientistIndex >= 4) break;
     const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
-    newScientists.push({
-      id: `scientist-${scientistIndex}`,
-      type: "scientist",
+    newScientists[scientistIndex] = {
+      ...newScientists[scientistIndex],
       tileId: tile.id,
       x: space.coordinate.x,
       y: space.coordinate.y,
-    });
+    };
     scientistIndex++;
   }
   newState = {
     ...newState,
     scientists: newScientists,
-    holdingPen: { ...newState.holdingPen, scientists: 0 },
   };
 
   return newState;

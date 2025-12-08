@@ -175,13 +175,11 @@ export function handleDisappearance(state: GameState): GameState {
   if (scientistCards.played === null || raptorCards.played === null) return state;
   if (raptorCards.played >= scientistCards.played) return state;
 
-  // Mother must exist
-  if (!state.mother) return state;
-
   // Remove mother from the board (she'll be replaced after opponent acts)
+  // Set tileId to -1 to mark as "disappeared" (temporarily off-board)
   const newStateAfterDisappearance = {
     ...state,
-    mother: null,
+    mother: { ...state.mother, tileId: -1, x: -1, y: -1 },
   };
   return {
     ...newStateAfterDisappearance,

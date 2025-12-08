@@ -46,6 +46,7 @@ interface TileProps {
   pieces: AdaptedPiece[];
   validMoves: Array<{ tileId: number; x: number; y: number }>;
   setupPlacements?: Array<{ tileId: number; x: number; y: number }>;
+  setupMoveTargets?: Array<{ x: number; y: number }>;
   isValidSetupTile?: boolean;
   effectTargetIds?: string[];
   selectedEffectTargets?: string[];
@@ -74,6 +75,7 @@ function Tile({
   pieces,
   validMoves,
   setupPlacements = [],
+  setupMoveTargets = [],
   isValidSetupTile = false,
   effectTargetIds = [],
   selectedEffectTargets = [],
@@ -112,6 +114,11 @@ function Tile({
 
           // Check if this space is a valid setup placement
           const isValidSetupPlacement = setupPlacements.some(
+            (s) => s.x === space.coordinate.x && s.y === space.coordinate.y,
+          );
+
+          // Check if this space is a valid target for moving a piece within the tile
+          const isSetupMoveTarget = setupMoveTargets.some(
             (s) => s.x === space.coordinate.x && s.y === space.coordinate.y,
           );
 
@@ -202,6 +209,7 @@ function Tile({
               data-unusable={space.isUnusable}
               data-valid-move={isValidMove}
               data-valid-setup-placement={isValidSetupPlacement}
+              data-setup-move-target={isSetupMoveTarget}
               data-effect-destination={isEffectDestination}
               data-pending-destination={isPendingDestination || isPendingReinforcement || isPendingFire}
               data-has-fire={hasFireToken}

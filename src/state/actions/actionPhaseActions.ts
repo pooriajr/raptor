@@ -9,7 +9,7 @@ import { Scientist } from "@/pieces/Scientist.ts";
 
 // Saved state for action phase reset
 export interface ActionPhaseSavedState {
-  mother: PieceState | null;
+  mother: PieceState;
   babies: PieceState[];
   scientists: PieceState[];
   fireTokens: FireToken[];

@@ -1,5 +1,6 @@
 import { useGame } from "./state/GameContext";
 import "./SetupPhaseBanner.css";
+import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils";
 
 interface SetupPhaseBannerProps {
   onConfirm: () => void;
@@ -13,9 +14,9 @@ function SetupPhaseBanner({ onConfirm }: SetupPhaseBannerProps) {
   }
 
   const isRaptorSetup = state.phase === "RAPTOR_SETUP";
-  const motherPlaced = state.mother !== null;
-  const babiesPlaced = state.babies.length;
-  const scientistsPlaced = state.scientists.length;
+  const motherPlaced = isMotherPlaced(state);
+  const babiesPlaced = countPlacedBabies(state);
+  const scientistsPlaced = countPlacedScientists(state);
 
   const getInstruction = () => {
     if (isRaptorSetup) {
@@ -44,9 +45,7 @@ function SetupPhaseBanner({ onConfirm }: SetupPhaseBannerProps) {
     }
   };
 
-  const isComplete = isRaptorSetup
-    ? motherPlaced && babiesPlaced === 5
-    : scientistsPlaced === 4;
+  const isComplete = isRaptorSetup ? motherPlaced && babiesPlaced === 5 : scientistsPlaced === 4;
 
   return (
     <div className={`SetupPhaseBanner ${isRaptorSetup ? "raptor" : "scientist"}`}>
@@ -60,11 +59,7 @@ function SetupPhaseBanner({ onConfirm }: SetupPhaseBannerProps) {
           <span className="banner-instruction">{getInstruction()}</span>
         </div>
         <div className="banner-buttons">
-          <button
-            className={`confirm-button ${isComplete ? "active" : ""}`}
-            onClick={onConfirm}
-            disabled={!isComplete}
-          >
+          <button className={`confirm-button ${isComplete ? "active" : ""}`} onClick={onConfirm} disabled={!isComplete}>
             Confirm
           </button>
         </div>

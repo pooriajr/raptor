@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./DevPanel.css";
 import { useGame } from "./state/GameContext.tsx";
+import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils.ts";
 
 interface DevPanelProps {
   showCoordinates: boolean;
@@ -20,7 +21,7 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
     const lTiles = state.tiles.filter((t) => t.shape === "L");
 
     // Place mother on tile 2 if not placed
-    if (state.phase === "RAPTOR_SETUP" && state.holdingPen.mother > 0) {
+    if (state.phase === "RAPTOR_SETUP" && !isMotherPlaced(state)) {
       const tile2 = squareTiles.find((t) => t.id === 2)!;
       const space = tile2.spaces.find((s) => !s.hasMountain)!;
       dispatch({
@@ -34,7 +35,7 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
     // Place babies on remaining square tiles
     if (state.phase === "RAPTOR_SETUP") {
       const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
-      let babiesPlaced = state.babies.length;
+      let babiesPlaced = countPlacedBabies(state);
 
       for (const tile of tilesForBabies) {
         if (babiesPlaced >= 5) break;
@@ -54,7 +55,7 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
 
     // Place scientists on L-tiles
     if (state.phase === "SCIENTIST_SETUP") {
-      let scientistsPlaced = state.scientists.length;
+      let scientistsPlaced = countPlacedScientists(state);
 
       for (const tile of lTiles) {
         if (scientistsPlaced >= 4) break;

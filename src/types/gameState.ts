@@ -20,18 +20,11 @@ export type PieceType = "mother" | "baby" | "scientist";
 export interface PieceState {
   id: string;
   type: PieceType;
-  tileId: number;
+  tileId: number; // -1 means unplaced (in holding pen)
   x: number;
   y: number;
   isAsleep?: boolean; // Baby raptors can be put to sleep
   isFrightened?: boolean; // Scientists can be frightened
-}
-
-// Holding pen tracks how many of each piece type are available to place
-export interface HoldingPen {
-  scientists: number;
-  babies: number;
-  mother: number;
 }
 
 // Card state for each player
@@ -55,13 +48,12 @@ export type Player = "raptor" | "scientist";
 export interface GameState {
   phase: GamePhase;
   tiles: Tile[];
-  // Split piece arrays - each piece type has its own array
-  mother: PieceState | null;
+  // All pieces exist from start with tileId: -1 meaning unplaced
+  mother: PieceState;
   babies: PieceState[];
   scientists: PieceState[];
   scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
   fireTokens: FireToken[];
-  holdingPen: HoldingPen;
   raptorCards: CardState;
   scientistCards: CardState;
   // Action phase state
@@ -75,15 +67,6 @@ export interface GameState {
   motherSleepTokens: number; // Sleep tokens on mother (scientist wins at 5)
   capturedBabies: number; // Babies captured by scientists (scientist wins at 3)
   escapedBabies: number; // Babies that escaped the board (raptor wins at 3)
-}
-
-// Initial holding pen state for setup
-export function createInitialHoldingPen(): HoldingPen {
-  return {
-    scientists: 10,
-    babies: 5,
-    mother: 1,
-  };
 }
 
 // Create a shuffled deck of cards 1-9
@@ -106,17 +89,49 @@ export function createInitialCardState(): CardState {
   };
 }
 
+// Create mother raptor (unplaced initially)
+export function createInitialMother(): PieceState {
+  return {
+    id: "mother",
+    type: "mother",
+    tileId: -1, // -1 means unplaced
+    x: -1,
+    y: -1,
+  };
+}
+
+// Create all 5 baby raptors with stable IDs (unplaced initially)
+export function createInitialBabies(): PieceState[] {
+  return [0, 1, 2, 3, 4].map((i) => ({
+    id: `baby-${i}`,
+    type: "baby" as const,
+    tileId: -1, // -1 means unplaced
+    x: -1,
+    y: -1,
+  }));
+}
+
+// Create all 10 scientists with stable IDs (unplaced initially)
+export function createInitialScientists(): PieceState[] {
+  return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => ({
+    id: `scientist-${i}`,
+    type: "scientist" as const,
+    tileId: -1, // -1 means unplaced
+    x: -1,
+    y: -1,
+  }));
+}
+
 // Create initial game state - raptor sets up first
 export function createInitialGameState(): GameState {
   return {
     phase: "RAPTOR_SETUP",
     tiles: createBoard(),
-    mother: null,
-    babies: [],
-    scientists: [],
+    mother: createInitialMother(),
+    babies: createInitialBabies(),
+    scientists: createInitialScientists(),
     scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     fireTokens: [],
-    holdingPen: createInitialHoldingPen(),
     raptorCards: createInitialCardState(),
     scientistCards: createInitialCardState(),
     actionPoints: 0,

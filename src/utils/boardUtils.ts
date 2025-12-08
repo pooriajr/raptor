@@ -1,21 +1,22 @@
 import type { GameState, PieceState } from "../types/gameState.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
+import { isMotherPlaced, getPlacedBabies, getPlacedScientists, countPlacedBabies } from "./pieceUtils.ts";
 
 // Helper to find an item by id in an array
 export function findById<T extends { id: string }>(items: T[], id: string): T | undefined {
   return items.find((item) => item.id === id);
 }
 
-// Helper to get all pieces as PieceState array
+// Helper to get all placed pieces as PieceState array
 export function getAllPieces(state: GameState): PieceState[] {
   const pieces: PieceState[] = [];
-  if (state.mother) {
+  if (isMotherPlaced(state)) {
     pieces.push({ ...state.mother, type: "mother" });
   }
-  for (const baby of state.babies) {
+  for (const baby of getPlacedBabies(state)) {
     pieces.push({ ...baby, type: "baby" });
   }
-  for (const scientist of state.scientists) {
+  for (const scientist of getPlacedScientists(state)) {
     pieces.push({ ...scientist, type: "scientist" });
   }
   return pieces;
@@ -49,7 +50,7 @@ export function isSpaceOccupied(
 
 // Helper to check if tile has a raptor (mother or baby)
 export function tileHasRaptor(state: GameState, tileId: number): boolean {
-  if (state.mother && state.mother.tileId === tileId) return true;
+  if (state.mother.tileId === tileId) return true;
   return state.babies.some((b) => b.tileId === tileId);
 }
 
@@ -69,7 +70,7 @@ export function spaceHasMountain(state: GameState, tileId: number, x: number, y:
 
 // Check if raptor setup is complete (mother + 5 babies placed)
 export function isRaptorSetupComplete(state: GameState): boolean {
-  return state.mother !== null && state.babies.length === 5;
+  return isMotherPlaced(state) && countPlacedBabies(state) === 5;
 }
 
 // Helper to check if two pieces are adjacent (orthogonally)

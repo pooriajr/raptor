@@ -128,6 +128,17 @@
   box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
 }
 
+/* Setup move target - hover effect only, no permanent highlight */
+.space[data-setup-move-target="true"] {
+  cursor: pointer;
+}
+
+.space[data-setup-move-target="true"]:hover {
+  background-color: #90d5a8 !important;
+  border-color: #4a9d6f !important;
+  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
+}
+
 /* Piece status indicators */
 .piece {
   position: relative;

@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { gameReducer, getAllPieces, findById } from "./gameReducer";
 import { createInitialGameState, type GameState } from "../types/gameState";
+import {
+  countPlacedBabies,
+  countPlacedScientists,
+  isMotherPlaced,
+  getUnplacedBabies,
+  getUnplacedScientists,
+} from "../utils/pieceUtils";
 
 // Helper to complete raptor setup and transition to scientist setup phase
 function completeRaptorSetup(initialState: GameState): GameState {
@@ -112,7 +119,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: motherSpace.coordinate.y,
       });
       expect(state.mother).not.toBeNull();
-      expect(state.babies).toHaveLength(0);
+      expect(countPlacedBabies(state)).toBe(0);
       expect(state.phase).toBe("RAPTOR_SETUP"); // Still raptor setup
 
       // Place 5 babies
@@ -128,7 +135,7 @@ describe("Game Reducer - Setup Rules", () => {
       }
 
       expect(state.mother).not.toBeNull();
-      expect(state.babies).toHaveLength(5);
+      expect(countPlacedBabies(state)).toBe(5);
       expect(state.phase).toBe("RAPTOR_SETUP"); // Still raptor setup until confirmed
 
       // Confirm raptor setup
@@ -169,8 +176,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: validSpace.coordinate.y,
       });
 
-      expect(newState.scientists).toHaveLength(1);
-      expect(newState.holdingPen.scientists).toBe(9);
+      expect(countPlacedScientists(newState)).toBe(1);
     });
 
     it("rejects scientist placement on square tile", () => {
@@ -186,9 +192,8 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      // State unchanged - placement rejected (still has only raptor pieces)
-      expect(newState.scientists).toHaveLength(0);
-      expect(newState.holdingPen.scientists).toBe(10);
+      // State unchanged - placement rejected
+      expect(countPlacedScientists(newState)).toBe(0);
     });
 
     it("rejects scientist placement on L-tile exit space", () => {
@@ -204,8 +209,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: exitSpace.coordinate.y,
       });
 
-      expect(newState.scientists).toHaveLength(0);
-      expect(newState.holdingPen.scientists).toBe(10);
+      expect(countPlacedScientists(newState)).toBe(0);
     });
 
     it("rejects scientist placement on L-tile that already has a scientist", () => {
@@ -230,8 +234,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: spaces[1].coordinate.y,
       });
 
-      expect(state2.scientists).toHaveLength(1);
-      expect(state2.holdingPen.scientists).toBe(9);
+      expect(countPlacedScientists(state2)).toBe(1);
     });
 
     it("allows scientist placement on different L-tiles", () => {
@@ -257,8 +260,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space2.coordinate.y,
       });
 
-      expect(state2.scientists).toHaveLength(2);
-      expect(state2.holdingPen.scientists).toBe(8);
+      expect(countPlacedScientists(state2)).toBe(2);
     });
 
     it("allows exactly 4 scientists to be placed (one per L-tile)", () => {
@@ -279,7 +281,7 @@ describe("Game Reducer - Setup Rules", () => {
         });
       }
 
-      expect(state.scientists).toHaveLength(4);
+      expect(countPlacedScientists(state)).toBe(4);
     });
 
     it("board has exactly 4 L-tiles for scientist placement", () => {
@@ -315,8 +317,8 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       expect(newState.mother).not.toBeNull();
-      expect(newState.mother!.type).toBe("mother");
-      expect(newState.holdingPen.mother).toBe(0);
+      expect(newState.mother.type).toBe("mother");
+      expect(isMotherPlaced(newState)).toBe(true);
     });
 
     it("allows mother raptor placement on central square tile 7", () => {
@@ -350,7 +352,7 @@ describe("Game Reducer - Setup Rules", () => {
           y: space.coordinate.y,
         });
 
-        expect(newState.mother).toBeNull();
+        expect(isMotherPlaced(newState)).toBe(false);
       }
     });
 
@@ -366,7 +368,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      expect(newState.mother).toBeNull();
+      expect(isMotherPlaced(newState)).toBe(false);
     });
 
     it("displaces baby when mother is placed on tile that has a baby", () => {
@@ -382,8 +384,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: spaces[0].coordinate.y,
       });
 
-      expect(state1.babies).toHaveLength(1);
-      expect(state1.holdingPen.babies).toBe(4);
+      expect(countPlacedBabies(state1)).toBe(1);
 
       // Place mother on same tile - baby should be displaced
       const state2 = gameReducer(state1, {
@@ -393,10 +394,8 @@ describe("Game Reducer - Setup Rules", () => {
         y: spaces[1].coordinate.y,
       });
 
-      expect(state2.babies).toHaveLength(0); // Baby was displaced
-      expect(state2.mother).not.toBeNull(); // Mother was placed
-      expect(state2.holdingPen.babies).toBe(5); // Baby returned to holding pen
-      expect(state2.holdingPen.mother).toBe(0); // Mother removed from holding pen
+      expect(countPlacedBabies(state2)).toBe(0); // Baby was displaced
+      expect(isMotherPlaced(state2)).toBe(true); // Mother was placed
     });
   });
 
@@ -413,9 +412,9 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      expect(newState.babies).toHaveLength(1);
-      expect(newState.babies[0].type).toBe("baby");
-      expect(newState.holdingPen.babies).toBe(4);
+      expect(countPlacedBabies(newState)).toBe(1);
+      const placedBaby = newState.babies.find((b) => b.tileId !== -1)!;
+      expect(placedBaby.type).toBe("baby");
     });
 
     it("rejects baby raptor placement on L-tiles", () => {
@@ -430,7 +429,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      expect(newState.babies).toHaveLength(0);
+      expect(countPlacedBabies(newState)).toBe(0);
     });
 
     it("rejects baby raptor placement on tile that already has a raptor", () => {
@@ -454,7 +453,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: spaces[1].coordinate.y,
       });
 
-      expect(state2.babies).toHaveLength(1);
+      expect(countPlacedBabies(state2)).toBe(1);
     });
 
     it("allows baby placement on different square tiles (one per tile)", () => {
@@ -479,7 +478,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space2.coordinate.y,
       });
 
-      expect(state2.babies).toHaveLength(2);
+      expect(countPlacedBabies(state2)).toBe(2);
     });
 
     it("rejects baby placement if both central tiles (2 and 7) would be blocked", () => {
@@ -506,7 +505,7 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       // Second placement rejected - must leave one central tile for mother
-      expect(state2.babies).toHaveLength(1);
+      expect(countPlacedBabies(state2)).toBe(1);
     });
 
     it("allows baby placement on one central tile, leaving other for mother", () => {
@@ -521,7 +520,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space2.coordinate.y,
       });
 
-      expect(newState.babies).toHaveLength(1);
+      expect(countPlacedBabies(newState)).toBe(1);
 
       // Tile 7 should still be available for mother
       const tile7 = newState.tiles.find((t) => t.id === 7)!;
@@ -534,7 +533,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space7.coordinate.y,
       });
 
-      expect(finalState.babies).toHaveLength(1);
+      expect(countPlacedBabies(finalState)).toBe(1);
       expect(finalState.mother).not.toBeNull();
     });
 
@@ -561,8 +560,7 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      expect(state1.mother).not.toBeNull();
-      expect(state1.holdingPen.mother).toBe(0);
+      expect(isMotherPlaced(state1)).toBe(true);
 
       // Remove mother
       const state2 = gameReducer(state1, {
@@ -570,8 +568,7 @@ describe("Game Reducer - Setup Rules", () => {
         pieceId: "mother",
       });
 
-      expect(state2.mother).toBeNull();
-      expect(state2.holdingPen.mother).toBe(1);
+      expect(isMotherPlaced(state2)).toBe(false);
     });
 
     it("removes baby and returns to holding pen", () => {
@@ -587,17 +584,16 @@ describe("Game Reducer - Setup Rules", () => {
         y: space.coordinate.y,
       });
 
-      expect(state1.babies).toHaveLength(1);
-      expect(state1.holdingPen.babies).toBe(4);
+      expect(countPlacedBabies(state1)).toBe(1);
 
-      // Remove baby
+      // Remove baby (find the placed one)
+      const placedBaby = state1.babies.find((b) => b.tileId !== -1)!;
       const state2 = gameReducer(state1, {
         type: "REMOVE_PIECE",
-        pieceId: state1.babies[0].id,
+        pieceId: placedBaby.id,
       });
 
-      expect(state2.babies).toHaveLength(0);
-      expect(state2.holdingPen.babies).toBe(5);
+      expect(countPlacedBabies(state2)).toBe(0);
     });
 
     it("removes scientist and returns to holding pen", () => {
@@ -641,17 +637,18 @@ describe("Game Reducer - Setup Rules", () => {
         y: sciSpace.coordinate.y,
       });
 
-      expect(state.scientists).toHaveLength(1);
-      expect(state.holdingPen.scientists).toBe(9);
+      expect(countPlacedScientists(state)).toBe(1);
+      expect(getUnplacedScientists(state)).toHaveLength(9);
 
-      // Remove scientist
+      // Remove scientist - find the placed one
+      const placedScientist = state.scientists.find((s) => s.tileId !== -1)!;
       const state2 = gameReducer(state, {
         type: "REMOVE_PIECE",
-        pieceId: state.scientists[0].id,
+        pieceId: placedScientist.id,
       });
 
-      expect(state2.scientists).toHaveLength(0);
-      expect(state2.holdingPen.scientists).toBe(10);
+      expect(countPlacedScientists(state2)).toBe(0);
+      expect(getUnplacedScientists(state2)).toHaveLength(10);
     });
 
     it("ignores remove action outside setup phases", () => {
@@ -708,7 +705,7 @@ describe("Game Reducer - Setup Rules", () => {
         pieceId: babyId,
       });
 
-      expect(state2.babies).toHaveLength(5); // Baby still there
+      expect(countPlacedBabies(state2)).toBe(5); // Baby still there
     });
   });
 
@@ -764,25 +761,27 @@ describe("Game Reducer - Setup Rules", () => {
           y: mountainSpace.coordinate.y,
         });
 
-        expect(newState.babies).toHaveLength(0);
+        expect(countPlacedBabies(newState)).toBe(0);
       }
     });
   });
 
   describe("Setup Piece Counts", () => {
-    it("initial state has 10 scientists in holding pen", () => {
+    it("initial state has 10 unplaced scientists", () => {
       const state = createInitialGameState();
-      expect(state.holdingPen.scientists).toBe(10);
+      expect(getUnplacedScientists(state)).toHaveLength(10);
+      expect(countPlacedScientists(state)).toBe(0);
     });
 
-    it("initial state has 1 mother in holding pen", () => {
+    it("initial state has unplaced mother", () => {
       const state = createInitialGameState();
-      expect(state.holdingPen.mother).toBe(1);
+      expect(isMotherPlaced(state)).toBe(false);
     });
 
-    it("initial state has 5 babies in holding pen", () => {
+    it("initial state has 5 unplaced babies", () => {
       const state = createInitialGameState();
-      expect(state.holdingPen.babies).toBe(5);
+      expect(getUnplacedBabies(state)).toHaveLength(5);
+      expect(countPlacedBabies(state)).toBe(0);
     });
 
     it("mother and 5 babies fit on 6 square tiles (one per tile)", () => {
