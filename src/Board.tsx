@@ -284,16 +284,17 @@ function Board({ showCoordinates = false }: BoardProps) {
     return state.scientists.find((s) => s.id === id);
   };
 
-  const handlePieceClick = (pieceId: string) => {
+  // Handle piece interactions - returns true if the interaction was handled
+  const handlePieceInteraction = (pieceId: string): boolean => {
     // Handle effect phase targeting
     if (state.phase === "EFFECT_PHASE") {
       const effectType = getCurrentEffectType();
       const piece = findPieceById(pieceId);
-      if (!piece) return;
+      if (!piece) return false;
 
       if (effectType === "fear") {
         // Fear: select scientists to frighten
-        if (piece.type !== "scientist" || piece.isFrightened) return;
+        if (piece.type !== "scientist" || piece.isFrightened) return false;
 
         setSelectedEffectTargets((prev) => {
           if (prev.includes(pieceId)) {
@@ -306,9 +307,10 @@ function Board({ showCoordinates = false }: BoardProps) {
             return [...prev, pieceId];
           }
         });
+        return true;
       } else if (effectType === "sleeping_gas") {
         // Sleeping Gas: select babies to put to sleep
-        if (piece.type !== "baby" || piece.isAsleep) return;
+        if (piece.type !== "baby" || piece.isAsleep) return false;
 
         setSelectedEffectTargets((prev) => {
           if (prev.includes(pieceId)) {
@@ -321,9 +323,10 @@ function Board({ showCoordinates = false }: BoardProps) {
             return [...prev, pieceId];
           }
         });
+        return true;
       } else if (effectType === "recovery") {
         // Recovery: select sleeping babies to wake up
-        if (piece.type !== "baby" || !piece.isAsleep) return;
+        if (piece.type !== "baby" || !piece.isAsleep) return false;
 
         setSelectedEffectTargets((prev) => {
           if (prev.includes(pieceId)) {
@@ -336,13 +339,14 @@ function Board({ showCoordinates = false }: BoardProps) {
             return [...prev, pieceId];
           }
         });
+        return true;
       } else if (effectType === "mothers_call") {
         // Mother's Call: two-step selection per baby
         // Step 1: Select a baby that can reach mother's tile
         // Step 2: Select destination on mother's tile
         // Repeat for additional babies (if limit allows)
         const mother = state.mother;
-        if (!mother) return;
+        if (!mother) return false;
 
         if (piece.type === "baby") {
           // Check if this baby already has a pending move
@@ -355,19 +359,19 @@ function Board({ showCoordinates = false }: BoardProps) {
             setPendingMothersCallMoves((prev) =>
               prev.filter((m) => m.babyId !== pieceId),
             );
-            return;
+            return true;
           }
 
           // If clicking the currently selected baby, deselect it
           if (pieceId === selectedBabyForCall) {
             setSelectedBabyForCall(null);
             setSelectedBabyPathResults([]);
-            return;
+            return true;
           }
 
           // Check if we're at the limit
           const limit = getEffectLimit();
-          if (pendingMothersCallMoves.length >= limit) return;
+          if (pendingMothersCallMoves.length >= limit) return false;
 
           // Check if baby can reach mother's tile and get paths
           const pathResults = getReachableDestinationsOnMotherTileWithPaths(
@@ -388,12 +392,14 @@ function Board({ showCoordinates = false }: BoardProps) {
               ),
           );
 
-          if (availablePathResults.length === 0) return;
+          if (availablePathResults.length === 0) return false;
 
           // Select this baby and cache its path results
           setSelectedBabyForCall(pieceId);
           setSelectedBabyPathResults(availablePathResults);
+          return true;
         }
+        return false;
       } else if (effectType === "jeep") {
         // Jeep: two-step selection per move
         // Step 1: Select a scientist
@@ -406,12 +412,12 @@ function Board({ showCoordinates = false }: BoardProps) {
           if (pieceId === selectedScientistForJeep) {
             setSelectedScientistForJeep(null);
             setSelectedScientistJeepDestinations([]);
-            return;
+            return true;
           }
 
           // Check if we're at the limit - can't add more moves
           const limit = getEffectLimit();
-          if (pendingJeepMoves.length >= limit) return;
+          if (pendingJeepMoves.length >= limit) return false;
 
           // Get the scientist's effective position (considering pending moves)
           const currentPos = getScientistEffectivePosition(
@@ -459,17 +465,20 @@ function Board({ showCoordinates = false }: BoardProps) {
             return !isFinalDestination;
           });
 
-          if (availableDestinations.length === 0) return;
+          if (availableDestinations.length === 0) return false;
 
           // Select this scientist and cache its destinations
           setSelectedScientistForJeep(pieceId);
           setSelectedScientistJeepDestinations(availableDestinations);
+          return true;
         }
+        return false;
       }
-      return;
+      return false;
     }
 
-    // TODO: Other piece click handlers (select piece, show info, toggle jeep mode)
+    // TODO: Handle action phase piece selection
+    return false;
   };
 
   const handleEffectConfirm = () => {
@@ -547,8 +556,21 @@ function Board({ showCoordinates = false }: BoardProps) {
     setSelectedScientistJeepDestinations([]);
   };
 
-  // Handle space click for effect destinations (Mother's Call, Reinforcements)
-  const handleSpaceClick = (tileId: number, x: number, y: number) => {
+  // Unified space click handler - handles all interactions on a tile space
+  const handleSpaceClick = (
+    tileId: number,
+    x: number,
+    y: number,
+    pieceId: string | null,
+  ) => {
+    // If there's a piece on this space, handle piece-related interactions first
+    if (pieceId) {
+      const handled = handlePieceInteraction(pieceId);
+      if (handled) return;
+    }
+
+    // TODO: Handle action phase movement
+
     if (state.phase !== "EFFECT_PHASE") return;
 
     const effectType = getCurrentEffectType();
@@ -1152,7 +1174,6 @@ function Board({ showCoordinates = false }: BoardProps) {
                   pathTrailPositions={pathTrailPositions}
                   showCoordinates={showCoordinates}
                   onDrop={handleDrop}
-                  onPieceClick={handlePieceClick}
                   onSpaceClick={handleSpaceClick}
                 />
               );
