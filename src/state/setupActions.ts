@@ -5,7 +5,6 @@ import {
   tileHasScientist,
   spaceHasMountain,
   isRaptorSetupComplete,
-  getAllPieces,
 } from "../utils/boardUtils.ts";
 
 // Action types for setup phase
@@ -13,7 +12,6 @@ export type SetupAction =
   | { type: "PLACE_SCIENTIST"; tileId: number; x: number; y: number }
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
-  | { type: "MOVE_PIECE"; pieceId: string; tileId: number; x: number; y: number }
   | { type: "START_GAME" };
 
 export function handlePlaceScientist(
@@ -76,11 +74,7 @@ export function handlePlaceMother(
   // Validate: must be a central square tile (2 or 7)
   const centralTiles = [2, 7];
   const tile = state.tiles.find((t) => t.id === action.tileId);
-  if (
-    !tile ||
-    tile.shape !== "square" ||
-    !centralTiles.includes(action.tileId)
-  )
+  if (!tile || tile.shape !== "square" || !centralTiles.includes(action.tileId))
     return state;
 
   // Validate: no mountain
@@ -173,63 +167,6 @@ export function handlePlaceBaby(
   }
 
   return newState;
-}
-
-export function handleMovePiece(
-  state: GameState,
-  action: { pieceId: string; tileId: number; x: number; y: number },
-): GameState {
-  // Find the piece in any array
-  const allPieces = getAllPieces(state);
-  const piece = allPieces.find((p) => p.id === action.pieceId);
-  if (!piece) return state;
-
-  // Validate: target tile exists
-  const targetTile = state.tiles.find((t) => t.id === action.tileId);
-  if (!targetTile) return state;
-
-  // Validate: target space exists and has no mountain
-  const targetSpace = targetTile.spaces.find(
-    (s) => s.coordinate.x === action.x && s.coordinate.y === action.y,
-  );
-  if (!targetSpace || targetSpace.hasMountain || targetSpace.isUnusable)
-    return state;
-
-  // Validate: space not occupied
-  if (isSpaceOccupied(state, action.tileId, action.x, action.y, action.pieceId))
-    return state;
-
-  // Update the appropriate array based on piece type
-  if (piece.type === "mother" && state.mother) {
-    return {
-      ...state,
-      mother: {
-        ...state.mother,
-        tileId: action.tileId,
-        x: action.x,
-        y: action.y,
-      },
-    };
-  } else if (piece.type === "baby") {
-    return {
-      ...state,
-      babies: state.babies.map((b) =>
-        b.id === action.pieceId
-          ? { ...b, tileId: action.tileId, x: action.x, y: action.y }
-          : b,
-      ),
-    };
-  } else if (piece.type === "scientist") {
-    return {
-      ...state,
-      scientists: state.scientists.map((s) =>
-        s.id === action.pieceId
-          ? { ...s, tileId: action.tileId, x: action.x, y: action.y }
-          : s,
-      ),
-    };
-  }
-  return state;
 }
 
 export function handleStartGame(state: GameState): GameState {

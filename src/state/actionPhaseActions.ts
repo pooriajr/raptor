@@ -1,5 +1,9 @@
 import type { GameState, PieceState } from "../types/gameState.ts";
-import { getAllPieces, isSpaceOccupied, arePiecesAdjacent } from "../utils/boardUtils.ts";
+import {
+  getAllPieces,
+  isSpaceOccupied,
+  arePiecesAdjacent,
+} from "../utils/boardUtils.ts";
 import { hasLineOfSight } from "../utils/lineOfSight.ts";
 import { getConnectedFires } from "../utils/fireUtils.ts";
 import {

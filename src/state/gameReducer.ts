@@ -9,7 +9,6 @@ import {
   handlePlaceScientist,
   handlePlaceMother,
   handlePlaceBaby,
-  handleMovePiece,
   handleStartGame,
   type SetupAction,
 } from "./setupActions.ts";
@@ -142,8 +141,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handlePlaceMother(state, action);
     case "PLACE_BABY":
       return handlePlaceBaby(state, action);
-    case "MOVE_PIECE":
-      return handleMovePiece(state, action);
     case "START_GAME":
       return handleStartGame(state);
 
