@@ -61,9 +61,6 @@ interface TileProps {
   pendingJeepMoves?: PendingJeepMove[];
   pathTrailPositions?: Array<{ tileId: number; x: number; y: number }>;
   showCoordinates?: boolean;
-  onMouseDown: (pieceId: string) => void;
-  onMouseUp: () => void;
-  onDragStart: (pieceId: string) => void;
   onDrop: (tileId: number, localX: number, localY: number) => void;
   onPieceClick: (pieceId: string) => void;
   onSpaceClick?: (tileId: number, x: number, y: number) => void;
@@ -83,9 +80,6 @@ function Tile({
   pendingJeepMoves = [],
   pathTrailPositions = [],
   showCoordinates = false,
-  onMouseDown,
-  onMouseUp,
-  onDragStart,
   onDrop,
   onPieceClick,
   onSpaceClick,
@@ -370,12 +364,9 @@ function Tile({
               )}
               {/* Show piece normally, but hide if it has a pending move */}
               {pieceOnSpace && !pendingMoveFromHere && !isJeepOrigin && (
-                <span
+                <motion.span
+                  layoutId={`piece-${pieceOnSpace.id}`}
                   className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
-                  draggable
-                  onMouseDown={() => onMouseDown(pieceOnSpace.id)}
-                  onMouseUp={onMouseUp}
-                  onDragStart={() => onDragStart(pieceOnSpace.id)}
                   onClick={(e) => {
                     e.stopPropagation();
                     onPieceClick(pieceOnSpace.id);
@@ -388,7 +379,7 @@ function Tile({
                   {pieceOnSpace.isFrightened && (
                     <span className="status-icon">😨</span>
                   )}
-                </span>
+                </motion.span>
               )}
             </div>
           );

@@ -5,12 +5,11 @@ import CardDeck from "./CardDeck.tsx";
 import Hand from "./Hand.tsx";
 import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
+import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState, PieceType } from "./types/gameState.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
-import { MotherRaptor } from "./pieces/MotherRaptor.ts";
-import { BabyRaptor } from "./pieces/BabyRaptor.ts";
-import { Scientist } from "./pieces/Scientist.ts";
+
 import {
   canBabyReachMotherTile,
   getReachableDestinationsOnMotherTileWithPaths,
@@ -63,18 +62,6 @@ function getScientistEffectivePosition(
   return { tileId: scientist.tileId, x: scientist.x, y: scientist.y };
 }
 
-// Adapter: create a piece class instance from plain state for movement logic
-function createPieceFromState(piece: PieceState) {
-  switch (piece.type) {
-    case "mother":
-      return new MotherRaptor(piece.id, piece.tileId, piece.x, piece.y);
-    case "baby":
-      return new BabyRaptor(piece.id, piece.tileId, piece.x, piece.y);
-    case "scientist":
-      return new Scientist(piece.id, piece.tileId, piece.x, piece.y);
-  }
-}
-
 // Adapter to make PieceState compatible with components expecting Piece interface
 function adaptPieceForRender(piece: PieceState) {
   return {
@@ -95,7 +82,6 @@ interface BoardProps {
 function Board({ showCoordinates = false }: BoardProps) {
   const { state, dispatch } = useGame();
 
-  const [draggedPieceId, setDraggedPieceId] = useState<string | null>(null);
   const [isScientistNewDraw, setIsScientistNewDraw] = useState(false);
   const [isRaptorNewDraw, setIsRaptorNewDraw] = useState(false);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
@@ -132,7 +118,6 @@ function Board({ showCoordinates = false }: BoardProps) {
   }, [state.phase, dispatch]);
   const [draggedHoldingPieceType, setDraggedHoldingPieceType] =
     useState<PieceType | null>(null);
-  const [hoveredPieceId, setHoveredPieceId] = useState<string | null>(null);
   const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>(
     [],
   );
@@ -242,25 +227,11 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
-  const handleMouseDown = (pieceId: string) => {
-    setHoveredPieceId(pieceId);
-  };
-
-  const handleMouseUp = () => {
-    setHoveredPieceId(null);
-  };
-
-  const handleDragStart = (pieceId: string) => {
-    setDraggedPieceId(pieceId);
-    setHoveredPieceId(null);
-  };
-
   const handleHoldingPenDragStart = (pieceType: PieceType) => {
     setDraggedHoldingPieceType(pieceType);
   };
 
   const handleDragEnd = () => {
-    setDraggedPieceId(null);
     setDraggedHoldingPieceType(null);
   };
 
@@ -709,10 +680,6 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
-  // Get the valid moves for the currently dragged or hovered piece on the board
-  const activePieceId = draggedPieceId || hoveredPieceId;
-  const activePiece = activePieceId ? findPieceById(activePieceId) : null;
-
   // Calculate valid placement spaces for pieces from holding pen
   // Helper to check if a space is occupied by any piece
   const isSpaceOccupied = (tileId: number, x: number, y: number): boolean => {
@@ -836,56 +803,14 @@ function Board({ showCoordinates = false }: BoardProps) {
   };
 
   // Calculate valid moves
-  const validMoves = activePiece
-    ? // Piece on board - use movement rules
-      (() => {
-        const pieceInstance = createPieceFromState(activePiece);
-        const allPieces = getAllPieces();
-        return pieceInstance
-          .getValidMoves(state.tiles, allPieces, state.fireTokens)
-          .filter((move) => {
-            const targetTile = state.tiles.find((t) => t.id === move.tileId);
-            if (!targetTile) return false;
-
-            const targetSpace = targetTile.spaces.find(
-              (s) => s.coordinate.x === move.x && s.coordinate.y === move.y,
-            );
-            if (!targetSpace) return false;
-
-            if (targetSpace.hasMountain) return false;
-
-            const isOccupied = allPieces.some(
-              (p) =>
-                p.id !== activePieceId &&
-                p.tileId === move.tileId &&
-                p.x === move.x &&
-                p.y === move.y,
-            );
-            if (isOccupied) return false;
-
-            // Check for fire at destination
-            const hasFire = state.fireTokens.some(
-              (f) =>
-                f.tileId === move.tileId && f.x === move.x && f.y === move.y,
-            );
-            if (hasFire) {
-              // Raptors cannot move onto fire at all
-              // Scientists can pass through fire but cannot end on it
-              // (for now, both block since this is the final destination)
-              return false;
-            }
-
-            return true;
-          });
-      })()
-    : draggedHoldingPieceType
-      ? // Piece from holding pen - use placement rules
-        getValidPlacementSpaces(draggedHoldingPieceType)
-      : [];
+  const validMoves = draggedHoldingPieceType
+    ? // Piece from holding pen - use placement rules
+      getValidPlacementSpaces(draggedHoldingPieceType)
+    : [];
 
   const handleDrop = (tileId: number, localX: number, localY: number) => {
     if (draggedHoldingPieceType) {
-      // Placing piece from holding pen
+      // Placing piece from holding pen during setup
       switch (draggedHoldingPieceType) {
         case "scientist":
           dispatch({ type: "PLACE_SCIENTIST", tileId, x: localX, y: localY });
@@ -898,16 +823,6 @@ function Board({ showCoordinates = false }: BoardProps) {
           break;
       }
       setDraggedHoldingPieceType(null);
-    } else if (draggedPieceId) {
-      // Moving piece on board
-      dispatch({
-        type: "MOVE_PIECE",
-        pieceId: draggedPieceId,
-        tileId,
-        x: localX,
-        y: localY,
-      });
-      setDraggedPieceId(null);
     }
   };
 
@@ -1182,67 +1097,68 @@ function Board({ showCoordinates = false }: BoardProps) {
         </div>
 
         {/* Game board */}
-        <div className="Board">
-          {state.tiles.map((tile) => {
-            const piecesOnTile = adaptedPieces.filter(
-              (p) => p.tileId === tile.id,
-            );
-            const validMovesOnTile = validMoves.filter(
-              (move) => move.tileId === tile.id,
-            );
-            return (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                pieces={piecesOnTile}
-                validMoves={validMovesOnTile}
-                effectTargetIds={effectTargetIds}
-                selectedEffectTargets={
-                  getCurrentEffectType() === "mothers_call"
-                    ? [
-                        ...pendingMothersCallMoves.map((m) => m.babyId),
-                        ...(selectedBabyForCall ? [selectedBabyForCall] : []),
-                      ]
-                    : selectedEffectTargets
-                }
-                effectDestinations={[
-                  ...mothersCallDestinations,
-                  ...reinforcementDestinations,
-                  ...fireDestinations,
-                  ...selectedScientistJeepDestinations.map((d) => ({
-                    tileId: d.tileId,
-                    x: d.x,
-                    y: d.y,
-                  })),
-                ]}
-                pendingFirePlacements={pendingFirePlacements}
-                fireTokens={state.fireTokens}
-                pendingJeepMoves={pendingJeepMoves}
-                pendingReinforcementPlacements={pendingReinforcementPlacements}
-                pendingMoves={pendingMothersCallMoves.map((m) => {
-                  const baby = state.babies.find((b) => b.id === m.babyId);
-                  return {
-                    babyId: m.babyId,
-                    fromTileId: baby?.tileId ?? 0,
-                    fromX: baby?.x ?? 0,
-                    fromY: baby?.y ?? 0,
-                    toTileId: m.destinationTileId,
-                    toX: m.destinationX,
-                    toY: m.destinationY,
-                  };
-                })}
-                pathTrailPositions={pathTrailPositions}
-                showCoordinates={showCoordinates}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onDragStart={handleDragStart}
-                onDrop={handleDrop}
-                onPieceClick={handlePieceClick}
-                onSpaceClick={handleSpaceClick}
-              />
-            );
-          })}
-        </div>
+        <LayoutGroup>
+          <div className="Board">
+            {state.tiles.map((tile) => {
+              const piecesOnTile = adaptedPieces.filter(
+                (p) => p.tileId === tile.id,
+              );
+              const validMovesOnTile = validMoves.filter(
+                (move) => move.tileId === tile.id,
+              );
+              return (
+                <Tile
+                  key={tile.id}
+                  tile={tile}
+                  pieces={piecesOnTile}
+                  validMoves={validMovesOnTile}
+                  effectTargetIds={effectTargetIds}
+                  selectedEffectTargets={
+                    getCurrentEffectType() === "mothers_call"
+                      ? [
+                          ...pendingMothersCallMoves.map((m) => m.babyId),
+                          ...(selectedBabyForCall ? [selectedBabyForCall] : []),
+                        ]
+                      : selectedEffectTargets
+                  }
+                  effectDestinations={[
+                    ...mothersCallDestinations,
+                    ...reinforcementDestinations,
+                    ...fireDestinations,
+                    ...selectedScientistJeepDestinations.map((d) => ({
+                      tileId: d.tileId,
+                      x: d.x,
+                      y: d.y,
+                    })),
+                  ]}
+                  pendingFirePlacements={pendingFirePlacements}
+                  fireTokens={state.fireTokens}
+                  pendingJeepMoves={pendingJeepMoves}
+                  pendingReinforcementPlacements={
+                    pendingReinforcementPlacements
+                  }
+                  pendingMoves={pendingMothersCallMoves.map((m) => {
+                    const baby = state.babies.find((b) => b.id === m.babyId);
+                    return {
+                      babyId: m.babyId,
+                      fromTileId: baby?.tileId ?? 0,
+                      fromX: baby?.x ?? 0,
+                      fromY: baby?.y ?? 0,
+                      toTileId: m.destinationTileId,
+                      toX: m.destinationX,
+                      toY: m.destinationY,
+                    };
+                  })}
+                  pathTrailPositions={pathTrailPositions}
+                  showCoordinates={showCoordinates}
+                  onDrop={handleDrop}
+                  onPieceClick={handlePieceClick}
+                  onSpaceClick={handleSpaceClick}
+                />
+              );
+            })}
+          </div>
+        </LayoutGroup>
 
         {/* Scientist player area (bottom) */}
         <div className="player-area scientist-area" ref={scientistDeckRef}>

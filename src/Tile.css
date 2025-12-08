@@ -92,16 +92,10 @@
   display: inline-block;
 }
 
-/* Draggable piece styling */
+/* Piece styling */
 .piece {
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
-  transition: opacity 0.2s;
-}
-
-.piece:active {
-  cursor: grabbing;
-  opacity: 0.5;
 }
 
 /* Valid move highlighting - show when dragging starts */
