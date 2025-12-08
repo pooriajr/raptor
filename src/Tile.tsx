@@ -301,86 +301,111 @@ function Tile({
                   {space.coordinate.x},{space.coordinate.y}
                 </span>
               )}
-              {space.hasMountain && <span className="mountain">⛰️</span>}
-              {space.isExit && <span className="exit">🚪</span>}
-              {/* Show footprint at baby's origin (where baby is moving from) */}
-              {isBabyOrigin && <span className="path-trail">🐾</span>}
-              {/* Show footprint on path trail (intermediate spaces) */}
-              {isPathTrail && !pieceOnSpace && !isBabyOrigin && (
-                <span className="path-trail">🐾</span>
-              )}
-              {/* Show baby at pending destination */}
-              {isPendingDestination && pendingMoveToHere && (
-                <span
-                  className="piece pending-piece"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPieceClick(pendingMoveToHere.babyId);
-                  }}
-                >
-                  🦎
-                </span>
-              )}
-              {/* Show scientist at pending reinforcement placement */}
-              {isPendingReinforcement && pendingReinforcement && (
-                <motion.span
-                  className="piece pending-piece"
-                  layoutId={`reinforcement-${pendingReinforcement.id}`}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                >
-                  🧑‍🔬
-                </motion.span>
-              )}
-              {/* Show existing fire token */}
-              {hasFireToken && <span className="fire-token">🔥</span>}
-              {/* Show pending fire placement */}
-              {isPendingFire && (
-                <span className="fire-token pending-fire">🔥</span>
-              )}
-              {/* Show smoke at jeep origin (where scientist is moving from), but not if a car is here */}
-              {isJeepOrigin &&
-                !isIntermediateJeepStop &&
-                !isFinalJeepDestination && (
-                  <span className="jeep-trail">💨</span>
-                )}
-              {/* Show smoke on jeep path or intermediate stops, but never if a car is here */}
-              {/* Note: intermediate stops are also origins (scientist moved on), so check specifically */}
-              {((isJeepPath && !pieceOnSpace && !isJeepOrigin) ||
-                isIntermediateJeepStop) &&
-                !isFinalJeepDestination && (
-                  <span className="jeep-trail">💨</span>
-                )}
-              {/* Show car at final jeep destination */}
-              {isFinalJeepDestination && finalJeepMoveHere && (
-                <span
-                  className="piece pending-piece jeep-car"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPieceClick(finalJeepMoveHere.scientistId);
-                  }}
-                >
-                  🚙
-                </span>
-              )}
-              {/* Show piece normally, but hide if it has a pending move */}
-              {pieceOnSpace && !pendingMoveFromHere && !isJeepOrigin && (
-                <motion.span
-                  layoutId={`piece-${pieceOnSpace.id}`}
-                  className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPieceClick(pieceOnSpace.id);
-                  }}
-                >
-                  {pieceOnSpace.getEmoji()}
-                  {pieceOnSpace.isAsleep && (
-                    <span className="status-icon">💤</span>
-                  )}
-                  {pieceOnSpace.isFrightened && (
-                    <span className="status-icon">😨</span>
-                  )}
-                </motion.span>
-              )}
+              {/* Render single space content based on priority */}
+              {(() => {
+                // Priority 1: Mountain
+                if (space.hasMountain) {
+                  return <span className="mountain">⛰️</span>;
+                }
+
+                // Priority 2: Exit
+                if (space.isExit) {
+                  return <span className="exit">🚪</span>;
+                }
+
+                // Priority 3: Actual piece (not moving away)
+                if (pieceOnSpace && !pendingMoveFromHere && !isJeepOrigin) {
+                  return (
+                    <motion.span
+                      layoutId={`piece-${pieceOnSpace.id}`}
+                      className={`piece ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${effectTargetIds.includes(pieceOnSpace.id) ? "effect-target" : ""} ${selectedEffectTargets.includes(pieceOnSpace.id) ? "effect-selected" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPieceClick(pieceOnSpace.id);
+                      }}
+                      transition={{
+                        type: "tween",
+                        duration: 0.2,
+                        ease: "linear",
+                      }}
+                    >
+                      {pieceOnSpace.getEmoji()}
+                      {pieceOnSpace.isAsleep && (
+                        <span className="status-icon">💤</span>
+                      )}
+                      {pieceOnSpace.isFrightened && (
+                        <span className="status-icon">😨</span>
+                      )}
+                    </motion.span>
+                  );
+                }
+
+                // Priority 4: Pending piece previews
+                if (isPendingDestination && pendingMoveToHere) {
+                  return (
+                    <span
+                      className="piece pending-piece"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPieceClick(pendingMoveToHere.babyId);
+                      }}
+                    >
+                      🦎
+                    </span>
+                  );
+                }
+
+                if (isPendingReinforcement && pendingReinforcement) {
+                  return (
+                    <motion.span
+                      className="piece pending-piece"
+                      layoutId={`reinforcement-${pendingReinforcement.id}`}
+                      transition={{
+                        type: "tween",
+                        duration: 0.2,
+                        ease: "linear",
+                      }}
+                    >
+                      🧑‍🔬
+                    </motion.span>
+                  );
+                }
+
+                if (isFinalJeepDestination && finalJeepMoveHere) {
+                  return (
+                    <span
+                      className="piece pending-piece jeep-car"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPieceClick(finalJeepMoveHere.scientistId);
+                      }}
+                    >
+                      🚙
+                    </span>
+                  );
+                }
+
+                // Priority 5: Trail markers
+                if (isBabyOrigin || isPathTrail) {
+                  return <span className="path-trail">🐾</span>;
+                }
+
+                if (isJeepOrigin || isIntermediateJeepStop || isJeepPath) {
+                  return <span className="jeep-trail">💨</span>;
+                }
+
+                // Priority 6: Fire token (actual)
+                if (hasFireToken) {
+                  return <span className="fire-token">🔥</span>;
+                }
+
+                // Priority 7: Pending fire
+                if (isPendingFire) {
+                  return <span className="fire-token pending-fire">🔥</span>;
+                }
+
+                return null;
+              })()}
             </div>
           );
         })}
