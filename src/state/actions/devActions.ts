@@ -4,7 +4,8 @@ import type { GameState } from "@/types/gameState.ts";
 export type DevAction =
   | { type: "DEV_SKIP_TO_EFFECT"; raptorCard: number; scientistCard: number }
   | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" }
-  | { type: "DEV_SKIP_TO_CARD_SELECTION"; player: "scientist" | "raptor" };
+  | { type: "DEV_SKIP_TO_CARD_SELECTION"; player: "scientist" | "raptor" }
+  | { type: "LOAD_GAME"; savedState: GameState };
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
@@ -133,9 +134,15 @@ export function handleDevSkipToCardSelection(state: GameState, action: { player:
   };
 }
 
+export function handleLoadGame(_state: GameState, action: { savedState: GameState }): GameState {
+  // Replace entire state with saved state
+  return action.savedState;
+}
+
 // Handler map for dev actions
 export const devHandlers = {
   DEV_SKIP_TO_EFFECT: handleDevSkipToEffect,
   DEV_SKIP_TO_ACTION: handleDevSkipToAction,
   DEV_SKIP_TO_CARD_SELECTION: handleDevSkipToCardSelection,
+  LOAD_GAME: handleLoadGame,
 };

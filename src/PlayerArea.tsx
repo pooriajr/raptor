@@ -30,10 +30,24 @@ interface PlayerAreaProps {
     onClick: () => void;
     label?: string; // Optional label, defaults to undo icon
   };
+  // Load game button (shown during setup if save exists)
+  loadButton?: {
+    onClick: () => void;
+  };
 }
 
 const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerArea(
-  { player, selectedCard, floatingCard, onCardSelect, isNewDraw = false, actionInfo, actionButton, undoButton },
+  {
+    player,
+    selectedCard,
+    floatingCard,
+    onCardSelect,
+    isNewDraw = false,
+    actionInfo,
+    actionButton,
+    undoButton,
+    loadButton,
+  },
   ref,
 ) {
   const { state } = useGame();
@@ -174,6 +188,11 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
               )}
             </div>
           </div>
+        )}
+        {loadButton && (
+          <button className="load-game-button" onClick={loadButton.onClick}>
+            Load Game
+          </button>
         )}
         {actionButton && (
           <button

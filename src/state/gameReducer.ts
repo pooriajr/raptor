@@ -51,6 +51,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "DEV_SKIP_TO_EFFECT": return h.handleDevSkipToEffect(state, action);
     case "DEV_SKIP_TO_ACTION": return h.handleDevSkipToAction(state, action);
     case "DEV_SKIP_TO_CARD_SELECTION": return h.handleDevSkipToCardSelection(state, action);
+    case "LOAD_GAME": return h.handleLoadGame(state, action);
     default: return state;
   }
 }

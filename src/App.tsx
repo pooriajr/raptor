@@ -1,5 +1,5 @@
 import "./App.css";
-import { useReducer, useState, useEffect } from "react";
+import { useReducer, useState, useEffect, useRef } from "react";
 
 import Board from "./Board.tsx";
 import DevPanel from "./DevPanel.tsx";
@@ -8,10 +8,22 @@ import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import { GameContext } from "./state/GameContext.tsx";
 import { gameReducer } from "./state/gameReducer.ts";
 import { createInitialGameState } from "./types/gameState.ts";
+import { saveGame } from "./utils/saveLoad.ts";
 
 function App() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialGameState);
   const [showCoordinates, setShowCoordinates] = useState(false);
+  const prevPhaseRef = useRef(state.phase);
+
+  // Auto-save on phase changes (skip initial render and setup phases)
+  useEffect(() => {
+    const phaseChanged = state.phase !== prevPhaseRef.current;
+    prevPhaseRef.current = state.phase;
+
+    if (phaseChanged && state.phase !== "RAPTOR_SETUP") {
+      saveGame(state);
+    }
+  }, [state.phase, state]);
 
   // Determine the current active player based on game phase
   const getCurrentPlayer = (): "raptor" | "scientist" | null => {

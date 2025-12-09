@@ -88,6 +88,25 @@
   color: #fff;
 }
 
+.load-game-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.load-game-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 .action-phase-label {
   font-size: 1.6rem;
   font-weight: bold;

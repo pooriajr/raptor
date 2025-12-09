@@ -18,6 +18,7 @@ import {
   type PathResult,
 } from "./utils/pathfinding.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "./types/coordinates.ts";
+import { hasSavedGame, loadGame } from "./utils/saveLoad.ts";
 
 // Effect types for the current card
 type EffectType =
@@ -1480,6 +1481,17 @@ function Board({ showCoordinates = false }: BoardProps) {
   // Check if any actions have been taken this action phase
   const hasActionsTaken = actionPhaseSavedState !== null && state.actionPoints < actionPhaseSavedState.actionPoints;
 
+  // Handle loading saved game
+  const handleLoadGame = () => {
+    const savedState = loadGame();
+    if (savedState) {
+      dispatch({ type: "LOAD_GAME", savedState });
+    }
+  };
+
+  // Check if saved game exists (only check during setup phases)
+  const showLoadButton = (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") && hasSavedGame();
+
   return (
     <div className="game-layout">
       {/* Raptor player area (top) */}
@@ -1568,6 +1580,7 @@ function Board({ showCoordinates = false }: BoardProps) {
               ? { onClick: handleActionReset, label: "Reset" }
               : undefined
         }
+        loadButton={state.phase === "RAPTOR_SETUP" && showLoadButton ? { onClick: handleLoadGame } : undefined}
       />
 
       {/* Game board */}
