@@ -166,6 +166,20 @@
   text-transform: uppercase;
 }
 
+.discard-pile {
+  display: flex;
+  align-items: center;
+}
+
+.discard-card-wrapper {
+  transform: scale(0.5);
+  transform-origin: center center;
+}
+
+.discard-card-wrapper .Card {
+  pointer-events: none;
+}
+
 /* Sleep tokens indicator for mother raptor */
 .sleep-tokens-section {
   flex: 0 0 auto;

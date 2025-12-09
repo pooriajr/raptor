@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import CardDeck from "./CardDeck";
 import Hand from "./Hand";
+import Card from "./Card";
 import { useGame } from "./state/GameContext";
 import "./PlayerArea.css";
 
@@ -41,6 +42,7 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
   const deckCount = cards.deck.length;
   const handCards = cards.hand;
   const playedCard = cards.played;
+  const discardPile = cards.discard;
 
   const escapedBabies = state.escapedBabies;
   const capturedBabies = state.capturedBabies;
@@ -74,7 +76,21 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
           <CardDeck player={player} cardCount={deckCount} />
         </div>
         <div className="discard-section">
-          <div className="discard-placeholder">Discard</div>
+          {discardPile.length > 0 ? (
+            <div className="discard-pile">
+              {discardPile.map((cardValue, index) => (
+                <div
+                  key={`${cardValue}-${index}`}
+                  className="discard-card-wrapper"
+                  style={{ marginLeft: index > 0 ? "-30px" : "0" }}
+                >
+                  <Card value={cardValue} player={player} faceUp />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="discard-placeholder">Discard</div>
+          )}
         </div>
 
         {isRaptor ? (
