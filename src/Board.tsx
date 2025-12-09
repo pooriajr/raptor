@@ -1,7 +1,6 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
 import PlayerArea from "./PlayerArea.tsx";
-import EffectPhaseBanner from "./EffectPhaseBanner.tsx";
 import ActionPhaseBanner from "./ActionPhaseBanner.tsx";
 import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
@@ -365,6 +364,77 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   };
 
+  // Determine which player has the effect
+  const getEffectPlayer = (): "raptor" | "scientist" | null => {
+    const scientistCard = state.scientistCards.played;
+    const raptorCard = state.raptorCards.played;
+    if (scientistCard === null || raptorCard === null) return null;
+    return raptorCard < scientistCard ? "raptor" : "scientist";
+  };
+
+  // Get instruction text for current effect
+  const getEffectInstruction = (): string => {
+    const effectType = getCurrentEffectType();
+    const limit = getEffectLimit();
+    const selectionCount = selectedEffectTargets.length;
+
+    if (effectType === "fear") {
+      return `Click scientists to frighten (${selectionCount}/${limit})`;
+    } else if (effectType === "sleeping_gas") {
+      return `Click baby raptors to put to sleep (${selectionCount}/${limit})`;
+    } else if (effectType === "mothers_call") {
+      if (selectedBabyForCall !== null) {
+        return `Click a destination on mother's tile (${pendingMothersCallMoves.length}/${limit})`;
+      } else {
+        return `Click a baby raptor to call (${pendingMothersCallMoves.length}/${limit})`;
+      }
+    } else if (effectType === "disappearance") {
+      return "Click Confirm to remove mother from the board";
+    } else if (effectType === "recovery") {
+      return `Click sleeping babies to wake up (${selectionCount}/${limit})`;
+    } else if (effectType === "reinforcements") {
+      return `Click spaces on edges to place scientists (${pendingReinforcementPlacements.length}/${limit})`;
+    } else if (effectType === "fire") {
+      return `Click spaces adjacent to scientists or fire (${pendingFirePlacements.length}/${limit})`;
+    } else if (effectType === "jeep") {
+      if (selectedScientistForJeep !== null) {
+        return `Click a destination for the jeep (${pendingJeepMoves.length}/${limit})`;
+      } else {
+        return `Click a scientist to move by jeep (${pendingJeepMoves.length}/${limit})`;
+      }
+    }
+    return "No effect";
+  };
+
+  // Check if effect confirm button should be enabled
+  const isEffectConfirmEnabled = (): boolean => {
+    const effectType = getCurrentEffectType();
+    if (effectType === "mothers_call") return pendingMothersCallMoves.length > 0;
+    if (effectType === "disappearance") return true;
+    if (effectType === "reinforcements") return pendingReinforcementPlacements.length > 0;
+    if (effectType === "fire") return pendingFirePlacements.length > 0;
+    if (effectType === "jeep") return pendingJeepMoves.length > 0;
+    return selectedEffectTargets.length > 0;
+  };
+
+  // Check if undo button should be shown for effect phase
+  const shouldShowEffectUndo = (): boolean => {
+    const effectType = getCurrentEffectType();
+    if (effectType === "fire") return pendingFirePlacements.length > 0;
+    if (effectType === "jeep") return pendingJeepMoves.length > 0;
+    return false;
+  };
+
+  // Handle undo for effect phase
+  const handleEffectUndo = () => {
+    const effectType = getCurrentEffectType();
+    if (effectType === "fire") {
+      handleFireReset();
+    } else if (effectType === "jeep") {
+      handleJeepReset();
+    }
+  };
+
   // Handle piece interactions - returns true if the interaction was handled
   const handlePieceInteraction = (pieceId: string): boolean => {
     // Handle effect phase targeting
@@ -711,18 +781,6 @@ function Board({ showCoordinates = false }: BoardProps) {
       setSelectedScientistForJeep(null);
       setSelectedScientistJeepDestinations([]);
     }
-  };
-
-  const handleEffectSkip = () => {
-    dispatch({ type: "END_EFFECT_PHASE" });
-    setSelectedEffectTargets([]);
-    setSelectedBabyForCall(null);
-    setPendingMothersCallMoves([]);
-    setPendingReinforcementPlacements([]);
-    setPendingFirePlacements([]);
-    setSelectedScientistForJeep(null);
-    setPendingJeepMoves([]);
-    setSelectedScientistJeepDestinations([]);
   };
 
   const handleFireReset = () => {
@@ -1403,23 +1461,6 @@ function Board({ showCoordinates = false }: BoardProps) {
 
   return (
     <>
-      {state.phase === "EFFECT_PHASE" && (
-        <EffectPhaseBanner
-          selectedTargets={selectedEffectTargets}
-          effectLimit={getEffectLimit()}
-          effectType={getCurrentEffectType()}
-          selectedBabyForCall={selectedBabyForCall}
-          selectedScientistForJeep={selectedScientistForJeep}
-          pendingMothersCallCount={pendingMothersCallMoves.length}
-          pendingReinforcementCount={pendingReinforcementPlacements.length}
-          pendingFireCount={pendingFirePlacements.length}
-          pendingJeepCount={pendingJeepMoves.length}
-          onConfirm={handleEffectConfirm}
-          onSkip={handleEffectSkip}
-          onFireReset={handleFireReset}
-          onJeepReset={handleJeepReset}
-        />
-      )}
       {state.phase === "ACTION_PHASE" && (
         <ActionPhaseBanner
           onEndTurn={() => dispatch({ type: "END_ACTION_PHASE" })}
@@ -1432,17 +1473,9 @@ function Board({ showCoordinates = false }: BoardProps) {
         <PlayerArea
           ref={raptorDeckRef}
           player="raptor"
-          deckCount={state.raptorCards.deck.length}
-          handCards={state.raptorCards.hand}
-          playedCard={state.raptorCards.played}
-          selectedCard={state.phase === "RAPTOR_CARD_SELECTION" ? selectedCard : state.raptorCards.played}
+          selectedCard={state.phase === "RAPTOR_CARD_SELECTION" ? selectedCard : null}
           onCardSelect={handleCardSelect}
           isNewDraw={isRaptorNewDraw}
-          showHand={state.phase === "RAPTOR_CARD_SELECTION" || state.phase === "EFFECT_PHASE"}
-          handFaceDown={false}
-          hideUnselectedCards={state.phase === "EFFECT_PHASE"}
-          escapedBabies={state.escapedBabies}
-          motherSleepTokens={state.motherSleepTokens}
           actionInfo={
             state.phase === "RAPTOR_SETUP"
               ? {
@@ -1464,7 +1497,12 @@ function Board({ showCoordinates = false }: BoardProps) {
                     phaseLabel: "Pick a Card",
                     instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
                   }
-                : undefined
+                : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "raptor"
+                  ? {
+                      phaseLabel: "Effect Phase",
+                      instruction: getEffectInstruction(),
+                    }
+                  : undefined
           }
           actionButton={
             state.phase === "RAPTOR_SETUP"
@@ -1479,12 +1517,23 @@ function Board({ showCoordinates = false }: BoardProps) {
                     disabled: selectedCard === null,
                     onClick: handleCardConfirm,
                   }
-                : {
-                    label: "✓",
-                    disabled: true,
-                    onClick: () => {},
-                    isDone: true,
-                  }
+                : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "raptor"
+                  ? {
+                      label: "Confirm",
+                      disabled: !isEffectConfirmEnabled(),
+                      onClick: handleEffectConfirm,
+                    }
+                  : {
+                      label: "✓",
+                      disabled: true,
+                      onClick: () => {},
+                      isDone: true,
+                    }
+          }
+          undoButton={
+            state.phase === "EFFECT_PHASE" && getEffectPlayer() === "raptor" && shouldShowEffectUndo()
+              ? { onClick: handleEffectUndo }
+              : undefined
           }
         />
 
@@ -1584,25 +1633,10 @@ function Board({ showCoordinates = false }: BoardProps) {
         <PlayerArea
           ref={scientistDeckRef}
           player="scientist"
-          deckCount={state.scientistCards.deck.length}
-          handCards={
-            state.phase === "RAPTOR_CARD_SELECTION" && state.scientistCards.played !== null
-              ? [...state.scientistCards.hand, state.scientistCards.played]
-              : state.scientistCards.hand
-          }
-          playedCard={state.phase === "RAPTOR_CARD_SELECTION" ? null : state.scientistCards.played}
           selectedCard={state.phase === "SCIENTIST_CARD_SELECTION" ? selectedCard : null}
           floatingCard={state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null}
           onCardSelect={handleCardSelect}
           isNewDraw={isScientistNewDraw}
-          showHand={
-            state.phase === "SCIENTIST_CARD_SELECTION" ||
-            state.phase === "RAPTOR_CARD_SELECTION" ||
-            state.phase === "EFFECT_PHASE"
-          }
-          handFaceDown={state.phase === "RAPTOR_CARD_SELECTION"}
-          hideUnselectedCards={state.phase === "EFFECT_PHASE"}
-          capturedBabies={state.capturedBabies}
           actionInfo={
             state.phase === "SCIENTIST_SETUP"
               ? {
@@ -1615,7 +1649,12 @@ function Board({ showCoordinates = false }: BoardProps) {
                     phaseLabel: "Pick a Card",
                     instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
                   }
-                : undefined
+                : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "scientist"
+                  ? {
+                      phaseLabel: "Effect Phase",
+                      instruction: getEffectInstruction(),
+                    }
+                  : undefined
           }
           actionButton={
             state.phase === "SCIENTIST_SETUP"
@@ -1630,17 +1669,28 @@ function Board({ showCoordinates = false }: BoardProps) {
                     disabled: selectedCard === null,
                     onClick: handleCardConfirm,
                   }
-                : {
-                    label: (
-                      <>
-                        End
-                        <br />
-                        Turn
-                      </>
-                    ),
-                    disabled: true,
-                    onClick: () => {},
-                  }
+                : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "scientist"
+                  ? {
+                      label: "Confirm",
+                      disabled: !isEffectConfirmEnabled(),
+                      onClick: handleEffectConfirm,
+                    }
+                  : {
+                      label: (
+                        <>
+                          End
+                          <br />
+                          Turn
+                        </>
+                      ),
+                      disabled: true,
+                      onClick: () => {},
+                    }
+          }
+          undoButton={
+            state.phase === "EFFECT_PHASE" && getEffectPlayer() === "scientist" && shouldShowEffectUndo()
+              ? { onClick: handleEffectUndo }
+              : undefined
           }
         />
       </div>

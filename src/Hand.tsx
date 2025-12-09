@@ -10,9 +10,9 @@ interface HandProps {
   playedCard?: number | null;
   floatingCard?: number | null; // Card that should have floating animation
   faceDown?: boolean;
+  faceDownUnselected?: boolean; // Unselected cards shown face-down (selected card face-up)
   deckPosition?: { x: number; y: number };
   isNewDraw?: boolean;
-  hideUnselected?: boolean;
   showPlaceholders?: boolean;
 }
 
@@ -26,9 +26,9 @@ function Hand({
   playedCard,
   floatingCard,
   faceDown = false,
+  faceDownUnselected = false,
   deckPosition,
   isNewDraw = false,
-  hideUnselected = false,
   showPlaceholders = false,
 }: HandProps) {
   const [animatedCards, setAnimatedCards] = useState<number[]>([]);
@@ -73,18 +73,18 @@ function Hand({
           const isFloating = hasCard && value === floatingCard;
           const hasFloating = floatingCard != null;
           const isDimmed = hasCard && ((hasSelection && !isSelected && !isPlayed) || (hasFloating && !isFloating));
-          const isHidden = hasCard && hideUnselected && !isSelected && !isPlayed;
+          const cardFaceDown = faceDown || (faceDownUnselected && !isSelected && !isPlayed);
 
           return (
-            <div key={index} className={`card-wrapper ${isHidden ? "hidden" : ""}`}>
+            <div key={index} className="card-wrapper">
               {/* Show placeholder underneath during animation */}
               {isNewDraw && <div className="card-placeholder card-placeholder-under" />}
               {hasCard && (
                 <Card
                   value={value}
                   player={player}
-                  faceUp={!faceDown}
-                  onClick={!faceDown && onCardSelect ? () => onCardSelect(value) : undefined}
+                  faceUp={!cardFaceDown}
+                  onClick={!cardFaceDown && onCardSelect ? () => onCardSelect(value) : undefined}
                   selected={isSelected || isPlayed}
                   dimmed={isDimmed}
                   floating={isFloating}

@@ -27,10 +27,6 @@
   position: relative;
 }
 
-.card-wrapper.hidden {
-  visibility: hidden;
-}
-
 /* Placeholder mode - dimmed appearance */
 .Hand.placeholder-mode {
   opacity: 0.4;

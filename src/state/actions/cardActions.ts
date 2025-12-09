@@ -97,26 +97,22 @@ export function handleDrawCards(state: GameState, action: { player: "raptor" | "
 
 export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: number }): GameState {
   if (action.player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") {
-    // Remove card from hand and set as played
-    const newHand = state.scientistCards.hand.filter((c) => c !== action.card);
+    // Mark card as played (keep in hand until explicitly removed later)
     return {
       ...state,
       scientistCards: {
         ...state.scientistCards,
-        hand: newHand,
         played: action.card,
       },
       phase: "RAPTOR_READY",
     };
   }
   if (action.player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION") {
-    // Remove card from hand and set as played
-    const newHand = state.raptorCards.hand.filter((c) => c !== action.card);
+    // Mark card as played (keep in hand until explicitly removed later)
     return {
       ...state,
       raptorCards: {
         ...state.raptorCards,
-        hand: newHand,
         played: action.card,
       },
       phase: "CARD_REVEAL",

@@ -1,28 +1,17 @@
 import { forwardRef } from "react";
 import CardDeck from "./CardDeck";
 import Hand from "./Hand";
+import { useGame } from "./state/GameContext";
 import "./PlayerArea.css";
 
 interface PlayerAreaProps {
   player: "raptor" | "scientist";
-  // Deck
-  deckCount: number;
-  // Hand state
-  handCards: number[];
-  playedCard: number | null;
+  // Selection state (managed by Board for now)
   selectedCard: number | null;
   floatingCard?: number | null;
   onCardSelect?: (value: number) => void;
   isNewDraw?: boolean;
-  // Display modes
-  showHand: boolean;
-  handFaceDown?: boolean;
-  hideUnselectedCards?: boolean;
-  // Trackers
-  escapedBabies?: number;
-  capturedBabies?: number;
-  motherSleepTokens?: number;
-  // Action area
+  // Action area (effect phase UI from Board)
   actionInfo?: {
     phaseLabel: string;
     progress?: React.ReactNode;
@@ -34,30 +23,49 @@ interface PlayerAreaProps {
     onClick: () => void;
     isDone?: boolean;
   };
+  // Undo button (shown below action info)
+  undoButton?: {
+    onClick: () => void;
+  };
 }
 
 const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerArea(
-  {
-    player,
-    deckCount,
-    handCards,
-    playedCard,
-    selectedCard,
-    floatingCard,
-    onCardSelect,
-    isNewDraw = false,
-    showHand,
-    handFaceDown = false,
-    hideUnselectedCards = false,
-    escapedBabies,
-    capturedBabies,
-    motherSleepTokens,
-    actionInfo,
-    actionButton,
-  },
+  { player, selectedCard, floatingCard, onCardSelect, isNewDraw = false, actionInfo, actionButton, undoButton },
   ref,
 ) {
+  const { state } = useGame();
   const isRaptor = player === "raptor";
+
+  // Derive state from context
+  const cards = isRaptor ? state.raptorCards : state.scientistCards;
+  const deckCount = cards.deck.length;
+  const handCards = cards.hand;
+  const playedCard = cards.played;
+
+  const escapedBabies = state.escapedBabies;
+  const capturedBabies = state.capturedBabies;
+  const motherSleepTokens = state.motherSleepTokens;
+
+  // Compute display modes based on phase
+  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
+  const isReadyPhase = state.phase === "SCIENTIST_READY" || state.phase === "RAPTOR_READY";
+
+  const isThisPlayerSelecting =
+    (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
+    (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
+
+  const isOpponentSelecting =
+    (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
+    (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
+
+  const isCardReveal = state.phase === "CARD_REVEAL";
+  const isEffectPhase = state.phase === "EFFECT_PHASE";
+  const isActionPhase = state.phase === "ACTION_PHASE";
+
+  // Determine hand visibility and display mode
+  const showHand = !isSetupPhase && !isReadyPhase;
+  const handFaceDown = isOpponentSelecting;
+  const faceDownUnselectedCards = isEffectPhase || isActionPhase || isCardReveal;
 
   return (
     <div className={`player-area ${player}-area`} ref={ref}>
@@ -117,13 +125,13 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
           cards={handCards}
           player={player}
           faceDown={handFaceDown}
-          playedCard={playedCard}
-          selectedCard={selectedCard}
+          playedCard={isThisPlayerSelecting ? null : playedCard}
+          selectedCard={isThisPlayerSelecting ? selectedCard : null}
           floatingCard={floatingCard}
           onCardSelect={showHand && !handFaceDown ? onCardSelect : undefined}
           isNewDraw={isNewDraw}
           deckPosition={{ x: -300, y: 0 }}
-          hideUnselected={hideUnselectedCards}
+          faceDownUnselected={faceDownUnselectedCards}
           showPlaceholders={!showHand}
         />
       </div>
@@ -134,6 +142,11 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
             <div className="action-phase-label">{actionInfo.phaseLabel}</div>
             {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
             <div className="action-instruction">{actionInfo.instruction}</div>
+            {undoButton && (
+              <button className="undo-button" onClick={undoButton.onClick} title="Undo">
+                ↩
+              </button>
+            )}
           </div>
         )}
         {actionButton && (
