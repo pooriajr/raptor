@@ -410,25 +410,10 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
 export function handleEndActionPhase(state: GameState): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
 
-  // Transition to next round - reset for new card selection
+  // Transition to round end phase - this triggers END_ROUND action
   return {
     ...state,
-    phase: "SCIENTIST_READY",
-    actionPoints: 0,
-    activePlayer: null,
-    aggressiveActionsUsed: [], // Reset for next round
-    frightenedThisRound: [], // Reset for next round
-    asleepThisRound: [], // Reset for next round
-    motherPaidWoundCost: false, // Reset for next round
-    // Clear played cards for new round
-    scientistCards: {
-      ...state.scientistCards,
-      played: null,
-    },
-    raptorCards: {
-      ...state.raptorCards,
-      played: null,
-    },
+    phase: "ROUND_END",
   };
 }
 

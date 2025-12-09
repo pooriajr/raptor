@@ -4,7 +4,13 @@ import * as h from "@/state/actions/index.ts";
 export { findById, getAllPieces } from "@/utils/boardUtils.ts";
 export type { ActionPhaseSavedState } from "@/state/actions/index.ts";
 
-export type GameAction = h.SetupAction | h.CardAction | h.EffectAction | h.ActionPhaseAction | h.DevAction;
+export type GameAction =
+  | h.SetupAction
+  | h.CardAction
+  | h.EffectAction
+  | h.ActionPhaseAction
+  | h.RoundAction
+  | h.DevAction;
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   // prettier-ignore
@@ -41,6 +47,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "ACTION_SCIENTIST_STAND_UP": return h.handleScientistStandUp(state, action);
     case "END_ACTION_PHASE": return h.handleEndActionPhase(state);
     case "RESET_ACTION_PHASE": return h.handleResetActionPhase(state, action);
+    case "END_ROUND": return h.handleEndRound(state);
     case "DEV_SKIP_TO_EFFECT": return h.handleDevSkipToEffect(state, action);
     case "DEV_SKIP_TO_ACTION": return h.handleDevSkipToAction(state, action);
     case "DEV_SKIP_TO_CARD_SELECTION": return h.handleDevSkipToCardSelection(state, action);

@@ -7,21 +7,80 @@ export type CardAction =
   | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number }
   | { type: "CONFIRM_REVEAL" };
 
-// Helper to draw cards from deck to hand (up to 3 cards in hand)
-function drawCards(cardState: CardState): CardState {
-  const cardsNeeded = 3 - cardState.hand.length;
-  if (cardsNeeded <= 0 || cardState.deck.length === 0) {
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * Draw cards from deck to hand until hand has 3 cards.
+ * If deck is empty and more cards needed, shuffle discard into deck first.
+ *
+ * Per rules:
+ * - Each player draws a card to have three cards in hand
+ * - If deck is empty, keep hand cards, shuffle all played cards to create new deck
+ */
+export function drawToHand(cardState: CardState): CardState {
+  let { deck, hand, discard, played } = cardState;
+
+  const cardsNeeded = 3 - hand.length;
+  if (cardsNeeded <= 0) {
     return cardState;
   }
 
-  const cardsToDraw = Math.min(cardsNeeded, cardState.deck.length);
-  const newHand = [...cardState.hand, ...cardState.deck.slice(0, cardsToDraw)];
-  const newDeck = cardState.deck.slice(cardsToDraw);
+  // If deck is empty but we have discard, shuffle discard into deck
+  if (deck.length === 0 && discard.length > 0) {
+    deck = shuffleArray(discard);
+    discard = [];
+  }
 
-  return {
-    ...cardState,
+  // Still no cards available
+  if (deck.length === 0) {
+    return { ...cardState, deck, discard };
+  }
+
+  // Draw what we can
+  const cardsToDraw = Math.min(cardsNeeded, deck.length);
+  const newHand = [...hand, ...deck.slice(0, cardsToDraw)];
+  const newDeck = deck.slice(cardsToDraw);
+
+  // If we still need more cards and have discard remaining, shuffle and continue
+  let result: CardState = {
     deck: newDeck,
     hand: newHand,
+    played,
+    discard,
+  };
+
+  // Recursively draw if we still need cards and shuffled discard into deck
+  if (newHand.length < 3 && newDeck.length === 0 && discard.length > 0) {
+    result = drawToHand(result);
+  }
+
+  return result;
+}
+
+/**
+ * Move played card from hand to discard pile.
+ * Called at end of round before drawing new cards.
+ */
+export function discardPlayedCard(cardState: CardState): CardState {
+  const { hand, played, discard, deck } = cardState;
+
+  if (played === null) {
+    return cardState;
+  }
+
+  return {
+    deck,
+    hand: hand.filter((c) => c !== played),
+    played: null,
+    discard: [...discard, played],
   };
 }
 
@@ -85,12 +144,12 @@ export function handleDrawCards(state: GameState, action: { player: "raptor" | "
   if (action.player === "raptor") {
     return {
       ...state,
-      raptorCards: drawCards(state.raptorCards),
+      raptorCards: drawToHand(state.raptorCards),
     };
   } else {
     return {
       ...state,
-      scientistCards: drawCards(state.scientistCards),
+      scientistCards: drawToHand(state.scientistCards),
     };
   }
 }

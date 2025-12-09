@@ -32,6 +32,7 @@ export interface CardState {
   deck: number[]; // Card values 1-9 remaining in deck
   hand: number[]; // Card values currently in hand (up to 3)
   played: number | null; // Card played this round
+  discard: number[]; // Cards that have been played (visible to opponent)
 }
 
 // Fire token - blocks raptor movement, scientists can pass through but not end on
@@ -86,6 +87,7 @@ export function createInitialCardState(): CardState {
     deck: createShuffledDeck(),
     hand: [],
     played: null,
+    discard: [],
   };
 }
 

@@ -309,6 +309,13 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   }, [state.phase, state.scientistCards.played, state.raptorCards.played, dispatch]);
 
+  // Auto-dispatch round end - processes cards and transitions to next round
+  useEffect(() => {
+    if (state.phase === "ROUND_END") {
+      dispatch({ type: "END_ROUND" });
+    }
+  }, [state.phase, dispatch]);
+
   // Determine the current effect type based on played cards
   const getCurrentEffectType = (): EffectType => {
     const scientistCard = state.scientistCards.played;
