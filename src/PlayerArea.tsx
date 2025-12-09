@@ -12,11 +12,12 @@ interface PlayerAreaProps {
   floatingCard?: number | null;
   onCardSelect?: (value: number) => void;
   isNewDraw?: boolean;
-  // Action area (effect phase UI from Board)
+  // Action area (effect/action phase UI from Board)
   actionInfo?: {
     phaseLabel: string;
     progress?: React.ReactNode;
     instruction: string;
+    actionPoints?: number; // For action phase - displayed prominently
   };
   actionButton?: {
     label: React.ReactNode;
@@ -24,9 +25,10 @@ interface PlayerAreaProps {
     onClick: () => void;
     isDone?: boolean;
   };
-  // Undo button (shown below action info)
+  // Undo/Reset button (shown below action info)
   undoButton?: {
     onClick: () => void;
+    label?: string; // Optional label, defaults to undo icon
   };
 }
 
@@ -155,14 +157,22 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
       <div className="player-area-action">
         {actionInfo && (
           <div className="action-info">
-            <div className="action-phase-label">{actionInfo.phaseLabel}</div>
-            {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
-            <div className="action-instruction">{actionInfo.instruction}</div>
-            {undoButton && (
-              <button className="undo-button" onClick={undoButton.onClick} title="Undo">
-                ↩
-              </button>
+            {actionInfo.actionPoints !== undefined && (
+              <div className="action-points-display">
+                <span className="action-points-value">{actionInfo.actionPoints}</span>
+                <span className="action-points-label">AP</span>
+              </div>
             )}
+            <div className="action-text">
+              <div className="action-phase-label">{actionInfo.phaseLabel}</div>
+              {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
+              <div className="action-instruction">{actionInfo.instruction}</div>
+              {undoButton && (
+                <button className="reset-button" onClick={undoButton.onClick} title={undoButton.label || "Undo"}>
+                  {undoButton.label || "↩"}
+                </button>
+              )}
+            </div>
           </div>
         )}
         {actionButton && (

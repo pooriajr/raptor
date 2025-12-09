@@ -31,9 +31,61 @@
 
 .action-info {
   display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.action-text {
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.5rem;
+}
+
+.action-points-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  min-width: 80px;
+}
+
+.action-points-value {
+  font-size: 3.5rem;
+  font-weight: bold;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.action-points-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.reset-button {
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.reset-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .action-phase-label {
@@ -56,27 +108,6 @@
   font-size: 1.1rem;
   color: #ddd;
   text-align: right;
-}
-
-.undo-button {
-  width: 36px;
-  height: 36px;
-  margin-top: 0.5rem;
-  padding: 0;
-  font-size: 1.4rem;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.1);
-  color: #aaa;
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-
-.undo-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
 }
 
 .end-turn-button {
