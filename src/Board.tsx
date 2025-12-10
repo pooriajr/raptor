@@ -12,13 +12,12 @@ import {
   type HighlightStyle,
 } from "./types/highlights.ts";
 import type { GameAction } from "./state/gameReducer.ts";
-import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
+import { isMotherPlaced } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
 
 import {
-  canBabyReachMotherTile,
   getReachableDestinationsOnMotherTileWithPaths,
   getJeepDestinationsWithPaths,
   type PathResult,
@@ -132,20 +131,6 @@ function createPieceFromState(piece: PieceState) {
     case "scientist":
       return new Scientist(piece.id, piece.tileId, piece.x, piece.y);
   }
-}
-
-// Adapter to make PieceState compatible with components expecting Piece interface
-function adaptPieceForRender(piece: PieceState) {
-  return {
-    id: piece.id,
-    type: piece.type,
-    tileId: piece.tileId,
-    localX: piece.x,
-    localY: piece.y,
-    getEmoji: () => getPieceEmoji(piece.type),
-    isAsleep: piece.isAsleep,
-    isFrightened: piece.isFrightened,
-  };
 }
 
 function Board() {
@@ -891,51 +876,6 @@ function Board() {
     return result;
   })();
 
-  // Adapt pieces for Tile component
-  const adaptedPieces = getAllPieces().map(adaptPieceForRender);
-
-  // Calculate valid effect targets during effect phase
-  const effectTargetIds: string[] = (() => {
-    if (state.phase !== "EFFECT_PHASE") return [];
-
-    const effectType = getCurrentEffectType(state);
-
-    if (effectType === "fear") {
-      return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
-    } else if (effectType === "sleeping_gas") {
-      return state.babies.filter((b) => !b.isAsleep).map((b) => b.id);
-    } else if (effectType === "recovery") {
-      return state.babies.filter((b) => b.isAsleep).map((b) => b.id);
-    } else if (effectType === "mothers_call") {
-      const mother = state.mother;
-      if (!mother) return [];
-
-      // Get IDs of babies that already have pending moves
-      const pendingBabyIds = pendingMothersCallMoves.map((m) => m.babyId);
-
-      // Show babies that can reach mother and don't already have pending moves
-      // (unless we're at the limit)
-      const limit = getEffectLimit(state);
-      if (pendingMothersCallMoves.length >= limit && !selectedBabyForCall) {
-        return [];
-      }
-
-      return state.babies
-        .filter((b) => !pendingBabyIds.includes(b.id) && canBabyReachMotherTile(state.tiles, getAllPieces(), b, mother))
-        .map((b) => b.id);
-    } else if (effectType === "jeep") {
-      // Show all scientists as selectable (they can move multiple times)
-      const limit = getEffectLimit(state);
-      if (pendingJeepMoves.length >= limit && !selectedScientistForJeep) {
-        return [];
-      }
-
-      return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
-    }
-
-    return [];
-  })();
-
   // Calculate valid destination spaces for Reinforcements (long edges of square tiles)
   const reinforcementDestinations: Array<{
     tileId: number;
@@ -1322,36 +1262,21 @@ function Board() {
     return previews;
   })();
 
-  // Compute selected effect targets for piece highlighting
-  const computedSelectedEffectTargets =
-    getCurrentEffectType(state) === "mothers_call"
-      ? [...pendingMothersCallMoves.map((m) => m.babyId), ...(selectedBabyForCall ? [selectedBabyForCall] : [])]
-      : selectedEffectTargets;
-
   return (
     <div className="board-container">
       <LayoutGroup>
         <div className="Board">
-          {state.tiles.map((tile) => {
-            const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
-            const isValidSetupTile = validSetupTileIds.has(tile.id);
-
-            return (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                pieces={piecesOnTile}
-                highlights={highlights}
-                isValidSetupTile={isValidSetupTile}
-                effectTargetIds={effectTargetIds}
-                selectedEffectTargets={computedSelectedEffectTargets}
-                selectedActionPieceId={selectedActionPieceId}
-                pendingPreviews={pendingPreviews}
-                showCoordinates={state.showCoordinates}
-                onSpaceClick={handleSpaceClick}
-              />
-            );
-          })}
+          {state.tiles.map((tile) => (
+            <Tile
+              key={tile.id}
+              tile={tile}
+              highlights={highlights}
+              isValidSetupTile={validSetupTileIds.has(tile.id)}
+              pendingPreviews={pendingPreviews}
+              showCoordinates={state.showCoordinates}
+              onSpaceClick={handleSpaceClick}
+            />
+          ))}
         </div>
       </LayoutGroup>
     </div>
