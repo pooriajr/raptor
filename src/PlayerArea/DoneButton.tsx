@@ -1,6 +1,6 @@
 import { useGame } from "../state/GameContext";
 import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "../utils/pieceUtils";
-import { getEffectPlayer, isEffectConfirmEnabled, getCurrentEffectType } from "../utils/effectUtils";
+import { getEffectPlayer, getCurrentEffectType } from "../utils/effectUtils";
 import "./DoneButton.css";
 
 interface DoneButtonProps {
@@ -91,7 +91,7 @@ function DoneButton({ player }: DoneButtonProps) {
       return { disabled: selectedCard === null, onClick: handleCardConfirm, isDone: false };
     }
     if (isThisPlayerEffect) {
-      return { disabled: !isEffectConfirmEnabled(state, player), onClick: handleEffectConfirm, isDone: false };
+      return { disabled: false, onClick: handleEffectConfirm, isDone: false };
     }
     if (isThisPlayerAction) {
       return { disabled: false, onClick: handleEndActionPhase, isDone: false };

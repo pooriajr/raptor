@@ -116,19 +116,6 @@ export function getEffectInstruction(state: GameState, player: Player): string {
   return "No effect";
 }
 
-// Check if effect confirm button should be enabled
-export function isEffectConfirmEnabled(state: GameState, player: Player): boolean {
-  const effectType = getCurrentEffectType(state);
-  const interaction = player === "raptor" ? state.raptorInteraction : state.scientistInteraction;
-
-  if (effectType === "mothers_call") return interaction.pendingMothersCallMoves.length > 0;
-  if (effectType === "disappearance") return true;
-  if (effectType === "reinforcements") return interaction.pendingReinforcementPlacements.length > 0;
-  if (effectType === "fire") return interaction.pendingFirePlacements.length > 0;
-  if (effectType === "jeep") return interaction.pendingJeepMoves.length > 0;
-  return interaction.selectedEffectTargets.length > 0;
-}
-
 // Check if undo button should be shown for effect phase
 export function shouldShowEffectUndo(state: GameState, player: Player): boolean {
   const effectType = getCurrentEffectType(state);
