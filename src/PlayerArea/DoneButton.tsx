@@ -80,32 +80,32 @@ function DoneButton({ player }: DoneButtonProps) {
 
   // === Compute button state ===
 
-  const { disabled, onClick, isDone } = (() => {
+  const { disabled, onClick } = (() => {
     if (isThisPlayerSetup) {
       const setupComplete = isRaptor
         ? isMotherPlaced(state) && countPlacedBabies(state) >= 5
         : countPlacedScientists(state) >= 4;
-      return { disabled: !setupComplete, onClick: handleSetupConfirm, isDone: false };
+      return { disabled: !setupComplete, onClick: handleSetupConfirm };
     }
     if (isThisPlayerSelecting) {
-      return { disabled: selectedCard === null, onClick: handleCardConfirm, isDone: false };
+      return { disabled: selectedCard === null, onClick: handleCardConfirm };
     }
     if (isThisPlayerEffect) {
-      return { disabled: false, onClick: handleEffectConfirm, isDone: false };
+      return { disabled: false, onClick: handleEffectConfirm };
     }
     if (isThisPlayerAction) {
-      return { disabled: false, onClick: handleEndActionPhase, isDone: false };
+      return { disabled: false, onClick: handleEndActionPhase };
     }
-    // Not this player's turn - show done checkmark
-    return { disabled: true, onClick: () => {}, isDone: true };
+    // Not this player's turn
+    return { disabled: true, onClick: () => {} };
   })();
 
-  const className = `done-button ${isDone ? "done-button--done" : disabled ? "done-button--disabled" : "done-button--ready"}`;
+  const className = `done-button ${disabled ? "done-button--disabled" : "done-button--ready"}`;
 
   return (
-    <button className={className} disabled={disabled || isDone} onClick={onClick}>
+    <button className={className} disabled={disabled} onClick={onClick}>
       <span className="done-button__edge" />
-      <span className="done-button__front">{isDone ? "✓" : "Done"}</span>
+      <span className="done-button__front">Done</span>
     </button>
   );
 }

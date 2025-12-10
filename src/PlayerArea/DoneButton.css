@@ -68,21 +68,3 @@
 .done-button--disabled .done-button__edge {
   background: linear-gradient(to left, #0f2f0f 0%, #1a4a1a 8%, #1a4a1a 92%, #0f2f0f 100%);
 }
-
-/* Done state (checkmark shown for inactive player) */
-.done-button--done {
-  width: 60px;
-  height: 60px;
-  cursor: default;
-  filter: brightness(40%);
-}
-
-.done-button--done .done-button__front {
-  font-size: 1.8rem;
-  background: linear-gradient(180deg, #3a6a3a 0%, #2d5d2d 40%, #1f4f1f 100%);
-  transform: translateY(-2px);
-}
-
-.done-button--done .done-button__edge {
-  background: linear-gradient(to left, #0f2f0f 0%, #1a4a1a 8%, #1a4a1a 92%, #0f2f0f 100%);
-}
