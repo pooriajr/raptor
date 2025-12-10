@@ -1,13 +1,13 @@
-import CardDeck from "./CardDeck";
-import Hand from "./Hand";
+import CardDeck from "../CardDeck";
+import Hand from "../Hand";
 import DiscardPile from "./DiscardPile";
 import DoneButton from "./DoneButton";
 import UndoButton from "./UndoButton";
 import Tracker from "./Tracker";
-import { useGame } from "./state/GameContext";
-import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils";
-import { getEffectPlayer, getEffectInstruction } from "./utils/effectUtils";
-import { hasSavedGame, loadGame } from "./utils/saveLoad";
+import { useGame } from "../state/GameContext";
+import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "../utils/pieceUtils";
+import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
+import { hasSavedGame, loadGame } from "../utils/saveLoad";
 import "./PlayerArea.css";
 
 interface PlayerAreaProps {

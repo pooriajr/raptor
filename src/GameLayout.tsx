@@ -1,5 +1,5 @@
 import Board from "./Board.tsx";
-import PlayerArea from "./PlayerArea.tsx";
+import PlayerArea from "./PlayerArea";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
 import DevPanel from "./DevPanel.tsx";
@@ -16,7 +16,6 @@ function GameLayout() {
       <PlayerArea player="raptor" />
       <Board />
       <PlayerArea player="scientist" />
-
       {state.phase === "CARD_REVEAL" && <CardRevealOverlay />}
       {state.phase === "SCIENTIST_READY" && <PlayerReadyScreen player="scientist" />}
       {state.phase === "RAPTOR_READY" && <PlayerReadyScreen player="raptor" />}

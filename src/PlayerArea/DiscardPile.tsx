@@ -1,5 +1,5 @@
-import Card from "./Card";
-import { useGame } from "./state/GameContext";
+import Card from "../Card";
+import { useGame } from "../state/GameContext";
 import "./DiscardPile.css";
 
 interface DiscardPileProps {

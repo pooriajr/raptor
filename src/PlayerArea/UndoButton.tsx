@@ -1,5 +1,5 @@
-import { useGame } from "./state/GameContext";
-import { shouldShowEffectUndo, getCurrentEffectType, getEffectPlayer } from "./utils/effectUtils";
+import { useGame } from "../state/GameContext";
+import { shouldShowEffectUndo, getCurrentEffectType, getEffectPlayer } from "../utils/effectUtils";
 import "./UndoButton.css";
 
 interface UndoButtonProps {

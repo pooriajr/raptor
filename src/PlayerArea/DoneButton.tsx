@@ -1,6 +1,6 @@
-import { useGame } from "./state/GameContext";
-import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils";
-import { getEffectPlayer, isEffectConfirmEnabled, getCurrentEffectType } from "./utils/effectUtils";
+import { useGame } from "../state/GameContext";
+import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "../utils/pieceUtils";
+import { getEffectPlayer, isEffectConfirmEnabled, getCurrentEffectType } from "../utils/effectUtils";
 import "./DoneButton.css";
 
 interface DoneButtonProps {
