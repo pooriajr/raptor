@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
+import { createSpaceId, createEmptyHighlights, type SpaceId, type SpaceHighlights } from "./types/board.ts";
 import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
@@ -1215,30 +1216,173 @@ function Board() {
     return destinations;
   })();
 
-  // Calculate path trail positions for visualization
-  // Includes paths from pending moves + baby start positions
-  const pathTrailPositions: Array<{
-    tileId: number;
-    x: number;
-    y: number;
-  }> = (() => {
-    const positions: Array<{ tileId: number; x: number; y: number }> = [];
+  // Build consolidated highlights object
+  const highlights: SpaceHighlights = (() => {
+    const h = createEmptyHighlights();
 
-    // Add paths and start positions from pending moves
-    for (const move of pendingMothersCallMoves) {
-      // Add baby's start position
-      const baby = state.babies.find((b) => b.id === move.babyId);
-      if (baby) {
-        positions.push({ tileId: baby.tileId, x: baby.x, y: baby.y });
-      }
-      // Add intermediate path positions
-      for (const pos of move.path) {
-        positions.push(pos);
+    // Valid moves (action phase)
+    for (const move of validMoves) {
+      h.validMoves.add(createSpaceId(move.tileId, move.x, move.y));
+    }
+
+    // Setup placements
+    for (const space of setupPlacementSpaces) {
+      h.setupPlacements.add(createSpaceId(space.tileId, space.x, space.y));
+    }
+
+    // Setup move targets (moving piece within tile)
+    if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
+      for (const tile of state.tiles) {
+        const hasPieceOnTile =
+          state.phase === "RAPTOR_SETUP"
+            ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
+            : state.scientists.some((s) => s.tileId === tile.id);
+
+        if (hasPieceOnTile) {
+          for (const space of tile.spaces) {
+            if (space.hasMountain || space.isUnusable) continue;
+            if (state.phase === "SCIENTIST_SETUP" && space.isExit) continue;
+            if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) continue;
+            h.setupMoveTargets.add(space.id);
+          }
+        }
       }
     }
 
-    return positions;
+    // Effect destinations
+    for (const dest of mothersCallDestinations) {
+      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
+    }
+    for (const dest of reinforcementDestinations) {
+      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
+    }
+    for (const dest of fireDestinations) {
+      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
+    }
+    for (const dest of selectedScientistJeepDestinations) {
+      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
+    }
+
+    // Pending destinations (where pieces will move to)
+    for (const move of pendingMothersCallMoves) {
+      h.pendingDestinations.add(createSpaceId(move.destinationTileId, move.destinationX, move.destinationY));
+    }
+    for (const placement of pendingReinforcementPlacements) {
+      h.pendingDestinations.add(createSpaceId(placement.tileId, placement.x, placement.y));
+    }
+
+    // Pending origins (where pieces are moving from) and path trails
+    for (const move of pendingMothersCallMoves) {
+      const baby = state.babies.find((b) => b.id === move.babyId);
+      if (baby) {
+        h.pendingOrigins.add(createSpaceId(baby.tileId, baby.x, baby.y));
+      }
+      for (const pos of move.path) {
+        h.pathTrails.add(createSpaceId(pos.tileId, pos.x, pos.y));
+      }
+    }
+
+    // Jeep origins and paths
+    for (const move of pendingJeepMoves) {
+      // Check if this is the first move for this scientist (origin)
+      const isFirstMove = !pendingJeepMoves.some(
+        (m) =>
+          m.scientistId === move.scientistId &&
+          m.toTileId === move.fromTileId &&
+          m.toX === move.fromX &&
+          m.toY === move.fromY,
+      );
+      if (isFirstMove) {
+        h.pendingOrigins.add(createSpaceId(move.fromTileId, move.fromX, move.fromY));
+      }
+      // Add path positions
+      for (const pos of move.path) {
+        h.pathTrails.add(createSpaceId(pos.tileId, pos.x, pos.y));
+      }
+      // Add intermediate stops (destinations that have subsequent moves)
+      const hasSubsequentMove = pendingJeepMoves.some(
+        (m2) =>
+          m2.scientistId === move.scientistId &&
+          m2.fromTileId === move.toTileId &&
+          m2.fromX === move.toX &&
+          m2.fromY === move.toY,
+      );
+      if (hasSubsequentMove) {
+        h.pathTrails.add(createSpaceId(move.toTileId, move.toX, move.toY));
+      }
+    }
+
+    // Hostile targets (pieces that can be attacked)
+    for (const pieceId of actionTargets.hostileTargets) {
+      const piece = findPieceById(pieceId);
+      if (piece) {
+        h.hostileTargets.add(createSpaceId(piece.tileId, piece.x, piece.y));
+      }
+    }
+
+    // Friendly targets (pieces/fire that can be interacted with)
+    for (const pieceId of actionTargets.friendlyTargets) {
+      const piece = findPieceById(pieceId);
+      if (piece) {
+        h.friendlyTargets.add(createSpaceId(piece.tileId, piece.x, piece.y));
+      }
+    }
+    for (const fire of actionTargets.friendlyFirePositions) {
+      h.friendlyTargets.add(createSpaceId(fire.tileId, fire.x, fire.y));
+    }
+
+    // Fire tokens
+    for (const fire of state.fireTokens) {
+      h.fireTokens.add(createSpaceId(fire.tileId, fire.x, fire.y));
+    }
+
+    // Pending fire
+    for (const fire of pendingFirePlacements) {
+      h.pendingFire.add(createSpaceId(fire.tileId, fire.x, fire.y));
+    }
+
+    return h;
   })();
+
+  // Build pending previews map
+  const pendingPreviews: Map<SpaceId, { type: "baby" | "scientist" | "jeep"; id?: string | number }> = (() => {
+    const previews = new Map<SpaceId, { type: "baby" | "scientist" | "jeep"; id?: string | number }>();
+
+    // Baby previews (Mother's Call)
+    for (const move of pendingMothersCallMoves) {
+      previews.set(createSpaceId(move.destinationTileId, move.destinationX, move.destinationY), { type: "baby" });
+    }
+
+    // Scientist previews (Reinforcements)
+    for (const placement of pendingReinforcementPlacements) {
+      previews.set(createSpaceId(placement.tileId, placement.x, placement.y), {
+        type: "scientist",
+        id: placement.id,
+      });
+    }
+
+    // Jeep previews (final destinations only)
+    for (const move of pendingJeepMoves) {
+      const hasSubsequentMove = pendingJeepMoves.some(
+        (m2) =>
+          m2.scientistId === move.scientistId &&
+          m2.fromTileId === move.toTileId &&
+          m2.fromX === move.toX &&
+          m2.fromY === move.toY,
+      );
+      if (!hasSubsequentMove) {
+        previews.set(createSpaceId(move.toTileId, move.toX, move.toY), { type: "jeep" });
+      }
+    }
+
+    return previews;
+  })();
+
+  // Compute selected effect targets for piece highlighting
+  const computedSelectedEffectTargets =
+    getCurrentEffectType(state) === "mothers_call"
+      ? [...pendingMothersCallMoves.map((m) => m.babyId), ...(selectedBabyForCall ? [selectedBabyForCall] : [])]
+      : selectedEffectTargets;
 
   return (
     <div className="board-container">
@@ -1246,83 +1390,19 @@ function Board() {
         <div className="Board">
           {state.tiles.map((tile) => {
             const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
-            const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
-            const setupPlacementsOnTile = setupPlacementSpaces.filter((s) => s.tileId === tile.id);
             const isValidSetupTile = validSetupTileIds.has(tile.id);
-
-            // Calculate valid move targets for tiles that already have a piece during setup
-            const setupMoveTargetsOnTile: Array<{ x: number; y: number }> = (() => {
-              if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return [];
-
-              // Check if this tile has a piece that can be moved
-              const hasPieceOnTile =
-                state.phase === "RAPTOR_SETUP"
-                  ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
-                  : state.scientists.some((s) => s.tileId === tile.id);
-
-              if (!hasPieceOnTile) return [];
-
-              // Return valid spaces on this tile (excluding occupied, mountains, unusable, exits for scientists)
-              return tile.spaces
-                .filter((space) => {
-                  if (space.hasMountain || space.isUnusable) return false;
-                  if (state.phase === "SCIENTIST_SETUP" && space.isExit) return false;
-                  // Exclude spaces with pieces
-                  if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) return false;
-                  return true;
-                })
-                .map((space) => ({ x: space.coordinate.x, y: space.coordinate.y }));
-            })();
 
             return (
               <Tile
                 key={tile.id}
                 tile={tile}
                 pieces={piecesOnTile}
-                validMoves={validMovesOnTile}
-                setupPlacements={setupPlacementsOnTile}
-                setupMoveTargets={setupMoveTargetsOnTile}
+                highlights={highlights}
                 isValidSetupTile={isValidSetupTile}
                 effectTargetIds={effectTargetIds}
-                selectedEffectTargets={
-                  getCurrentEffectType(state) === "mothers_call"
-                    ? [
-                        ...pendingMothersCallMoves.map((m) => m.babyId),
-                        ...(selectedBabyForCall ? [selectedBabyForCall] : []),
-                      ]
-                    : selectedEffectTargets
-                }
-                effectDestinations={[
-                  ...mothersCallDestinations,
-                  ...reinforcementDestinations,
-                  ...fireDestinations,
-                  ...selectedScientistJeepDestinations.map((d) => ({
-                    tileId: d.tileId,
-                    x: d.x,
-                    y: d.y,
-                  })),
-                ]}
-                pendingFirePlacements={pendingFirePlacements}
-                fireTokens={state.fireTokens}
-                pendingJeepMoves={pendingJeepMoves}
-                pendingReinforcementPlacements={pendingReinforcementPlacements}
-                pendingMoves={pendingMothersCallMoves.map((m) => {
-                  const baby = state.babies.find((b) => b.id === m.babyId);
-                  return {
-                    babyId: m.babyId,
-                    fromTileId: baby?.tileId ?? 0,
-                    fromX: baby?.x ?? 0,
-                    fromY: baby?.y ?? 0,
-                    toTileId: m.destinationTileId,
-                    toX: m.destinationX,
-                    toY: m.destinationY,
-                  };
-                })}
-                pathTrailPositions={pathTrailPositions}
+                selectedEffectTargets={computedSelectedEffectTargets}
                 selectedActionPieceId={selectedActionPieceId}
-                hostileTargetIds={actionTargets.hostileTargets}
-                friendlyTargetIds={actionTargets.friendlyTargets}
-                friendlyFirePositions={actionTargets.friendlyFirePositions}
+                pendingPreviews={pendingPreviews}
                 showCoordinates={state.showCoordinates}
                 onSpaceClick={handleSpaceClick}
               />

@@ -3,15 +3,74 @@ export interface Coordinate {
   y: number;
 }
 
+// SpaceId is a unique identifier for a space: "tileId-x-y"
+export type SpaceId = string;
+
+export function createSpaceId(tileId: number, x: number, y: number): SpaceId {
+  return `${tileId}-${x}-${y}`;
+}
+
+export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: number } {
+  const [tileId, x, y] = spaceId.split("-").map(Number);
+  return { tileId, x, y };
+}
+
+// Consolidated space highlighting - uses Sets for O(1) lookup
+export interface SpaceHighlights {
+  // Destinations (clickable spaces to move/place things)
+  validMoves: Set<SpaceId>; // Action phase movement
+  setupPlacements: Set<SpaceId>; // Setup phase placement
+  setupMoveTargets: Set<SpaceId>; // Moving piece within tile during setup
+  effectDestinations: Set<SpaceId>; // Effect targets (Mother's Call, reinforcements, fire, jeep)
+
+  // Pending states (showing what will happen on confirm)
+  pendingDestinations: Set<SpaceId>; // Where pieces will move to
+  pendingOrigins: Set<SpaceId>; // Where pieces are moving from (show trail)
+  pathTrails: Set<SpaceId>; // Intermediate path positions
+
+  // Combat targets
+  hostileTargets: Set<SpaceId>; // Enemy pieces that can be attacked
+  friendlyTargets: Set<SpaceId>; // Friendly pieces/fire that can be interacted with
+
+  // Static tokens
+  fireTokens: Set<SpaceId>; // Existing fire
+  pendingFire: Set<SpaceId>; // Fire to be placed
+}
+
+export function createEmptyHighlights(): SpaceHighlights {
+  return {
+    validMoves: new Set(),
+    setupPlacements: new Set(),
+    setupMoveTargets: new Set(),
+    effectDestinations: new Set(),
+    pendingDestinations: new Set(),
+    pendingOrigins: new Set(),
+    pathTrails: new Set(),
+    hostileTargets: new Set(),
+    friendlyTargets: new Set(),
+    fireTokens: new Set(),
+    pendingFire: new Set(),
+  };
+}
+
 export interface Space {
+  id: SpaceId;
   coordinate: Coordinate;
   hasMountain: boolean;
   isExit: boolean;
   isUnusable: boolean;
 }
 
-export function createSpace(x: number, y: number, hasMountain = false, isExit = false, isUnusable = false): Space {
+export function createSpace(
+  tileId: number,
+  x: number,
+  y: number,
+  hasMountain = false,
+  isExit = false,
+  isUnusable = false,
+): Space {
   return {
+    id: createSpaceId(tileId, x, y),
     coordinate: { x, y },
     hasMountain,
     isExit,
@@ -70,7 +129,7 @@ export function createSquareTile(id: number, mountainPattern: MountainPattern = 
   for (let y = 0; y < 3; y++) {
     for (let x = 0; x < 3; x++) {
       const hasMountain = mountainPattern.some((mountain) => mountain.x === x && mountain.y === y);
-      spaces.push(createSpace(x, y, hasMountain));
+      spaces.push(createSpace(id, x, y, hasMountain));
     }
   }
   return { id, shape: "square", spaces };
@@ -85,7 +144,7 @@ export function createLShapedTile(id: number, side: "left" | "right", exitPositi
     for (let x = 0; x < 2; x++) {
       const isExitSpace = x === exitCol && y === exitRow;
       const isUnusableSpace = x === exitCol && y !== exitRow;
-      spaces.push(createSpace(x, y, false, isExitSpace, isUnusableSpace));
+      spaces.push(createSpace(id, x, y, false, isExitSpace, isUnusableSpace));
     }
   }
 
