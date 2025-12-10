@@ -1,5 +1,5 @@
-import CardDeck from "../CardDeck";
-import Hand from "../Hand";
+import CardDeck from "./CardDeck";
+import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
 import DoneButton from "./DoneButton";
 import UndoButton from "./UndoButton";
