@@ -1,57 +1,56 @@
-import { forwardRef } from "react";
 import CardDeck from "./CardDeck";
 import Hand from "./Hand";
 import Card from "./Card";
+import DoneButton from "./DoneButton";
 import { useGame } from "./state/GameContext";
 import "./PlayerArea.css";
 
 interface PlayerAreaProps {
   player: "raptor" | "scientist";
-  // Selection state (managed by Board for now)
-  selectedCard: number | null;
-  floatingCard?: number | null;
-  onCardSelect?: (value: number) => void;
-  isNewDraw?: boolean;
-  // Action area (effect/action phase UI from Board)
   actionInfo?: {
     phaseLabel: string;
     progress?: React.ReactNode;
     instruction: string;
-    actionPoints?: number; // For action phase - displayed prominently
+    actionPoints?: number;
   };
   actionButton?: {
-    label: React.ReactNode;
     disabled: boolean;
     onClick: () => void;
     isDone?: boolean;
   };
-  // Undo/Reset button (shown below action info)
   undoButton?: {
     onClick: () => void;
-    label?: string; // Optional label, defaults to undo icon
+    label?: string;
   };
-  // Load game button (shown during setup if save exists)
   loadButton?: {
     onClick: () => void;
   };
 }
 
-const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerArea(
-  {
-    player,
-    selectedCard,
-    floatingCard,
-    onCardSelect,
-    isNewDraw = false,
-    actionInfo,
-    actionButton,
-    undoButton,
-    loadButton,
-  },
-  ref,
-) {
-  const { state } = useGame();
+function PlayerArea({ player, actionInfo, actionButton, undoButton, loadButton }: PlayerAreaProps) {
+  const { state, dispatch } = useGame();
   const isRaptor = player === "raptor";
+
+  // Get interaction state from context
+  const interaction = isRaptor ? state.raptorInteraction : state.scientistInteraction;
+  const selectedCard = interaction.selectedCard;
+  const isNewDraw = interaction.isNewDraw;
+
+  // Compute floatingCard - shown when opponent is selecting and we've already played
+  const floatingCard =
+    player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null;
+
+  // Card selection handler
+  const handleCardSelect = (value: number) => {
+    const isThisPlayerSelecting =
+      (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
+      (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
+
+    if (!isThisPlayerSelecting) return;
+
+    const newCard = selectedCard === value ? null : value;
+    dispatch({ type: "SELECT_CARD", player, card: newCard });
+  };
 
   // Derive state from context
   const cards = isRaptor ? state.raptorCards : state.scientistCards;
@@ -86,7 +85,7 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
   const faceDownUnselectedCards = isEffectPhase || isActionPhase || isCardReveal;
 
   return (
-    <div className={`player-area ${player}-area`} ref={ref}>
+    <div className={`player-area ${player}-area`}>
       <div className="player-area-left">
         <div className="deck-section">
           <CardDeck player={player} cardCount={deckCount} />
@@ -160,7 +159,7 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
           playedCard={isThisPlayerSelecting ? null : playedCard}
           selectedCard={isThisPlayerSelecting ? selectedCard : null}
           floatingCard={floatingCard}
-          onCardSelect={showHand && !handFaceDown ? onCardSelect : undefined}
+          onCardSelect={showHand && !handFaceDown ? handleCardSelect : undefined}
           isNewDraw={isNewDraw}
           deckPosition={{ x: -300, y: 0 }}
           faceDownUnselected={faceDownUnselectedCards}
@@ -195,17 +194,11 @@ const PlayerArea = forwardRef<HTMLDivElement, PlayerAreaProps>(function PlayerAr
           </button>
         )}
         {actionButton && (
-          <button
-            className={`end-turn-button ${actionButton.isDone ? "done" : ""}`}
-            disabled={actionButton.disabled}
-            onClick={actionButton.onClick}
-          >
-            {actionButton.label}
-          </button>
+          <DoneButton disabled={actionButton.disabled} onClick={actionButton.onClick} isDone={actionButton.isDone} />
         )}
       </div>
     </div>
   );
-});
+}
 
 export default PlayerArea;

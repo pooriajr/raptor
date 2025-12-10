@@ -6,6 +6,7 @@ import {
   spaceHasMountain,
   isRaptorSetupComplete,
 } from "@/utils/boardUtils.ts";
+import { transitionToPhase } from "@/state/phaseTransition.ts";
 import {
   isPlaced,
   isMotherPlaced,
@@ -136,10 +137,7 @@ export function handleConfirmRaptorSetup(state: GameState): GameState {
   if (state.phase !== "RAPTOR_SETUP") return state;
   if (!isRaptorSetupComplete(state)) return state;
 
-  return {
-    ...state,
-    phase: "SCIENTIST_SETUP",
-  };
+  return transitionToPhase(state, "SCIENTIST_SETUP");
 }
 
 export function handleStartGame(state: GameState): GameState {
@@ -148,10 +146,7 @@ export function handleStartGame(state: GameState): GameState {
   if (countPlacedScientists(state) !== 4) return state;
 
   // Go to scientist ready screen first (scientist picks first)
-  return {
-    ...state,
-    phase: "SCIENTIST_READY",
-  };
+  return transitionToPhase(state, "SCIENTIST_READY");
 }
 
 export function handleRemovePiece(state: GameState, action: { pieceId: string }): GameState {

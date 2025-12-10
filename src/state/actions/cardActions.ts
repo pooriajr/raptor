@@ -1,4 +1,5 @@
 import type { GameState, CardState, Player } from "@/types/gameState.ts";
+import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Action types for card phase
 export type CardAction =
@@ -114,28 +115,65 @@ export function calculateActionPhaseState(state: GameState): {
   }
 }
 
-// Helper to transition to action phase with calculated AP
-export function transitionToActionPhase(state: GameState): Partial<GameState> {
-  const { actionPoints, activePlayer } = calculateActionPhaseState(state);
+/**
+ * Shuffle discard pile into deck for a player.
+ * Used when card 1 is played (both raptor and scientist card 1 have shuffle effect).
+ */
+export function shuffleDiscardIntoDeck(cardState: CardState): CardState {
+  const { deck, hand, discard, played } = cardState;
+
+  if (discard.length === 0) {
+    return cardState;
+  }
+
+  // Combine deck and discard, then shuffle
+  const newDeck = shuffleArray([...deck, ...discard]);
+
   return {
-    phase: "ACTION_PHASE" as const,
+    deck: newDeck,
+    hand,
+    played,
+    discard: [],
+  };
+}
+
+// Helper to transition to action phase with calculated AP
+// Also handles card 1 shuffle effect for the player who used the effect
+export function getActionPhaseState(state: GameState): Partial<GameState> {
+  const { actionPoints, activePlayer } = calculateActionPhaseState(state);
+
+  // Check if card 1 was played and got the effect (lower card gets effect)
+  const scientistCard = state.scientistCards.played;
+  const raptorCard = state.raptorCards.played;
+
+  let scientistCards = state.scientistCards;
+  let raptorCards = state.raptorCards;
+
+  if (scientistCard !== null && raptorCard !== null) {
+    // Scientist played card 1 and got the effect (scientist card lower)
+    if (scientistCard === 1 && scientistCard < raptorCard) {
+      scientistCards = shuffleDiscardIntoDeck(scientistCards);
+    }
+    // Raptor played card 1 and got the effect (raptor card lower)
+    if (raptorCard === 1 && raptorCard < scientistCard) {
+      raptorCards = shuffleDiscardIntoDeck(raptorCards);
+    }
+  }
+
+  return {
     actionPoints,
     activePlayer,
+    scientistCards,
+    raptorCards,
   };
 }
 
 export function handlePlayerReady(state: GameState, action: { player: "raptor" | "scientist" }): GameState {
   if (action.player === "scientist" && state.phase === "SCIENTIST_READY") {
-    return {
-      ...state,
-      phase: "SCIENTIST_CARD_SELECTION",
-    };
+    return transitionToPhase(state, "SCIENTIST_CARD_SELECTION");
   }
   if (action.player === "raptor" && state.phase === "RAPTOR_READY") {
-    return {
-      ...state,
-      phase: "RAPTOR_CARD_SELECTION",
-    };
+    return transitionToPhase(state, "RAPTOR_CARD_SELECTION");
   }
   return state;
 }
@@ -157,25 +195,27 @@ export function handleDrawCards(state: GameState, action: { player: "raptor" | "
 export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: number }): GameState {
   if (action.player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") {
     // Mark card as played (keep in hand until explicitly removed later)
-    return {
+    const newState = {
       ...state,
       scientistCards: {
         ...state.scientistCards,
         played: action.card,
       },
-      phase: "RAPTOR_READY",
     };
+    return transitionToPhase(newState, "RAPTOR_READY");
   }
   if (action.player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION") {
     // Mark card as played (keep in hand until explicitly removed later)
-    return {
+    // Also reset observation - raptor has seen the card and made their choice
+    const newState = {
       ...state,
       raptorCards: {
         ...state.raptorCards,
         played: action.card,
       },
-      phase: "CARD_REVEAL",
+      observationActive: false,
     };
+    return transitionToPhase(newState, "CARD_REVEAL");
   }
   return state;
 }
@@ -188,12 +228,12 @@ export function handleConfirmReveal(state: GameState): GameState {
 
   // If same cards, go to round end (nothing happens)
   if (scientistCard === raptorCard) {
-    return { ...state, phase: "ROUND_END" };
+    return transitionToPhase(state, "ROUND_END");
   }
 
   // Lower card player uses their special effect first
   if (scientistCard !== null && raptorCard !== null) {
-    return { ...state, phase: "EFFECT_PHASE" };
+    return transitionToPhase(state, "EFFECT_PHASE");
   }
 
   return state;

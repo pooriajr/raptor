@@ -1,0 +1,18 @@
+.game-layout {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #242424;
+  transition: background-color 0.3s ease;
+}
+
+.game-layout.active-raptor {
+  background-color: #1a3518;
+}
+
+.game-layout.active-scientist {
+  background-color: #181a35;
+}

@@ -2397,7 +2397,7 @@ describe("Game Reducer - Action Phase", () => {
 
       expect(state.phase).toBe("SCIENTIST_READY");
       expect(state.actionPoints).toBe(0);
-      expect(state.activePlayer).toBe(null);
+      expect(state.activePlayer).toBe("scientist");
     });
 
     it("moves played cards to discard and clears played", () => {

@@ -6,6 +6,7 @@ import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates
 import { BabyRaptor } from "@/pieces/BabyRaptor.ts";
 import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
+import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Saved state for action phase reset
 export interface ActionPhaseSavedState {
@@ -410,11 +411,13 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
 export function handleEndActionPhase(state: GameState): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
 
+  // If mother disappeared this round, go to MOTHER_RETURN phase first
+  if (state.motherDisappeared) {
+    return transitionToPhase(state, "MOTHER_RETURN");
+  }
+
   // Transition to round end phase - this triggers END_ROUND action
-  return {
-    ...state,
-    phase: "ROUND_END",
-  };
+  return transitionToPhase(state, "ROUND_END");
 }
 
 export function handleResetActionPhase(state: GameState, action: { savedState: ActionPhaseSavedState }): GameState {

@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 import Card from "./Card";
 import { getCardEffect } from "./utils/cardEffects";
+import { useGame } from "./state/GameContext";
 import "./CardRevealOverlay.css";
 
-interface CardRevealOverlayProps {
-  scientistCard: number;
-  raptorCard: number;
-  onConfirm: () => void;
-}
-
-function CardRevealOverlay({ scientistCard, raptorCard, onConfirm }: CardRevealOverlayProps) {
+function CardRevealOverlay() {
+  const { state, dispatch } = useGame();
   const [revealed, setRevealed] = useState(false);
+
+  const scientistCard = state.scientistCards.played!;
+  const raptorCard = state.raptorCards.played!;
 
   useEffect(() => {
     const timeout = setTimeout(() => setRevealed(true), 300);
@@ -72,7 +71,7 @@ function CardRevealOverlay({ scientistCard, raptorCard, onConfirm }: CardRevealO
               </div>
             )}
 
-            <button className="confirm-button" onClick={onConfirm}>
+            <button className="confirm-button" onClick={() => dispatch({ type: "CONFIRM_REVEAL" })}>
               {sameCards ? "End Round" : "Continue"}
             </button>
           </>

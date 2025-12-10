@@ -1,11 +1,10 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import PlayerArea from "./PlayerArea.tsx";
 import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
-import { getPieceEmoji, isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils.ts";
+import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
@@ -14,23 +13,10 @@ import {
   canBabyReachMotherTile,
   getReachableDestinationsOnMotherTileWithPaths,
   getJeepDestinationsWithPaths,
-  type Position,
   type PathResult,
 } from "./utils/pathfinding.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "./types/coordinates.ts";
-import { hasSavedGame, loadGame } from "./utils/saveLoad.ts";
-
-// Effect types for the current card
-type EffectType =
-  | "fear"
-  | "sleeping_gas"
-  | "mothers_call"
-  | "disappearance"
-  | "recovery"
-  | "reinforcements"
-  | "fire"
-  | "jeep"
-  | "none";
+import { getCurrentEffectType, getEffectLimit } from "./utils/effectUtils.ts";
 
 // Type for pending jeep moves
 interface PendingJeepMove {
@@ -161,17 +147,33 @@ interface BoardProps {
 function Board({ showCoordinates = false }: BoardProps) {
   const { state, dispatch } = useGame();
 
-  const [isScientistNewDraw, setIsScientistNewDraw] = useState(false);
-  const [isRaptorNewDraw, setIsRaptorNewDraw] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<number | null>(null);
-  const scientistDeckRef = useRef<HTMLDivElement>(null);
-  const raptorDeckRef = useRef<HTMLDivElement>(null);
+  // Helper to get current player based on phase
+  const getCurrentPlayer = (): "raptor" | "scientist" | null => {
+    if (state.phase === "RAPTOR_CARD_SELECTION" || state.phase === "RAPTOR_SETUP") return "raptor";
+    if (state.phase === "SCIENTIST_CARD_SELECTION" || state.phase === "SCIENTIST_SETUP") return "scientist";
+    if (state.phase === "EFFECT_PHASE") {
+      // Inline logic from getEffectPlayer to avoid forward reference
+      const scientistCard = state.scientistCards.played;
+      const raptorCard = state.raptorCards.played;
+      if (scientistCard === null || raptorCard === null) return null;
+      return raptorCard < scientistCard ? "raptor" : "scientist";
+    }
+    if (state.phase === "ACTION_PHASE") return state.activePlayer;
+    return null;
+  };
+
+  // Get interaction state for current player (or raptor as fallback)
+  const currentPlayer = getCurrentPlayer();
+  const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
+
   const prevPhaseRef = useRef(state.phase);
 
   // Reset selected card when phase changes
   useEffect(() => {
-    setSelectedCard(null);
-  }, [state.phase]);
+    if (currentPlayer) {
+      dispatch({ type: "SELECT_CARD", player: currentPlayer, card: null });
+    }
+  }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Draw cards when entering card selection phases
   useEffect(() => {
@@ -185,41 +187,28 @@ function Board({ showCoordinates = false }: BoardProps) {
 
     if (isScientistSelection || isRaptorSelection) {
       const player = isScientistSelection ? "scientist" : "raptor";
-      const setNewDraw = isScientistSelection ? setIsScientistNewDraw : setIsRaptorNewDraw;
 
       dispatch({ type: "DRAW_CARDS", player });
-      setNewDraw(true);
-      const timeout = setTimeout(() => setNewDraw(false), 1500);
+      dispatch({ type: "SET_NEW_DRAW", player, isNewDraw: true });
+      const timeout = setTimeout(() => {
+        dispatch({ type: "SET_NEW_DRAW", player, isNewDraw: false });
+      }, 1500);
       return () => clearTimeout(timeout);
     }
   }, [state.phase, dispatch]);
-  const [selectedEffectTargets, setSelectedEffectTargets] = useState<string[]>([]);
-  // For Mother's Call: track selected baby and pending moves
-  const [selectedBabyForCall, setSelectedBabyForCall] = useState<string | null>(null);
-  const [pendingMothersCallMoves, setPendingMothersCallMoves] = useState<
-    Array<{
-      babyId: string;
-      destinationTileId: number;
-      destinationX: number;
-      destinationY: number;
-      path: Position[]; // Intermediate spaces for trail visualization
-    }>
-  >([]);
-  // Cache the path results for the currently selected baby
+
+  // Read effect phase state from context
+  const selectedEffectTargets = interaction.selectedEffectTargets;
+  const selectedBabyForCall = interaction.selectedBabyForCall;
+  const pendingMothersCallMoves = interaction.pendingMothersCallMoves;
+  const pendingReinforcementPlacements = interaction.pendingReinforcementPlacements;
+  const pendingFirePlacements = interaction.pendingFirePlacements;
+  const selectedScientistForJeep = interaction.selectedScientistForJeep;
+  const pendingJeepMoves = interaction.pendingJeepMoves;
+
+  // Cache the path results for the currently selected baby (local state - computed, not persisted)
   const [selectedBabyPathResults, setSelectedBabyPathResults] = useState<PathResult[]>([]);
-  // For Reinforcements: track pending placements with stable IDs for animation
-  const [pendingReinforcementPlacements, setPendingReinforcementPlacements] = useState<
-    Array<{ id: number; tileId: number; x: number; y: number }>
-  >([]);
-  const [reinforcementIdCounter, setReinforcementIdCounter] = useState(0);
-  // For Fire: track pending placements
-  const [pendingFirePlacements, setPendingFirePlacements] = useState<Array<{ tileId: number; x: number; y: number }>>(
-    [],
-  );
-  // For Jeep: track selected scientist and pending moves
-  const [selectedScientistForJeep, setSelectedScientistForJeep] = useState<string | null>(null);
-  const [pendingJeepMoves, setPendingJeepMoves] = useState<PendingJeepMove[]>([]);
-  // Cache jeep destinations for the currently selected scientist
+  // Cache jeep destinations for the currently selected scientist (local state - computed, not persisted)
   const [selectedScientistJeepDestinations, setSelectedScientistJeepDestinations] = useState<
     Array<{
       tileId: number;
@@ -229,15 +218,9 @@ function Board({ showCoordinates = false }: BoardProps) {
     }>
   >([]);
 
-  // Action phase state
-  const [selectedActionPieceId, setSelectedActionPieceId] = useState<string | null>(null);
-  const [actionPhaseSavedState, setActionPhaseSavedState] = useState<{
-    mother: PieceState;
-    babies: PieceState[];
-    scientists: PieceState[];
-    fireTokens: typeof state.fireTokens;
-    actionPoints: number;
-  } | null>(null);
+  // Read action phase state from context
+  const selectedActionPieceId = interaction.selectedActionPieceId;
+  const actionPhaseSavedState = state.actionPhaseSavedState;
 
   // Helper to get all pieces as a single array
   const getAllPieces = (): PieceState[] => {
@@ -261,36 +244,35 @@ function Board({ showCoordinates = false }: BoardProps) {
   // Reset effect targets when leaving effect phase
   useEffect(() => {
     if (state.phase !== "EFFECT_PHASE") {
-      setSelectedEffectTargets([]);
-      setSelectedBabyForCall(null);
-      setPendingMothersCallMoves([]);
+      // Reset both players' interaction state when leaving effect phase
+      dispatch({ type: "RESET_ALL_INTERACTIONS" });
       setSelectedBabyPathResults([]);
-      setPendingReinforcementPlacements([]);
-      setReinforcementIdCounter(0);
-      setPendingFirePlacements([]);
-      setSelectedScientistForJeep(null);
-      setPendingJeepMoves([]);
       setSelectedScientistJeepDestinations([]);
     }
-  }, [state.phase]);
+  }, [state.phase, dispatch]);
 
   // Save state when entering action phase, reset when leaving
   useEffect(() => {
     if (state.phase === "ACTION_PHASE") {
       // Save state on first entry (when savedState is null)
       if (actionPhaseSavedState === null) {
-        setActionPhaseSavedState({
-          mother: { ...state.mother },
-          babies: state.babies.map((b) => ({ ...b })),
-          scientists: state.scientists.map((s) => ({ ...s })),
-          fireTokens: state.fireTokens.map((f) => ({ ...f })),
-          actionPoints: state.actionPoints,
+        dispatch({
+          type: "SAVE_ACTION_PHASE_STATE",
+          savedState: {
+            mother: { ...state.mother },
+            babies: state.babies.map((b) => ({ ...b })),
+            scientists: state.scientists.map((s) => ({ ...s })),
+            fireTokens: state.fireTokens.map((f) => ({ ...f })),
+            actionPoints: state.actionPoints,
+          },
         });
       }
     } else {
       // Reset when leaving action phase
-      setSelectedActionPieceId(null);
-      setActionPhaseSavedState(null);
+      if (currentPlayer) {
+        dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId: null });
+      }
+      dispatch({ type: "CLEAR_ACTION_PHASE_STATE" });
     }
   }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -316,187 +298,59 @@ function Board({ showCoordinates = false }: BoardProps) {
     }
   }, [state.phase, dispatch]);
 
-  // Determine the current effect type based on played cards
-  const getCurrentEffectType = (): EffectType => {
-    const scientistCard = state.scientistCards.played;
-    const raptorCard = state.raptorCards.played;
-    if (scientistCard === null || raptorCard === null) return "none";
-
-    const raptorHasEffect = raptorCard < scientistCard;
-
-    if (raptorHasEffect) {
-      // Raptor effects: 1=Mother's Call(1), 2=Disappearance, 3=Fear(1), 4=Mother's Call(2), 5=Recovery(2), 6=Disappearance, 7=Recovery(3), 8=Fear(2)
-      if (raptorCard === 1 || raptorCard === 4) return "mothers_call";
-      if (raptorCard === 2 || raptorCard === 6) return "disappearance";
-      if (raptorCard === 3 || raptorCard === 8) return "fear";
-      if (raptorCard === 5 || raptorCard === 7) return "recovery";
-      return "none";
-    } else {
-      // Scientist effects: 1=Sleeping Gas(1), 2=Reinforcements(1-2), 3=Jeep(2), 4=Sleeping Gas(2), 5=Fire(2), 6=Reinforcements(1-2), 7=Fire(3), 8=Jeep(4)
-      if (scientistCard === 1 || scientistCard === 4) return "sleeping_gas";
-      if (scientistCard === 2 || scientistCard === 6) return "reinforcements";
-      if (scientistCard === 3 || scientistCard === 8) return "jeep";
-      if (scientistCard === 5 || scientistCard === 7) return "fire";
-      return "none";
-    }
-  };
-
-  // Get effect limit for current card
-  const getEffectLimit = (): number => {
-    const scientistCard = state.scientistCards.played;
-    const raptorCard = state.raptorCards.played;
-    if (scientistCard === null || raptorCard === null) return 0;
-
-    const raptorHasEffect = raptorCard < scientistCard;
-
-    if (raptorHasEffect) {
-      // Raptor cards: 1=1 baby, 3=1 scientist, 4=2 babies, 5=2 recovery, 7=3 recovery, 8=2 scientists
-      if (raptorCard === 1) return 1;
-      if (raptorCard === 3) return 1;
-      if (raptorCard === 4) return 2;
-      if (raptorCard === 5) return 2; // Recovery x2
-      if (raptorCard === 7) return 3; // Recovery x3
-      if (raptorCard === 8) return 2;
-      return 0;
-    } else {
-      // Scientist cards: 1=1 baby, 2=2 scientists, 3=2 jeep moves, 4=2 babies, 5=2 fire, 6=2 scientists, 7=3 fire, 8=4 jeep moves
-      if (scientistCard === 1) return 1;
-      if (scientistCard === 2 || scientistCard === 6) return 2; // Reinforcements
-      if (scientistCard === 3) return 2; // Jeep x2
-      if (scientistCard === 4) return 2;
-      if (scientistCard === 5) return 2; // Fire x2
-      if (scientistCard === 7) return 3; // Fire x3
-      if (scientistCard === 8) return 4; // Jeep x4
-      return 0;
-    }
-  };
-
-  // Determine which player has the effect
-  const getEffectPlayer = (): "raptor" | "scientist" | null => {
-    const scientistCard = state.scientistCards.played;
-    const raptorCard = state.raptorCards.played;
-    if (scientistCard === null || raptorCard === null) return null;
-    return raptorCard < scientistCard ? "raptor" : "scientist";
-  };
-
-  // Get instruction text for current effect
-  const getEffectInstruction = (): string => {
-    const effectType = getCurrentEffectType();
-    const limit = getEffectLimit();
-    const selectionCount = selectedEffectTargets.length;
-
-    if (effectType === "fear") {
-      return `Click scientists to frighten (${selectionCount}/${limit})`;
-    } else if (effectType === "sleeping_gas") {
-      return `Click baby raptors to put to sleep (${selectionCount}/${limit})`;
-    } else if (effectType === "mothers_call") {
-      if (selectedBabyForCall !== null) {
-        return `Click a destination on mother's tile (${pendingMothersCallMoves.length}/${limit})`;
-      } else {
-        return `Click a baby raptor to call (${pendingMothersCallMoves.length}/${limit})`;
-      }
-    } else if (effectType === "disappearance") {
-      return "Click Confirm to remove mother from the board";
-    } else if (effectType === "recovery") {
-      return `Click sleeping babies to wake up (${selectionCount}/${limit})`;
-    } else if (effectType === "reinforcements") {
-      return `Click spaces on edges to place scientists (${pendingReinforcementPlacements.length}/${limit})`;
-    } else if (effectType === "fire") {
-      return `Click spaces adjacent to scientists or fire (${pendingFirePlacements.length}/${limit})`;
-    } else if (effectType === "jeep") {
-      if (selectedScientistForJeep !== null) {
-        return `Click a destination for the jeep (${pendingJeepMoves.length}/${limit})`;
-      } else {
-        return `Click a scientist to move by jeep (${pendingJeepMoves.length}/${limit})`;
-      }
-    }
-    return "No effect";
-  };
-
-  // Check if effect confirm button should be enabled
-  const isEffectConfirmEnabled = (): boolean => {
-    const effectType = getCurrentEffectType();
-    if (effectType === "mothers_call") return pendingMothersCallMoves.length > 0;
-    if (effectType === "disappearance") return true;
-    if (effectType === "reinforcements") return pendingReinforcementPlacements.length > 0;
-    if (effectType === "fire") return pendingFirePlacements.length > 0;
-    if (effectType === "jeep") return pendingJeepMoves.length > 0;
-    return selectedEffectTargets.length > 0;
-  };
-
-  // Check if undo button should be shown for effect phase
-  const shouldShowEffectUndo = (): boolean => {
-    const effectType = getCurrentEffectType();
-    if (effectType === "fire") return pendingFirePlacements.length > 0;
-    if (effectType === "jeep") return pendingJeepMoves.length > 0;
-    return false;
-  };
-
-  // Handle undo for effect phase
-  const handleEffectUndo = () => {
-    const effectType = getCurrentEffectType();
-    if (effectType === "fire") {
-      handleFireReset();
-    } else if (effectType === "jeep") {
-      handleJeepReset();
-    }
-  };
-
   // Handle piece interactions - returns true if the interaction was handled
   const handlePieceInteraction = (pieceId: string): boolean => {
     // Handle effect phase targeting
     if (state.phase === "EFFECT_PHASE") {
-      const effectType = getCurrentEffectType();
+      const effectType = getCurrentEffectType(state);
       const piece = findPieceById(pieceId);
-      if (!piece) return false;
+      const player = currentPlayer;
+      if (!piece || !player) return false;
+
+      // Helper to toggle effect target with limit handling
+      const toggleEffectTarget = (targetId: string) => {
+        const current = selectedEffectTargets;
+        if (current.includes(targetId)) {
+          // Remove from selection
+          dispatch({
+            type: "SET_EFFECT_TARGETS",
+            player,
+            pieceIds: current.filter((id) => id !== targetId),
+          });
+        } else {
+          const limit = getEffectLimit(state);
+          if (current.length >= limit) {
+            // At limit - replace oldest with new
+            dispatch({
+              type: "SET_EFFECT_TARGETS",
+              player,
+              pieceIds: [...current.slice(1), targetId],
+            });
+          } else {
+            // Add to selection
+            dispatch({
+              type: "SET_EFFECT_TARGETS",
+              player,
+              pieceIds: [...current, targetId],
+            });
+          }
+        }
+      };
 
       if (effectType === "fear") {
         // Fear: select scientists to frighten
         if (piece.type !== "scientist" || piece.isFrightened) return false;
-
-        setSelectedEffectTargets((prev) => {
-          if (prev.includes(pieceId)) {
-            return prev.filter((id) => id !== pieceId);
-          } else {
-            const limit = getEffectLimit();
-            if (prev.length >= limit) {
-              return [...prev.slice(1), pieceId];
-            }
-            return [...prev, pieceId];
-          }
-        });
+        toggleEffectTarget(pieceId);
         return true;
       } else if (effectType === "sleeping_gas") {
         // Sleeping Gas: select babies to put to sleep
         if (piece.type !== "baby" || piece.isAsleep) return false;
-
-        setSelectedEffectTargets((prev) => {
-          if (prev.includes(pieceId)) {
-            return prev.filter((id) => id !== pieceId);
-          } else {
-            const limit = getEffectLimit();
-            if (prev.length >= limit) {
-              return [...prev.slice(1), pieceId];
-            }
-            return [...prev, pieceId];
-          }
-        });
+        toggleEffectTarget(pieceId);
         return true;
       } else if (effectType === "recovery") {
         // Recovery: select sleeping babies to wake up
         if (piece.type !== "baby" || !piece.isAsleep) return false;
-
-        setSelectedEffectTargets((prev) => {
-          if (prev.includes(pieceId)) {
-            return prev.filter((id) => id !== pieceId);
-          } else {
-            const limit = getEffectLimit();
-            if (prev.length >= limit) {
-              return [...prev.slice(1), pieceId];
-            }
-            return [...prev, pieceId];
-          }
-        });
+        toggleEffectTarget(pieceId);
         return true;
       } else if (effectType === "mothers_call") {
         // Mother's Call: two-step selection per baby
@@ -511,20 +365,22 @@ function Board({ showCoordinates = false }: BoardProps) {
           const hasPendingMove = pendingMothersCallMoves.some((m) => m.babyId === pieceId);
 
           if (hasPendingMove) {
-            // Remove the pending move (undo)
-            setPendingMothersCallMoves((prev) => prev.filter((m) => m.babyId !== pieceId));
+            // Remove the pending move (undo) - need to filter and set new array
+            const newMoves = pendingMothersCallMoves.filter((m) => m.babyId !== pieceId);
+            dispatch({ type: "CLEAR_MOTHERS_CALL_MOVES", player });
+            newMoves.forEach((move) => dispatch({ type: "ADD_MOTHERS_CALL_MOVE", player, move }));
             return true;
           }
 
           // If clicking the currently selected baby, deselect it
           if (pieceId === selectedBabyForCall) {
-            setSelectedBabyForCall(null);
+            dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: null });
             setSelectedBabyPathResults([]);
             return true;
           }
 
           // Check if we're at the limit
-          const limit = getEffectLimit();
+          const limit = getEffectLimit(state);
           if (pendingMothersCallMoves.length >= limit) return false;
 
           // Check if baby can reach mother's tile and get paths
@@ -544,7 +400,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           if (availablePathResults.length === 0) return false;
 
           // Select this baby and cache its path results
-          setSelectedBabyForCall(pieceId);
+          dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: pieceId });
           setSelectedBabyPathResults(availablePathResults);
           return true;
         }
@@ -559,13 +415,13 @@ function Board({ showCoordinates = false }: BoardProps) {
         if (piece.type === "scientist") {
           // If clicking the currently selected scientist, deselect it
           if (pieceId === selectedScientistForJeep) {
-            setSelectedScientistForJeep(null);
+            dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
             setSelectedScientistJeepDestinations([]);
             return true;
           }
 
           // Check if we're at the limit - can't add more moves
-          const limit = getEffectLimit();
+          const limit = getEffectLimit(state);
           if (pendingJeepMoves.length >= limit) return false;
 
           // Get the scientist's effective position (considering pending moves)
@@ -614,7 +470,7 @@ function Board({ showCoordinates = false }: BoardProps) {
           if (availableDestinations.length === 0) return false;
 
           // Select this scientist and cache its destinations
-          setSelectedScientistForJeep(pieceId);
+          dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: pieceId });
           setSelectedScientistJeepDestinations(availableDestinations);
           return true;
         }
@@ -720,95 +576,25 @@ function Board({ showCoordinates = false }: BoardProps) {
             type: "ACTION_SCIENTIST_STAND_UP",
             scientistId: pieceId,
           });
-          setSelectedActionPieceId(pieceId);
+          if (currentPlayer) {
+            dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId });
+          }
         }
         return true;
       }
 
       // Toggle selection or switch to new piece
-      if (selectedActionPieceId === pieceId) {
-        setSelectedActionPieceId(null);
-      } else {
-        setSelectedActionPieceId(pieceId);
+      if (currentPlayer) {
+        if (selectedActionPieceId === pieceId) {
+          dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId: null });
+        } else {
+          dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId });
+        }
       }
       return true;
     }
 
     return false;
-  };
-
-  const handleEffectConfirm = () => {
-    const effectType = getCurrentEffectType();
-
-    if (effectType === "fear") {
-      dispatch({
-        type: "FRIGHTEN_SCIENTISTS",
-        pieceIds: selectedEffectTargets,
-      });
-      setSelectedEffectTargets([]);
-    } else if (effectType === "sleeping_gas") {
-      dispatch({
-        type: "PUT_BABIES_TO_SLEEP",
-        pieceIds: selectedEffectTargets,
-      });
-      setSelectedEffectTargets([]);
-    } else if (effectType === "recovery") {
-      dispatch({
-        type: "WAKE_BABIES",
-        pieceIds: selectedEffectTargets,
-      });
-      setSelectedEffectTargets([]);
-    } else if (effectType === "mothers_call") {
-      dispatch({
-        type: "MOTHERS_CALL",
-        moves: pendingMothersCallMoves,
-      });
-      setPendingMothersCallMoves([]);
-      setSelectedBabyForCall(null);
-    } else if (effectType === "disappearance") {
-      dispatch({ type: "DISAPPEARANCE" });
-    } else if (effectType === "reinforcements") {
-      dispatch({
-        type: "REINFORCEMENTS",
-        placements: pendingReinforcementPlacements,
-      });
-      setPendingReinforcementPlacements([]);
-    } else if (effectType === "fire") {
-      dispatch({
-        type: "PLACE_FIRE",
-        placements: pendingFirePlacements,
-      });
-      setPendingFirePlacements([]);
-    } else if (effectType === "jeep") {
-      dispatch({
-        type: "JEEP_MOVES",
-        moves: pendingJeepMoves,
-      });
-      setPendingJeepMoves([]);
-      setSelectedScientistForJeep(null);
-      setSelectedScientistJeepDestinations([]);
-    }
-  };
-
-  const handleFireReset = () => {
-    setPendingFirePlacements([]);
-  };
-
-  const handleJeepReset = () => {
-    setPendingJeepMoves([]);
-    setSelectedScientistForJeep(null);
-    setSelectedScientistJeepDestinations([]);
-  };
-
-  // Handle action phase reset
-  const handleActionReset = () => {
-    if (actionPhaseSavedState) {
-      dispatch({
-        type: "RESET_ACTION_PHASE",
-        savedState: actionPhaseSavedState,
-      });
-      setSelectedActionPieceId(null);
-    }
   };
 
   // Unified space click handler - handles all interactions on a tile space
@@ -943,7 +729,9 @@ function Board({ showCoordinates = false }: BoardProps) {
 
     if (state.phase !== "EFFECT_PHASE") return;
 
-    const effectType = getCurrentEffectType();
+    const effectType = getCurrentEffectType(state);
+    const player = currentPlayer;
+    if (!player) return;
 
     if (effectType === "mothers_call") {
       if (selectedBabyForCall === null) return;
@@ -954,52 +742,56 @@ function Board({ showCoordinates = false }: BoardProps) {
       );
 
       // Add to pending moves with path
-      setPendingMothersCallMoves((prev) => [
-        ...prev,
-        {
+      dispatch({
+        type: "ADD_MOTHERS_CALL_MOVE",
+        player,
+        move: {
           babyId: selectedBabyForCall,
           destinationTileId: tileId,
           destinationX: x,
           destinationY: y,
           path: pathResult?.path ?? [],
         },
-      ]);
-      setSelectedBabyForCall(null);
+      });
+      dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: null });
       setSelectedBabyPathResults([]);
     } else if (effectType === "reinforcements") {
       // Check if already selected (toggle off)
       const alreadySelected = pendingReinforcementPlacements.some((p) => p.tileId === tileId && p.x === x && p.y === y);
 
       if (alreadySelected) {
-        // Remove from pending
-        setPendingReinforcementPlacements((prev) =>
-          prev.filter((p) => !(p.tileId === tileId && p.x === x && p.y === y)),
-        );
+        // Remove from pending - need to clear and re-add filtered list
+        dispatch({ type: "CLEAR_REINFORCEMENTS", player });
+        pendingReinforcementPlacements
+          .filter((p) => !(p.tileId === tileId && p.x === x && p.y === y))
+          .forEach((p) =>
+            dispatch({ type: "ADD_REINFORCEMENT", player, placement: { tileId: p.tileId, x: p.x, y: p.y } }),
+          );
       } else {
-        const limit = getEffectLimit();
+        const limit = getEffectLimit(state);
         const atLimit = pendingReinforcementPlacements.length >= limit;
 
         if (atLimit) {
-          // Reuse the ID of the oldest placement so Framer Motion animates the move
-          const oldestId = pendingReinforcementPlacements[0].id;
-          setPendingReinforcementPlacements((prev) => [...prev.slice(1), { id: oldestId, tileId, x, y }]);
+          // At limit - remove oldest and add new
+          dispatch({ type: "CLEAR_REINFORCEMENTS", player });
+          [...pendingReinforcementPlacements.slice(1), { tileId, x, y }].forEach((p) =>
+            dispatch({ type: "ADD_REINFORCEMENT", player, placement: { tileId: p.tileId, x: p.x, y: p.y } }),
+          );
         } else {
-          // New placement gets a fresh ID
-          const newId = reinforcementIdCounter;
-          setReinforcementIdCounter((c) => c + 1);
-          setPendingReinforcementPlacements((prev) => [...prev, { id: newId, tileId, x, y }]);
+          // New placement
+          dispatch({ type: "ADD_REINFORCEMENT", player, placement: { tileId, x, y } });
         }
       }
     } else if (effectType === "fire") {
       // Fire placement: no undo, no replace - just add until limit
-      const limit = getEffectLimit();
+      const limit = getEffectLimit(state);
       if (pendingFirePlacements.length >= limit) {
         // At limit - do nothing, user must use Reset button
         return;
       }
 
       // Add new fire placement
-      setPendingFirePlacements((prev) => [...prev, { tileId, x, y }]);
+      dispatch({ type: "ADD_FIRE_PLACEMENT", player, position: { tileId, x, y } });
     } else if (effectType === "jeep") {
       // Jeep move: add move for selected scientist
       if (selectedScientistForJeep === null) return;
@@ -1015,9 +807,10 @@ function Board({ showCoordinates = false }: BoardProps) {
       const fromPos = getScientistEffectivePosition(scientist, pendingJeepMoves);
 
       // Add the move
-      setPendingJeepMoves((prev) => [
-        ...prev,
-        {
+      dispatch({
+        type: "ADD_JEEP_MOVE",
+        player,
+        move: {
           scientistId: selectedScientistForJeep,
           fromTileId: fromPos.tileId,
           fromX: fromPos.x,
@@ -1027,32 +820,11 @@ function Board({ showCoordinates = false }: BoardProps) {
           toY: y,
           path: destination.path,
         },
-      ]);
+      });
 
       // Clear selection - user can select another scientist or same one again
-      setSelectedScientistForJeep(null);
+      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
       setSelectedScientistJeepDestinations([]);
-    }
-  };
-
-  const handleCardSelect = (value: number) => {
-    // Toggle selection - clicking same card deselects, clicking different card swaps
-    setSelectedCard((prev) => (prev === value ? null : value));
-  };
-
-  const handleCardConfirm = () => {
-    if (selectedCard === null) return;
-
-    const player =
-      state.phase === "SCIENTIST_CARD_SELECTION"
-        ? "scientist"
-        : state.phase === "RAPTOR_CARD_SELECTION"
-          ? "raptor"
-          : null;
-
-    if (player) {
-      dispatch({ type: "PLAY_CARD", player, card: selectedCard });
-      setSelectedCard(null);
     }
   };
 
@@ -1275,7 +1047,7 @@ function Board({ showCoordinates = false }: BoardProps) {
   const effectTargetIds: string[] = (() => {
     if (state.phase !== "EFFECT_PHASE") return [];
 
-    const effectType = getCurrentEffectType();
+    const effectType = getCurrentEffectType(state);
 
     if (effectType === "fear") {
       return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
@@ -1292,7 +1064,7 @@ function Board({ showCoordinates = false }: BoardProps) {
 
       // Show babies that can reach mother and don't already have pending moves
       // (unless we're at the limit)
-      const limit = getEffectLimit();
+      const limit = getEffectLimit(state);
       if (pendingMothersCallMoves.length >= limit && !selectedBabyForCall) {
         return [];
       }
@@ -1302,7 +1074,7 @@ function Board({ showCoordinates = false }: BoardProps) {
         .map((b) => b.id);
     } else if (effectType === "jeep") {
       // Show all scientists as selectable (they can move multiple times)
-      const limit = getEffectLimit();
+      const limit = getEffectLimit(state);
       if (pendingJeepMoves.length >= limit && !selectedScientistForJeep) {
         return [];
       }
@@ -1327,7 +1099,7 @@ function Board({ showCoordinates = false }: BoardProps) {
     y: number;
   }> = (() => {
     if (state.phase !== "EFFECT_PHASE") return [];
-    if (getCurrentEffectType() !== "reinforcements") return [];
+    if (getCurrentEffectType(state) !== "reinforcements") return [];
     if (state.scientistReserve <= 0) return [];
 
     const destinations: Array<{ tileId: number; x: number; y: number }> = [];
@@ -1374,10 +1146,10 @@ function Board({ showCoordinates = false }: BoardProps) {
     y: number;
   }> = (() => {
     if (state.phase !== "EFFECT_PHASE") return [];
-    if (getCurrentEffectType() !== "fire") return [];
+    if (getCurrentEffectType(state) !== "fire") return [];
 
     // Don't show destinations if already at limit
-    const limit = getEffectLimit();
+    const limit = getEffectLimit(state);
     if (pendingFirePlacements.length >= limit) return [];
 
     const destinations: Array<{ tileId: number; x: number; y: number }> = [];
@@ -1458,302 +1230,96 @@ function Board({ showCoordinates = false }: BoardProps) {
     return positions;
   })();
 
-  const handleSetupConfirm = () => {
-    if (state.phase === "RAPTOR_SETUP") {
-      dispatch({ type: "CONFIRM_RAPTOR_SETUP" });
-    } else if (state.phase === "SCIENTIST_SETUP") {
-      dispatch({ type: "START_GAME" });
-    }
-  };
-
-  // Helper to get action phase instruction
-  const getActionInstruction = () => {
-    if (state.actionPoints === 0) {
-      return "No action points remaining";
-    }
-    if (state.activePlayer === "raptor") {
-      return "Select a piece, then click to move or act";
-    } else {
-      return "Select a scientist, then click to move or act";
-    }
-  };
-
-  // Check if any actions have been taken this action phase
-  const hasActionsTaken = actionPhaseSavedState !== null && state.actionPoints < actionPhaseSavedState.actionPoints;
-
-  // Handle loading saved game
-  const handleLoadGame = () => {
-    const savedState = loadGame();
-    if (savedState) {
-      dispatch({ type: "LOAD_GAME", savedState });
-    }
-  };
-
-  // Check if saved game exists (only check during setup phases)
-  const showLoadButton = (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") && hasSavedGame();
-
   return (
-    <div className="game-layout">
-      {/* Raptor player area (top) */}
-      <PlayerArea
-        ref={raptorDeckRef}
-        player="raptor"
-        selectedCard={state.phase === "RAPTOR_CARD_SELECTION" ? selectedCard : null}
-        onCardSelect={handleCardSelect}
-        isNewDraw={isRaptorNewDraw}
-        actionInfo={
-          state.phase === "RAPTOR_SETUP"
-            ? {
-                phaseLabel: "Raptor Setup",
-                progress: (
-                  <>
-                    <span>🦖 {isMotherPlaced(state) ? "1" : "0"}/1</span>
-                    <span>🦎 {countPlacedBabies(state)}/5</span>
-                  </>
-                ),
-                instruction: !isMotherPlaced(state)
-                  ? "Place mother on center tile"
-                  : countPlacedBabies(state) < 5
-                    ? "Place babies on square tiles"
-                    : "Setup complete!",
-              }
-            : state.phase === "RAPTOR_CARD_SELECTION"
-              ? {
-                  phaseLabel: "Pick a Card",
-                  instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
+    <div className="board-container">
+      <LayoutGroup>
+        <div className="Board">
+          {state.tiles.map((tile) => {
+            const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
+            const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
+            const setupPlacementsOnTile = setupPlacementSpaces.filter((s) => s.tileId === tile.id);
+            const isValidSetupTile = validSetupTileIds.has(tile.id);
+
+            // Calculate valid move targets for tiles that already have a piece during setup
+            const setupMoveTargetsOnTile: Array<{ x: number; y: number }> = (() => {
+              if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return [];
+
+              // Check if this tile has a piece that can be moved
+              const hasPieceOnTile =
+                state.phase === "RAPTOR_SETUP"
+                  ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
+                  : state.scientists.some((s) => s.tileId === tile.id);
+
+              if (!hasPieceOnTile) return [];
+
+              // Return valid spaces on this tile (excluding occupied, mountains, unusable, exits for scientists)
+              return tile.spaces
+                .filter((space) => {
+                  if (space.hasMountain || space.isUnusable) return false;
+                  if (state.phase === "SCIENTIST_SETUP" && space.isExit) return false;
+                  // Exclude spaces with pieces
+                  if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) return false;
+                  return true;
+                })
+                .map((space) => ({ x: space.coordinate.x, y: space.coordinate.y }));
+            })();
+
+            return (
+              <Tile
+                key={tile.id}
+                tile={tile}
+                pieces={piecesOnTile}
+                validMoves={validMovesOnTile}
+                setupPlacements={setupPlacementsOnTile}
+                setupMoveTargets={setupMoveTargetsOnTile}
+                isValidSetupTile={isValidSetupTile}
+                effectTargetIds={effectTargetIds}
+                selectedEffectTargets={
+                  getCurrentEffectType(state) === "mothers_call"
+                    ? [
+                        ...pendingMothersCallMoves.map((m) => m.babyId),
+                        ...(selectedBabyForCall ? [selectedBabyForCall] : []),
+                      ]
+                    : selectedEffectTargets
                 }
-              : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "raptor"
-                ? {
-                    phaseLabel: "Effect Phase",
-                    instruction: getEffectInstruction(),
-                  }
-                : state.phase === "ACTION_PHASE" && state.activePlayer === "raptor"
-                  ? {
-                      phaseLabel: "Action Phase",
-                      instruction: getActionInstruction(),
-                      actionPoints: state.actionPoints,
-                    }
-                  : undefined
-        }
-        actionButton={
-          state.phase === "RAPTOR_SETUP"
-            ? {
-                label: "Done",
-                disabled: !isMotherPlaced(state) || countPlacedBabies(state) < 5,
-                onClick: handleSetupConfirm,
-              }
-            : state.phase === "RAPTOR_CARD_SELECTION"
-              ? {
-                  label: "Confirm",
-                  disabled: selectedCard === null,
-                  onClick: handleCardConfirm,
-                }
-              : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "raptor"
-                ? {
-                    label: "Confirm",
-                    disabled: !isEffectConfirmEnabled(),
-                    onClick: handleEffectConfirm,
-                  }
-                : state.phase === "ACTION_PHASE" && state.activePlayer === "raptor"
-                  ? {
-                      label: (
-                        <>
-                          End
-                          <br />
-                          Turn
-                        </>
-                      ),
-                      disabled: false,
-                      onClick: () => dispatch({ type: "END_ACTION_PHASE" }),
-                    }
-                  : {
-                      label: "✓",
-                      disabled: true,
-                      onClick: () => {},
-                      isDone: true,
-                    }
-        }
-        undoButton={
-          state.phase === "EFFECT_PHASE" && getEffectPlayer() === "raptor" && shouldShowEffectUndo()
-            ? { onClick: handleEffectUndo }
-            : state.phase === "ACTION_PHASE" && state.activePlayer === "raptor" && hasActionsTaken
-              ? { onClick: handleActionReset, label: "Reset" }
-              : undefined
-        }
-        loadButton={state.phase === "RAPTOR_SETUP" && showLoadButton ? { onClick: handleLoadGame } : undefined}
-      />
-
-      {/* Game board */}
-      <div className="board-container">
-        <LayoutGroup>
-          <div className="Board">
-            {state.tiles.map((tile) => {
-              const piecesOnTile = adaptedPieces.filter((p) => p.tileId === tile.id);
-              const validMovesOnTile = validMoves.filter((move) => move.tileId === tile.id);
-              const setupPlacementsOnTile = setupPlacementSpaces.filter((s) => s.tileId === tile.id);
-              const isValidSetupTile = validSetupTileIds.has(tile.id);
-
-              // Calculate valid move targets for tiles that already have a piece during setup
-              const setupMoveTargetsOnTile: Array<{ x: number; y: number }> = (() => {
-                if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return [];
-
-                // Check if this tile has a piece that can be moved
-                const hasPieceOnTile =
-                  state.phase === "RAPTOR_SETUP"
-                    ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
-                    : state.scientists.some((s) => s.tileId === tile.id);
-
-                if (!hasPieceOnTile) return [];
-
-                // Return valid spaces on this tile (excluding occupied, mountains, unusable, exits for scientists)
-                return tile.spaces
-                  .filter((space) => {
-                    if (space.hasMountain || space.isUnusable) return false;
-                    if (state.phase === "SCIENTIST_SETUP" && space.isExit) return false;
-                    // Exclude spaces with pieces
-                    if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) return false;
-                    return true;
-                  })
-                  .map((space) => ({ x: space.coordinate.x, y: space.coordinate.y }));
-              })();
-
-              return (
-                <Tile
-                  key={tile.id}
-                  tile={tile}
-                  pieces={piecesOnTile}
-                  validMoves={validMovesOnTile}
-                  setupPlacements={setupPlacementsOnTile}
-                  setupMoveTargets={setupMoveTargetsOnTile}
-                  isValidSetupTile={isValidSetupTile}
-                  effectTargetIds={effectTargetIds}
-                  selectedEffectTargets={
-                    getCurrentEffectType() === "mothers_call"
-                      ? [
-                          ...pendingMothersCallMoves.map((m) => m.babyId),
-                          ...(selectedBabyForCall ? [selectedBabyForCall] : []),
-                        ]
-                      : selectedEffectTargets
-                  }
-                  effectDestinations={[
-                    ...mothersCallDestinations,
-                    ...reinforcementDestinations,
-                    ...fireDestinations,
-                    ...selectedScientistJeepDestinations.map((d) => ({
-                      tileId: d.tileId,
-                      x: d.x,
-                      y: d.y,
-                    })),
-                  ]}
-                  pendingFirePlacements={pendingFirePlacements}
-                  fireTokens={state.fireTokens}
-                  pendingJeepMoves={pendingJeepMoves}
-                  pendingReinforcementPlacements={pendingReinforcementPlacements}
-                  pendingMoves={pendingMothersCallMoves.map((m) => {
-                    const baby = state.babies.find((b) => b.id === m.babyId);
-                    return {
-                      babyId: m.babyId,
-                      fromTileId: baby?.tileId ?? 0,
-                      fromX: baby?.x ?? 0,
-                      fromY: baby?.y ?? 0,
-                      toTileId: m.destinationTileId,
-                      toX: m.destinationX,
-                      toY: m.destinationY,
-                    };
-                  })}
-                  pathTrailPositions={pathTrailPositions}
-                  selectedActionPieceId={selectedActionPieceId}
-                  hostileTargetIds={actionTargets.hostileTargets}
-                  friendlyTargetIds={actionTargets.friendlyTargets}
-                  friendlyFirePositions={actionTargets.friendlyFirePositions}
-                  showCoordinates={showCoordinates}
-                  onSpaceClick={handleSpaceClick}
-                />
-              );
-            })}
-          </div>
-        </LayoutGroup>
-      </div>
-
-      {/* Scientist player area (bottom) */}
-      <PlayerArea
-        ref={scientistDeckRef}
-        player="scientist"
-        selectedCard={state.phase === "SCIENTIST_CARD_SELECTION" ? selectedCard : null}
-        floatingCard={state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null}
-        onCardSelect={handleCardSelect}
-        isNewDraw={isScientistNewDraw}
-        actionInfo={
-          state.phase === "SCIENTIST_SETUP"
-            ? {
-                phaseLabel: "Scientist Setup",
-                progress: <span>🧑‍🔬 {countPlacedScientists(state)}/4</span>,
-                instruction: countPlacedScientists(state) < 4 ? "Place scientists on L-tiles" : "Setup complete!",
-              }
-            : state.phase === "SCIENTIST_CARD_SELECTION"
-              ? {
-                  phaseLabel: "Pick a Card",
-                  instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
-                }
-              : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "scientist"
-                ? {
-                    phaseLabel: "Effect Phase",
-                    instruction: getEffectInstruction(),
-                  }
-                : state.phase === "ACTION_PHASE" && state.activePlayer === "scientist"
-                  ? {
-                      phaseLabel: "Action Phase",
-                      instruction: getActionInstruction(),
-                      actionPoints: state.actionPoints,
-                    }
-                  : undefined
-        }
-        actionButton={
-          state.phase === "SCIENTIST_SETUP"
-            ? {
-                label: "Done",
-                disabled: countPlacedScientists(state) < 4,
-                onClick: handleSetupConfirm,
-              }
-            : state.phase === "SCIENTIST_CARD_SELECTION"
-              ? {
-                  label: "Confirm",
-                  disabled: selectedCard === null,
-                  onClick: handleCardConfirm,
-                }
-              : state.phase === "EFFECT_PHASE" && getEffectPlayer() === "scientist"
-                ? {
-                    label: "Confirm",
-                    disabled: !isEffectConfirmEnabled(),
-                    onClick: handleEffectConfirm,
-                  }
-                : state.phase === "ACTION_PHASE" && state.activePlayer === "scientist"
-                  ? {
-                      label: (
-                        <>
-                          End
-                          <br />
-                          Turn
-                        </>
-                      ),
-                      disabled: false,
-                      onClick: () => dispatch({ type: "END_ACTION_PHASE" }),
-                    }
-                  : {
-                      label: "✓",
-                      disabled: true,
-                      onClick: () => {},
-                      isDone: true,
-                    }
-        }
-        undoButton={
-          state.phase === "EFFECT_PHASE" && getEffectPlayer() === "scientist" && shouldShowEffectUndo()
-            ? { onClick: handleEffectUndo }
-            : state.phase === "ACTION_PHASE" && state.activePlayer === "scientist" && hasActionsTaken
-              ? { onClick: handleActionReset, label: "Reset" }
-              : undefined
-        }
-      />
+                effectDestinations={[
+                  ...mothersCallDestinations,
+                  ...reinforcementDestinations,
+                  ...fireDestinations,
+                  ...selectedScientistJeepDestinations.map((d) => ({
+                    tileId: d.tileId,
+                    x: d.x,
+                    y: d.y,
+                  })),
+                ]}
+                pendingFirePlacements={pendingFirePlacements}
+                fireTokens={state.fireTokens}
+                pendingJeepMoves={pendingJeepMoves}
+                pendingReinforcementPlacements={pendingReinforcementPlacements}
+                pendingMoves={pendingMothersCallMoves.map((m) => {
+                  const baby = state.babies.find((b) => b.id === m.babyId);
+                  return {
+                    babyId: m.babyId,
+                    fromTileId: baby?.tileId ?? 0,
+                    fromX: baby?.x ?? 0,
+                    fromY: baby?.y ?? 0,
+                    toTileId: m.destinationTileId,
+                    toX: m.destinationX,
+                    toY: m.destinationY,
+                  };
+                })}
+                pathTrailPositions={pathTrailPositions}
+                selectedActionPieceId={selectedActionPieceId}
+                hostileTargetIds={actionTargets.hostileTargets}
+                friendlyTargetIds={actionTargets.friendlyTargets}
+                friendlyFirePositions={actionTargets.friendlyFirePositions}
+                showCoordinates={showCoordinates}
+                onSpaceClick={handleSpaceClick}
+              />
+            );
+          })}
+        </div>
+      </LayoutGroup>
     </div>
   );
 }

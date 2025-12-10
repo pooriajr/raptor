@@ -1,5 +1,6 @@
 import type { GameState } from "@/types/gameState.ts";
 import { discardPlayedCard, drawToHand } from "./cardActions.ts";
+import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Action types for round management
 export type RoundAction = { type: "END_ROUND" };
@@ -30,21 +31,22 @@ export function handleEndRound(state: GameState): GameState {
   const scientistAfterDraw = drawToHand(scientistAfterDiscard);
   const raptorAfterDraw = drawToHand(raptorAfterDiscard);
 
-  return {
+  const newState = {
     ...state,
-    phase: "SCIENTIST_READY",
     // Updated card states
     scientistCards: scientistAfterDraw,
     raptorCards: raptorAfterDraw,
     // Reset action phase state
     actionPoints: 0,
-    activePlayer: null,
     // Reset round-based restrictions
     aggressiveActionsUsed: [],
     frightenedThisRound: [],
     asleepThisRound: [],
     motherPaidWoundCost: false,
+    motherDisappeared: false,
+    // Note: observationActive is NOT reset here - it persists to the next card selection
   };
+  return transitionToPhase(newState, "SCIENTIST_READY");
 }
 
 // Handler map for round actions

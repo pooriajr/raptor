@@ -2,7 +2,6 @@ import type { GameState } from "@/types/gameState.ts";
 import * as h from "@/state/actions/index.ts";
 
 export { findById, getAllPieces } from "@/utils/boardUtils.ts";
-export type { ActionPhaseSavedState } from "@/state/actions/index.ts";
 
 export type GameAction =
   | h.SetupAction
@@ -10,7 +9,8 @@ export type GameAction =
   | h.EffectAction
   | h.ActionPhaseAction
   | h.RoundAction
-  | h.DevAction;
+  | h.DevAction
+  | h.InteractionAction;
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   // prettier-ignore
@@ -30,7 +30,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "PUT_BABIES_TO_SLEEP": return h.handlePutBabiesToSleep(state, action);
     case "MOTHERS_CALL": return h.handleMothersCall(state, action);
     case "DISAPPEARANCE": return h.handleDisappearance(state);
+    case "MOTHER_RETURN": return h.handleMotherReturn(state, action);
     case "WAKE_BABIES": return h.handleWakeBabies(state, action);
+    case "RECOVERY": return h.handleRecovery(state, action);
     case "REINFORCEMENTS": return h.handleReinforcements(state, action);
     case "PLACE_FIRE": return h.handlePlaceFire(state, action);
     case "JEEP_MOVES": return h.handleJeepMoves(state, action);
@@ -52,6 +54,27 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "DEV_SKIP_TO_ACTION": return h.handleDevSkipToAction(state, action);
     case "DEV_SKIP_TO_CARD_SELECTION": return h.handleDevSkipToCardSelection(state, action);
     case "LOAD_GAME": return h.handleLoadGame(state, action);
+    // Interaction actions
+    case "SELECT_CARD": return h.interactionHandlers.SELECT_CARD(state, action);
+    case "SET_NEW_DRAW": return h.interactionHandlers.SET_NEW_DRAW(state, action);
+    case "TOGGLE_EFFECT_TARGET": return h.interactionHandlers.TOGGLE_EFFECT_TARGET(state, action);
+    case "SET_EFFECT_TARGETS": return h.interactionHandlers.SET_EFFECT_TARGETS(state, action);
+    case "SELECT_BABY_FOR_CALL": return h.interactionHandlers.SELECT_BABY_FOR_CALL(state, action);
+    case "ADD_MOTHERS_CALL_MOVE": return h.interactionHandlers.ADD_MOTHERS_CALL_MOVE(state, action);
+    case "CLEAR_MOTHERS_CALL_MOVES": return h.interactionHandlers.CLEAR_MOTHERS_CALL_MOVES(state, action);
+    case "ADD_REINFORCEMENT": return h.interactionHandlers.ADD_REINFORCEMENT(state, action);
+    case "CLEAR_REINFORCEMENTS": return h.interactionHandlers.CLEAR_REINFORCEMENTS(state, action);
+    case "ADD_FIRE_PLACEMENT": return h.interactionHandlers.ADD_FIRE_PLACEMENT(state, action);
+    case "CLEAR_FIRE_PLACEMENTS": return h.interactionHandlers.CLEAR_FIRE_PLACEMENTS(state, action);
+    case "SELECT_SCIENTIST_FOR_JEEP": return h.interactionHandlers.SELECT_SCIENTIST_FOR_JEEP(state, action);
+    case "ADD_JEEP_MOVE": return h.interactionHandlers.ADD_JEEP_MOVE(state, action);
+    case "CLEAR_JEEP_MOVES": return h.interactionHandlers.CLEAR_JEEP_MOVES(state, action);
+    case "SET_MOTHER_TOKEN_REMOVALS": return h.interactionHandlers.SET_MOTHER_TOKEN_REMOVALS(state, action);
+    case "SELECT_ACTION_PIECE": return h.interactionHandlers.SELECT_ACTION_PIECE(state, action);
+    case "SAVE_ACTION_PHASE_STATE": return h.interactionHandlers.SAVE_ACTION_PHASE_STATE(state, action);
+    case "CLEAR_ACTION_PHASE_STATE": return h.interactionHandlers.CLEAR_ACTION_PHASE_STATE(state);
+    case "RESET_INTERACTION": return h.interactionHandlers.RESET_INTERACTION(state, action);
+    case "RESET_ALL_INTERACTIONS": return h.interactionHandlers.RESET_ALL_INTERACTIONS(state);
     default: return state;
   }
 }

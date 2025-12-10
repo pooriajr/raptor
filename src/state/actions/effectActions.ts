@@ -1,8 +1,9 @@
-import type { GameState, PieceState } from "@/types/gameState.ts";
+import type { GameState } from "@/types/gameState.ts";
 import { findById, getAllPieces, isSpaceOccupied } from "@/utils/boardUtils.ts";
 import { getReachableDestinationsOnMotherTile } from "@/utils/pathfinding.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
-import { transitionToActionPhase } from "@/state/actions/cardActions.ts";
+import { getActionPhaseState } from "@/state/actions/cardActions.ts";
+import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Action types for effect phase
 export type EffectAction =
@@ -48,6 +49,8 @@ export type EffectAction =
     }
   | { type: "DISAPPEARANCE" }
   | { type: "WAKE_BABIES"; pieceIds: string[] }
+  | { type: "RECOVERY"; babyIds: string[]; motherTokensToRemove: number }
+  | { type: "MOTHER_RETURN"; tileId: number; x: number; y: number }
   | { type: "END_EFFECT_PHASE" };
 
 export function handleFrightenScientists(state: GameState, action: { pieceIds: string[] }): GameState {
@@ -69,11 +72,9 @@ export function handleFrightenScientists(state: GameState, action: { pieceIds: s
     ...state,
     scientists: state.scientists.map((s) => (validTargets.includes(s.id) ? { ...s, isFrightened: true } : s)),
     frightenedThisRound: [...state.frightenedThisRound, ...validTargets],
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterFrighten,
-    ...transitionToActionPhase(newStateAfterFrighten),
-  };
+  return transitionToPhase(newStateAfterFrighten, "ACTION_PHASE");
 }
 
 export function handlePutBabiesToSleep(state: GameState, action: { pieceIds: string[] }): GameState {
@@ -95,11 +96,9 @@ export function handlePutBabiesToSleep(state: GameState, action: { pieceIds: str
     ...state,
     babies: state.babies.map((b) => (validTargets.includes(b.id) ? { ...b, isAsleep: true } : b)),
     asleepThisRound: [...state.asleepThisRound, ...validTargets],
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterSleep,
-    ...transitionToActionPhase(newStateAfterSleep),
-  };
+  return transitionToPhase(newStateAfterSleep, "ACTION_PHASE");
 }
 
 export function handleMothersCall(
@@ -160,11 +159,9 @@ export function handleMothersCall(
   const newStateAfterMothersCall = {
     ...state,
     babies: updatedBabies,
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterMothersCall,
-    ...transitionToActionPhase(newStateAfterMothersCall),
-  };
+  return transitionToPhase(newStateAfterMothersCall, "ACTION_PHASE");
 }
 
 export function handleDisappearance(state: GameState): GameState {
@@ -177,14 +174,40 @@ export function handleDisappearance(state: GameState): GameState {
 
   // Remove mother from the board (she'll be replaced after opponent acts)
   // Set tileId to -1 to mark as "disappeared" (temporarily off-board)
+  // Also set flags for mother return phase and observation mechanic
   const newStateAfterDisappearance = {
     ...state,
     mother: { ...state.mother, tileId: -1, x: -1, y: -1 },
+    motherDisappeared: true,
+    observationActive: true, // Raptor will see scientist's card next round
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterDisappearance,
-    ...transitionToActionPhase(newStateAfterDisappearance),
+  return transitionToPhase(newStateAfterDisappearance, "ACTION_PHASE");
+}
+
+export function handleMotherReturn(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
+  if (state.phase !== "MOTHER_RETURN") return state;
+
+  // Validate mother has disappeared
+  if (!state.motherDisappeared) return state;
+
+  // Validate the space exists and is valid
+  const tile = state.tiles.find((t) => t.id === action.tileId);
+  if (!tile) return state;
+
+  const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
+  if (!space || space.hasMountain || space.isUnusable || space.isExit) return state;
+
+  // Validate space is not occupied
+  if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
+
+  // Place mother back on the board and transition to round end
+  const newState = {
+    ...state,
+    mother: { ...state.mother, tileId: action.tileId, x: action.x, y: action.y },
+    motherDisappeared: false,
   };
+  return transitionToPhase(newState, "ROUND_END");
 }
 
 export function handleWakeBabies(state: GameState, action: { pieceIds: string[] }): GameState {
@@ -205,11 +228,39 @@ export function handleWakeBabies(state: GameState, action: { pieceIds: string[] 
   const newStateAfterWake = {
     ...state,
     babies: state.babies.map((b) => (validTargets.includes(b.id) ? { ...b, isAsleep: false } : b)),
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterWake,
-    ...transitionToActionPhase(newStateAfterWake),
+  return transitionToPhase(newStateAfterWake, "ACTION_PHASE");
+}
+
+export function handleRecovery(
+  state: GameState,
+  action: { babyIds: string[]; motherTokensToRemove: number },
+): GameState {
+  if (state.phase !== "EFFECT_PHASE") return state;
+
+  // Must be raptor's effect (raptor had lower card)
+  const { scientistCards, raptorCards } = state;
+  if (scientistCards.played === null || raptorCards.played === null) return state;
+  if (raptorCards.played >= scientistCards.played) return state;
+
+  // Validate baby targets are sleeping babies
+  const validBabyTargets = action.babyIds.filter((id) => {
+    const baby = findById(state.babies, id);
+    return baby && baby.isAsleep;
+  });
+
+  // Validate mother token removal (can't remove more than she has)
+  const tokensToRemove = Math.min(action.motherTokensToRemove, state.motherSleepTokens);
+
+  // Wake up the babies and remove mother's sleep tokens
+  const newStateAfterRecovery = {
+    ...state,
+    babies: state.babies.map((b) => (validBabyTargets.includes(b.id) ? { ...b, isAsleep: false } : b)),
+    motherSleepTokens: state.motherSleepTokens - tokensToRemove,
+    ...getActionPhaseState(state),
   };
+  return transitionToPhase(newStateAfterRecovery, "ACTION_PHASE");
 }
 
 export function handleReinforcements(
@@ -237,12 +288,15 @@ export function handleReinforcements(
   const topRowTiles = [1, 2, 3];
   const bottomRowTiles = [6, 7, 8];
 
+  // Get unplaced scientists from the array (these are the reserve)
+  const unplacedScientists = state.scientists.filter((s) => s.tileId === -1);
+
   // Validate and place each scientist
   let updatedScientists = [...state.scientists];
-  let remainingReserve = state.scientistReserve;
+  let placedCount = 0;
 
   for (const placement of action.placements) {
-    if (remainingReserve <= 0) break;
+    if (placedCount >= unplacedScientists.length) break;
 
     const tile = state.tiles.find((t) => t.id === placement.tileId);
     if (!tile || tile.shape !== "square") continue;
@@ -263,27 +317,21 @@ export function handleReinforcements(
     const tempState = { ...state, scientists: updatedScientists };
     if (isSpaceOccupied(tempState, placement.tileId, placement.x, placement.y)) continue;
 
-    // Place the scientist
-    const newScientist: PieceState = {
-      id: `scientist-${updatedScientists.length}`,
-      type: "scientist",
-      tileId: placement.tileId,
-      x: placement.x,
-      y: placement.y,
-    };
-    updatedScientists = [...updatedScientists, newScientist];
-    remainingReserve--;
+    // Place the scientist by updating the existing unplaced scientist
+    const scientistToPlace = unplacedScientists[placedCount];
+    updatedScientists = updatedScientists.map((s) =>
+      s.id === scientistToPlace.id ? { ...s, tileId: placement.tileId, x: placement.x, y: placement.y } : s,
+    );
+    placedCount++;
   }
 
   const newStateAfterReinforcements = {
     ...state,
     scientists: updatedScientists,
-    scientistReserve: remainingReserve,
+    scientistReserve: state.scientistReserve - placedCount,
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterReinforcements,
-    ...transitionToActionPhase(newStateAfterReinforcements),
-  };
+  return transitionToPhase(newStateAfterReinforcements, "ACTION_PHASE");
 }
 
 export function handlePlaceFire(
@@ -349,11 +397,9 @@ export function handlePlaceFire(
   const newStateAfterFire = {
     ...state,
     fireTokens: updatedFireTokens,
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterFire,
-    ...transitionToActionPhase(newStateAfterFire),
-  };
+  return transitionToPhase(newStateAfterFire, "ACTION_PHASE");
 }
 
 export function handleJeepMoves(
@@ -398,16 +444,15 @@ export function handleJeepMoves(
     ...state,
     scientists: updatedScientists,
     fireTokens: updatedFireTokens,
+    ...getActionPhaseState(state),
   };
-  return {
-    ...newStateAfterJeep,
-    ...transitionToActionPhase(newStateAfterJeep),
-  };
+  return transitionToPhase(newStateAfterJeep, "ACTION_PHASE");
 }
 
 export function handleEndEffectPhase(state: GameState): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
-  return { ...state, ...transitionToActionPhase(state) };
+  const newState = { ...state, ...getActionPhaseState(state) };
+  return transitionToPhase(newState, "ACTION_PHASE");
 }
 
 // Handler map for effect actions
@@ -416,7 +461,9 @@ export const effectHandlers = {
   PUT_BABIES_TO_SLEEP: handlePutBabiesToSleep,
   MOTHERS_CALL: handleMothersCall,
   DISAPPEARANCE: handleDisappearance,
+  MOTHER_RETURN: handleMotherReturn,
   WAKE_BABIES: handleWakeBabies,
+  RECOVERY: handleRecovery,
   REINFORCEMENTS: handleReinforcements,
   PLACE_FIRE: handlePlaceFire,
   JEEP_MOVES: handleJeepMoves,

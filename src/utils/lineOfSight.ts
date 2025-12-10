@@ -1,9 +1,14 @@
-import type { GameState, PieceState } from "../types/gameState.ts";
-import { localToGlobal } from "../types/coordinates.ts";
+import type { GameState, PieceState } from "@/types/gameState";
+import { localToGlobal } from "@/types/coordinates";
 
-// Helper to check if a scientist has line of sight to the mother
-// LOS is blocked by: Rocks, Active (standing) scientists
-// Can shoot through: Frightened scientists, fire tokens, baby raptors
+/**
+ * Check if a scientist has line of sight to the mother for shooting.
+ *
+ * LOS rules:
+ * - Must be orthogonal (same row or column)
+ * - Blocked by: Rocks (mountains), Active (standing) scientists
+ * - Can shoot through: Frightened scientists, fire tokens, baby raptors
+ */
 export function hasLineOfSight(state: GameState, scientist: PieceState, mother: PieceState): boolean {
   const sciGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
   const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
@@ -21,24 +26,8 @@ export function hasLineOfSight(state: GameState, scientist: PieceState, mother: 
     const minX = Math.min(sciGlobal.globalX, motherGlobal.globalX);
     const maxX = Math.max(sciGlobal.globalX, motherGlobal.globalX);
     for (let x = minX + 1; x < maxX; x++) {
-      // Check for mountain at this global position
-      // We need to convert back to local coords to check
-      for (const tile of state.tiles) {
-        for (const space of tile.spaces) {
-          const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
-          if (spaceGlobal.globalX === x && spaceGlobal.globalY === sciGlobal.globalY) {
-            // Check for mountain
-            if (space.hasMountain) return false;
-
-            // Check for standing (non-frightened) scientist
-            const pieceHere = state.scientists.find(
-              (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
-            );
-            if (pieceHere && !pieceHere.isFrightened) {
-              return false;
-            }
-          }
-        }
+      if (isBlockedAt(state, x, sciGlobal.globalY)) {
+        return false;
       }
     }
   } else {
@@ -46,25 +35,36 @@ export function hasLineOfSight(state: GameState, scientist: PieceState, mother: 
     const minY = Math.min(sciGlobal.globalY, motherGlobal.globalY);
     const maxY = Math.max(sciGlobal.globalY, motherGlobal.globalY);
     for (let y = minY + 1; y < maxY; y++) {
-      for (const tile of state.tiles) {
-        for (const space of tile.spaces) {
-          const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
-          if (spaceGlobal.globalX === sciGlobal.globalX && spaceGlobal.globalY === y) {
-            // Check for mountain
-            if (space.hasMountain) return false;
-
-            // Check for standing (non-frightened) scientist
-            const pieceHere = state.scientists.find(
-              (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
-            );
-            if (pieceHere && !pieceHere.isFrightened) {
-              return false;
-            }
-          }
-        }
+      if (isBlockedAt(state, sciGlobal.globalX, y)) {
+        return false;
       }
     }
   }
 
   return true;
+}
+
+/**
+ * Check if a global coordinate blocks line of sight.
+ * Blocked by mountains and standing (non-frightened) scientists.
+ */
+function isBlockedAt(state: GameState, globalX: number, globalY: number): boolean {
+  for (const tile of state.tiles) {
+    for (const space of tile.spaces) {
+      const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
+      if (spaceGlobal.globalX === globalX && spaceGlobal.globalY === globalY) {
+        // Check for mountain
+        if (space.hasMountain) return true;
+
+        // Check for standing (non-frightened) scientist
+        const pieceHere = state.scientists.find(
+          (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
+        );
+        if (pieceHere && !pieceHere.isFrightened) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }

@@ -12,6 +12,7 @@ export type GamePhase =
   | "CARD_REVEAL"
   | "EFFECT_PHASE" // Lower card player uses special effect
   | "ACTION_PHASE" // Higher card player spends action points
+  | "MOTHER_RETURN" // After disappearance, raptor places mother back on board
   | "ROUND_END";
 
 // Piece types as plain data (not class instances)
@@ -46,6 +47,90 @@ export interface FireToken {
 // Player type for action phase
 export type Player = "raptor" | "scientist";
 
+// Position on the board
+export interface Position {
+  tileId: number;
+  x: number;
+  y: number;
+}
+
+// Pending move for mother's call effect
+export interface PendingMothersCallMove {
+  babyId: string;
+  destinationTileId: number;
+  destinationX: number;
+  destinationY: number;
+  path: Position[]; // Intermediate spaces for trail visualization
+}
+
+// Pending reinforcement placement
+export interface PendingReinforcement {
+  id: number; // Stable ID for animation
+  tileId: number;
+  x: number;
+  y: number;
+}
+
+// Pending jeep move
+export interface PendingJeepMove {
+  scientistId: string;
+  fromTileId: number;
+  fromX: number;
+  fromY: number;
+  toTileId: number;
+  toX: number;
+  toY: number;
+  path: Position[];
+}
+
+// UI/Interaction state - staging before commit
+export interface InteractionState {
+  // Card selection (each player has their own)
+  selectedCard: number | null;
+  isNewDraw: boolean;
+
+  // Effect phase selections
+  selectedEffectTargets: string[]; // Piece IDs for fear/sleeping gas/recovery
+  selectedBabyForCall: string | null; // Baby being positioned for mother's call
+  pendingMothersCallMoves: PendingMothersCallMove[];
+  pendingReinforcementPlacements: PendingReinforcement[];
+  reinforcementIdCounter: number;
+  pendingFirePlacements: Position[];
+  selectedScientistForJeep: string | null;
+  pendingJeepMoves: PendingJeepMove[];
+  pendingMotherTokenRemovals: number; // For recovery effect
+
+  // Action phase
+  selectedActionPieceId: string | null;
+}
+
+// Saved state for action phase reset
+export interface ActionPhaseSavedState {
+  mother: PieceState;
+  babies: PieceState[];
+  scientists: PieceState[];
+  fireTokens: FireToken[];
+  actionPoints: number;
+}
+
+// Create initial interaction state
+export function createInitialInteractionState(): InteractionState {
+  return {
+    selectedCard: null,
+    isNewDraw: false,
+    selectedEffectTargets: [],
+    selectedBabyForCall: null,
+    pendingMothersCallMoves: [],
+    pendingReinforcementPlacements: [],
+    reinforcementIdCounter: 0,
+    pendingFirePlacements: [],
+    selectedScientistForJeep: null,
+    pendingJeepMoves: [],
+    pendingMotherTokenRemovals: 0,
+    selectedActionPieceId: null,
+  };
+}
+
 export interface GameState {
   phase: GamePhase;
   tiles: Tile[];
@@ -64,10 +149,18 @@ export interface GameState {
   frightenedThisRound: string[]; // Scientist IDs frightened this round (can't stand up same round)
   asleepThisRound: string[]; // Baby IDs put to sleep this round (can't wake same round)
   motherPaidWoundCost: boolean; // Whether mother has paid her wound cost this round (sleep tokens)
+  // Disappearance tracking
+  motherDisappeared: boolean; // Whether mother disappeared this round (needs to return after action phase)
+  observationActive: boolean; // Whether raptor can see scientist's card next selection (from disappearance)
   // Win condition tracking
   motherSleepTokens: number; // Sleep tokens on mother (scientist wins at 5)
   capturedBabies: number; // Babies captured by scientists (scientist wins at 3)
   escapedBabies: number; // Babies that escaped the board (raptor wins at 3)
+  // UI/Interaction state - per player
+  raptorInteraction: InteractionState;
+  scientistInteraction: InteractionState;
+  // Action phase saved state for reset
+  actionPhaseSavedState: ActionPhaseSavedState | null;
 }
 
 // Create a shuffled deck of cards 1-9
@@ -137,13 +230,18 @@ export function createInitialGameState(): GameState {
     raptorCards: createInitialCardState(),
     scientistCards: createInitialCardState(),
     actionPoints: 0,
-    activePlayer: null,
+    activePlayer: "raptor",
     aggressiveActionsUsed: [],
     frightenedThisRound: [],
     asleepThisRound: [],
     motherPaidWoundCost: false,
+    motherDisappeared: false,
+    observationActive: false,
     motherSleepTokens: 0,
     capturedBabies: 0,
     escapedBabies: 0,
+    raptorInteraction: createInitialInteractionState(),
+    scientistInteraction: createInitialInteractionState(),
+    actionPhaseSavedState: null,
   };
 }
