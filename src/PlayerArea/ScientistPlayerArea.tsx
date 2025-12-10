@@ -20,8 +20,11 @@ function ScientistPlayerArea() {
   return (
     <PlayerAreaBase
       player="scientist"
+      cards={state.scientistCards}
+      interaction={state.scientistInteraction}
       trackers={trackers}
       setupInfo={setupInfo}
+      isSelectingCard={state.phase === "SCIENTIST_CARD_SELECTION"}
       actionInstruction="Select a scientist, then click to move or act"
     />
   );

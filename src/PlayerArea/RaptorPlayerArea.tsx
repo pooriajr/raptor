@@ -34,8 +34,11 @@ function RaptorPlayerArea() {
   return (
     <PlayerAreaBase
       player="raptor"
+      cards={state.raptorCards}
+      interaction={state.raptorInteraction}
       trackers={trackers}
       setupInfo={setupInfo}
+      isSelectingCard={state.phase === "RAPTOR_CARD_SELECTION"}
       actionInstruction="Select a piece, then click to move or act"
     />
   );

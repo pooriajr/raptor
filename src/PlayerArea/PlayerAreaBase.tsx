@@ -6,6 +6,7 @@ import UndoButton from "./UndoButton";
 import { useGame } from "../state/GameContext";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
 import { hasSavedGame, loadGame } from "../utils/saveLoad";
+import type { CardState, InteractionState } from "../types/gameState";
 import "./PlayerArea.css";
 
 interface SetupInfo {
@@ -16,23 +17,27 @@ interface SetupInfo {
 
 interface PlayerAreaBaseProps {
   player: "raptor" | "scientist";
+  cards: CardState;
+  interaction: InteractionState;
   trackers: React.ReactNode;
   setupInfo: SetupInfo | null;
+  isSelectingCard: boolean;
   actionInstruction: string;
 }
 
-function PlayerAreaBase({ player, trackers, setupInfo, actionInstruction }: PlayerAreaBaseProps) {
+function PlayerAreaBase({
+  player,
+  cards,
+  interaction,
+  trackers,
+  setupInfo,
+  isSelectingCard,
+  actionInstruction,
+}: PlayerAreaBaseProps) {
   const { state, dispatch } = useGame();
-
-  const cards = player === "raptor" ? state.raptorCards : state.scientistCards;
-  const interaction = player === "raptor" ? state.raptorInteraction : state.scientistInteraction;
 
   const isEffectPhase = state.phase === "EFFECT_PHASE";
   const isActionPhase = state.phase === "ACTION_PHASE";
-
-  const isThisPlayerSelecting =
-    (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
-    (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
 
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
   const isThisPlayerAction = isActionPhase && state.activePlayer === player;
@@ -48,7 +53,7 @@ function PlayerAreaBase({ player, trackers, setupInfo, actionInstruction }: Play
     if (setupInfo) {
       return setupInfo;
     }
-    if (isThisPlayerSelecting) {
+    if (isSelectingCard) {
       return {
         phaseLabel: "Pick a Card",
         progress: null,
