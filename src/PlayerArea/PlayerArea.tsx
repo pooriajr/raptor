@@ -39,15 +39,8 @@ function PlayerArea({ player }: PlayerAreaProps) {
     dispatch({ type: "SELECT_CARD", player, card: newCard });
   };
 
-  // Derive state from context
+  // Derive card state from context
   const cards = isRaptor ? state.raptorCards : state.scientistCards;
-  const deckCount = cards.deck.length;
-  const handCards = cards.hand;
-  const playedCard = cards.played;
-
-  const escapedBabies = state.escapedBabies;
-  const capturedBabies = state.capturedBabies;
-  const motherSleepTokens = state.motherSleepTokens;
 
   // Compute display modes based on phase
   const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
@@ -141,7 +134,7 @@ function PlayerArea({ player }: PlayerAreaProps) {
     <div className={`player-area ${player}-area`}>
       <div className="player-area-left">
         <div className="deck-section">
-          <CardDeck player={player} cardCount={deckCount} />
+          <CardDeck player={player} cardCount={cards.deck.length} />
         </div>
         <div className="discard-section">
           <DiscardPile player={player} />
@@ -149,20 +142,20 @@ function PlayerArea({ player }: PlayerAreaProps) {
 
         {isRaptor ? (
           <>
-            <Tracker label="Escaped" emoji="🦎" current={escapedBabies ?? 0} max={3} />
-            <Tracker label="Mother Sleep Tokens" emoji="💉" current={motherSleepTokens ?? 0} max={5} />
+            <Tracker label="Escaped" emoji="🦎" current={state.escapedBabies ?? 0} max={3} />
+            <Tracker label="Mother Sleep Tokens" emoji="💉" current={state.motherSleepTokens ?? 0} max={5} />
           </>
         ) : (
-          <Tracker label="Captured" emoji="🦎" current={capturedBabies ?? 0} max={3} />
+          <Tracker label="Captured" emoji="🦎" current={state.capturedBabies ?? 0} max={3} />
         )}
       </div>
 
       <div className="player-area-center">
         <Hand
-          cards={handCards}
+          cards={cards.hand}
           player={player}
           faceDown={handFaceDown}
-          playedCard={isThisPlayerSelecting ? null : playedCard}
+          playedCard={isThisPlayerSelecting ? null : cards.played}
           selectedCard={isThisPlayerSelecting ? selectedCard : null}
           floatingCard={floatingCard}
           onCardSelect={showHand && !handFaceDown ? handleCardSelect : undefined}
