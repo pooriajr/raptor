@@ -18,50 +18,18 @@ function PlayerArea({ player }: PlayerAreaProps) {
   const { state, dispatch } = useGame();
   const isRaptor = player === "raptor";
 
-  // Get interaction state from context
   const interaction = isRaptor ? state.raptorInteraction : state.scientistInteraction;
-  const selectedCard = interaction.selectedCard;
-  const isNewDraw = interaction.isNewDraw;
-
-  // Compute floatingCard - shown when opponent is selecting and we've already played
-  const floatingCard =
-    player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null;
-
-  // Card selection handler
-  const handleCardSelect = (value: number) => {
-    const isThisPlayerSelecting =
-      (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
-      (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
-
-    if (!isThisPlayerSelecting) return;
-
-    const newCard = selectedCard === value ? null : value;
-    dispatch({ type: "SELECT_CARD", player, card: newCard });
-  };
-
-  // Derive card state from context
   const cards = isRaptor ? state.raptorCards : state.scientistCards;
 
-  // Compute display modes based on phase
-  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
-  const isReadyPhase = state.phase === "SCIENTIST_READY" || state.phase === "RAPTOR_READY";
+  const isEffectPhase = state.phase === "EFFECT_PHASE";
+  const isActionPhase = state.phase === "ACTION_PHASE";
 
   const isThisPlayerSelecting =
     (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
     (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
 
-  const isOpponentSelecting =
-    (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
-    (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
-
-  const isCardReveal = state.phase === "CARD_REVEAL";
-  const isEffectPhase = state.phase === "EFFECT_PHASE";
-  const isActionPhase = state.phase === "ACTION_PHASE";
-
-  // Determine hand visibility and display mode
-  const showHand = !isSetupPhase && !isReadyPhase;
-  const handFaceDown = isOpponentSelecting;
-  const faceDownUnselectedCards = isEffectPhase || isActionPhase || isCardReveal;
+  const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
+  const isThisPlayerAction = isActionPhase && state.activePlayer === player;
 
   const handleLoadGame = () => {
     const savedState = loadGame();
@@ -70,17 +38,12 @@ function PlayerArea({ player }: PlayerAreaProps) {
     }
   };
 
-  // === Compute action info ===
-
   const getActionInstruction = (): string => {
     if (state.actionPoints === 0) {
       return "No action points remaining";
     }
     return isRaptor ? "Select a piece, then click to move or act" : "Select a scientist, then click to move or act";
   };
-
-  const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
-  const isThisPlayerAction = isActionPhase && state.activePlayer === player;
 
   const actionInfo = (() => {
     if (isRaptor && state.phase === "RAPTOR_SETUP") {
@@ -109,7 +72,9 @@ function PlayerArea({ player }: PlayerAreaProps) {
     if (isThisPlayerSelecting) {
       return {
         phaseLabel: "Pick a Card",
-        instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
+        instruction: interaction.selectedCard
+          ? `Card ${interaction.selectedCard} selected`
+          : "Select a card from your hand",
       };
     }
     if (isThisPlayerEffect) {
@@ -147,19 +112,7 @@ function PlayerArea({ player }: PlayerAreaProps) {
       </div>
 
       <div className="player-area-center">
-        <Hand
-          cards={cards.hand}
-          player={player}
-          faceDown={handFaceDown}
-          playedCard={isThisPlayerSelecting ? null : cards.played}
-          selectedCard={isThisPlayerSelecting ? selectedCard : null}
-          floatingCard={floatingCard}
-          onCardSelect={showHand && !handFaceDown ? handleCardSelect : undefined}
-          isNewDraw={isNewDraw}
-          deckPosition={{ x: -300, y: 0 }}
-          faceDownUnselected={faceDownUnselectedCards}
-          showPlaceholders={!showHand}
-        />
+        <Hand player={player} />
       </div>
 
       <div className="player-area-action">

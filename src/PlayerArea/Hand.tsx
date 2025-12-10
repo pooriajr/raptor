@@ -1,53 +1,74 @@
 import { useEffect, useState } from "react";
 import Card from "../Card";
+import { useGame } from "../state/GameContext";
 import "./Hand.css";
 
 interface HandProps {
-  cards: number[];
   player: "raptor" | "scientist";
-  onCardSelect?: (value: number) => void;
-  selectedCard?: number | null;
-  playedCard?: number | null;
-  floatingCard?: number | null; // Card that should have floating animation
-  faceDown?: boolean;
-  faceDownUnselected?: boolean; // Unselected cards shown face-down (selected card face-up)
-  deckPosition?: { x: number; y: number };
-  isNewDraw?: boolean;
-  showPlaceholders?: boolean;
 }
 
 const HAND_SIZE = 3;
+const DECK_POSITION = { x: -300, y: 0 };
 
-function Hand({
-  cards,
-  player,
-  onCardSelect,
-  selectedCard,
-  playedCard,
-  floatingCard,
-  faceDown = false,
-  faceDownUnselected = false,
-  deckPosition,
-  isNewDraw = false,
-  showPlaceholders = false,
-}: HandProps) {
+function Hand({ player }: HandProps) {
+  const { state, dispatch } = useGame();
+  const isRaptor = player === "raptor";
+
+  // Get state from context
+  const interaction = isRaptor ? state.raptorInteraction : state.scientistInteraction;
+  const cards = isRaptor ? state.raptorCards : state.scientistCards;
+  const handCards = cards.hand;
+  const isNewDraw = interaction.isNewDraw;
+
+  // Compute display modes based on phase
+  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
+  const isReadyPhase = state.phase === "SCIENTIST_READY" || state.phase === "RAPTOR_READY";
+  const isCardReveal = state.phase === "CARD_REVEAL";
+  const isEffectPhase = state.phase === "EFFECT_PHASE";
+  const isActionPhase = state.phase === "ACTION_PHASE";
+
+  const isThisPlayerSelecting =
+    (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
+    (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
+
+  const isOpponentSelecting =
+    (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
+    (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
+
+  // Derive props from state
+  const showPlaceholders = isSetupPhase || isReadyPhase;
+  const faceDown = isOpponentSelecting;
+  const faceDownUnselected = isEffectPhase || isActionPhase || isCardReveal;
+  const selectedCard = isThisPlayerSelecting ? interaction.selectedCard : null;
+  const playedCard = isThisPlayerSelecting ? null : cards.played;
+  const floatingCard =
+    player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null;
+
+  // Card selection handler
+  const handleCardSelect = (value: number) => {
+    if (!isThisPlayerSelecting) return;
+    const newCard = interaction.selectedCard === value ? null : value;
+    dispatch({ type: "SELECT_CARD", player, card: newCard });
+  };
+
+  const canSelect = !showPlaceholders && !faceDown;
+
+  // Animation state
   const [animatedCards, setAnimatedCards] = useState<number[]>([]);
 
-  // Animate cards appearing one by one on new draw
   useEffect(() => {
     if (!isNewDraw) {
-      setAnimatedCards(cards);
+      setAnimatedCards(handCards);
       return;
     }
 
     setAnimatedCards([]);
-    const timeouts = cards.map((card, i) => setTimeout(() => setAnimatedCards((prev) => [...prev, card]), i * 100));
+    const timeouts = handCards.map((card, i) => setTimeout(() => setAnimatedCards((prev) => [...prev, card]), i * 100));
     return () => timeouts.forEach(clearTimeout);
-  }, [cards, isNewDraw]);
+  }, [handCards, isNewDraw]);
 
   const hasSelection = selectedCard != null;
 
-  // When showing placeholders, render empty card slots
   if (showPlaceholders) {
     return (
       <div className={`Hand ${player} placeholder-mode`}>
@@ -77,22 +98,20 @@ function Hand({
 
           return (
             <div key={index} className="card-wrapper">
-              {/* Show placeholder underneath during animation */}
               {isNewDraw && <div className="card-placeholder card-placeholder-under" />}
               {hasCard && (
                 <Card
                   value={value}
                   player={player}
                   faceUp={!cardFaceDown}
-                  onClick={!cardFaceDown && onCardSelect ? () => onCardSelect(value) : undefined}
+                  onClick={!cardFaceDown && canSelect ? () => handleCardSelect(value) : undefined}
                   selected={isSelected || isPlayed}
                   dimmed={isDimmed}
                   floating={isFloating}
-                  initialPosition={isNewDraw ? deckPosition : undefined}
+                  initialPosition={isNewDraw ? DECK_POSITION : undefined}
                   animationDelay={isNewDraw ? index * 0.15 : 0}
                 />
               )}
-              {/* Show placeholder when no card yet (not during new draw) */}
               {!hasCard && !isNewDraw && <div className="card-placeholder" />}
             </div>
           );
