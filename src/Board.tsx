@@ -1142,13 +1142,6 @@ function Board() {
     return [];
   })();
 
-  // Calculate valid destination spaces for Mother's Call (from cached results)
-  const mothersCallDestinations: Array<{
-    tileId: number;
-    x: number;
-    y: number;
-  }> = selectedBabyPathResults.map((pr) => pr.position);
-
   // Calculate valid destination spaces for Reinforcements (long edges of square tiles)
   const reinforcementDestinations: Array<{
     tileId: number;
@@ -1343,9 +1336,23 @@ function Board() {
     }
 
     // Effect destinations
-    // Mother's call destinations - action requires baby selection state (will be consolidated later)
-    for (const dest of mothersCallDestinations) {
-      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    // Mother's call destinations - include baby ID and path in action
+    if (currentPlayer && selectedBabyForCall) {
+      for (const pathResult of selectedBabyPathResults) {
+        const dest = pathResult.position;
+        const action: GameAction = {
+          type: "ADD_MOTHERS_CALL_MOVE",
+          player: currentPlayer,
+          move: {
+            babyId: selectedBabyForCall,
+            destinationTileId: dest.tileId,
+            destinationX: dest.x,
+            destinationY: dest.y,
+            path: pathResult.path,
+          },
+        };
+        set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+      }
     }
     // Reinforcement destinations - simple single action
     if (currentPlayer) {
@@ -1367,9 +1374,29 @@ function Board() {
         set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
       }
     }
-    // Jeep destinations - action requires scientist selection state (will be consolidated later)
-    for (const dest of selectedScientistJeepDestinations) {
-      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    // Jeep destinations - include scientist ID, from position, and path in action
+    if (currentPlayer && selectedScientistForJeep) {
+      const scientist = findPieceById(selectedScientistForJeep);
+      if (scientist) {
+        const fromPos = getScientistEffectivePosition(scientist, pendingJeepMoves);
+        for (const dest of selectedScientistJeepDestinations) {
+          const action: GameAction = {
+            type: "ADD_JEEP_MOVE",
+            player: currentPlayer,
+            move: {
+              scientistId: selectedScientistForJeep,
+              fromTileId: fromPos.tileId,
+              fromX: fromPos.x,
+              fromY: fromPos.y,
+              toTileId: dest.tileId,
+              toX: dest.x,
+              toY: dest.y,
+              path: dest.path,
+            },
+          };
+          set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+        }
+      }
     }
 
     // Valid moves (action phase)
