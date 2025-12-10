@@ -133,12 +133,8 @@ function PlayerArea({ player }: PlayerAreaProps) {
   return (
     <div className={`player-area ${player}-area`}>
       <div className="player-area-left">
-        <div className="deck-section">
-          <CardDeck player={player} cardCount={cards.deck.length} />
-        </div>
-        <div className="discard-section">
-          <DiscardPile player={player} />
-        </div>
+        <CardDeck player={player} cardCount={cards.deck.length} />
+        <DiscardPile player={player} />
 
         {isRaptor ? (
           <>

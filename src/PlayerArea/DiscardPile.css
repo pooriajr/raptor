@@ -1,4 +1,8 @@
-.discard-placeholder {
+.DiscardPile {
+  min-width: 100px;
+}
+
+.DiscardPile .discard-placeholder {
   width: 50px;
   height: 70px;
   border: 2px dashed #555;
@@ -11,7 +15,7 @@
   text-transform: uppercase;
 }
 
-.discard-pile {
+.DiscardPile .discard-cards {
   display: flex;
   align-items: center;
 }

@@ -117,12 +117,3 @@
 .scientist-area {
   border-top: 2px solid #2a4a6c;
 }
-
-.deck-section {
-  flex: 0 0 auto;
-}
-
-.discard-section {
-  flex: 0 0 auto;
-  min-width: 100px;
-}
