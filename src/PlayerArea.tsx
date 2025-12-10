@@ -3,6 +3,7 @@ import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
 import DoneButton from "./DoneButton";
 import UndoButton from "./UndoButton";
+import Tracker from "./Tracker";
 import { useGame } from "./state/GameContext";
 import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils";
 import {
@@ -228,44 +229,11 @@ function PlayerArea({ player }: PlayerAreaProps) {
 
         {isRaptor ? (
           <>
-            <div className="baby-tracker-section">
-              <div className="baby-tracker escaped">
-                <span className="baby-tracker-label">Escaped:</span>
-                <span className="baby-tracker-count">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <span key={i} className={`baby-pip ${i < (escapedBabies ?? 0) ? "filled" : "empty"}`}>
-                      🦎
-                    </span>
-                  ))}
-                </span>
-              </div>
-            </div>
-            <div className="sleep-tokens-section">
-              <div className="sleep-tokens-display">
-                <span className="sleep-tokens-label">Mother Sleep Tokens:</span>
-                <span className="sleep-tokens-count">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className={`sleep-token-pip ${i < (motherSleepTokens ?? 0) ? "filled" : "empty"}`}>
-                      💉
-                    </span>
-                  ))}
-                </span>
-              </div>
-            </div>
+            <Tracker label="Escaped" emoji="🦎" current={escapedBabies ?? 0} max={3} />
+            <Tracker label="Mother Sleep Tokens" emoji="💉" current={motherSleepTokens ?? 0} max={5} />
           </>
         ) : (
-          <div className="baby-tracker-section">
-            <div className="baby-tracker captured">
-              <span className="baby-tracker-label">Captured:</span>
-              <span className="baby-tracker-count">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <span key={i} className={`baby-pip ${i < (capturedBabies ?? 0) ? "filled" : "empty"}`}>
-                    🦎
-                  </span>
-                ))}
-              </span>
-            </div>
-          </div>
+          <Tracker label="Captured" emoji="🦎" current={capturedBabies ?? 0} max={3} />
         )}
       </div>
 
