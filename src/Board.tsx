@@ -668,6 +668,20 @@ function Board() {
       if (handled) return;
     }
 
+    // Handle mother return phase - clicking to place mother back on board
+    if (state.phase === "MOTHER_RETURN") {
+      // Don't allow clicking on occupied spaces
+      if (pieceId) return;
+
+      // Validate the space is valid for mother placement
+      const tile = state.tiles.find((t) => t.id === tileId);
+      const space = tile?.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
+      if (!space || space.hasMountain || space.isUnusable || space.isExit) return;
+
+      dispatch({ type: "MOTHER_RETURN", tileId, x, y });
+      return;
+    }
+
     // Handle action phase movement and fire extinguishing
     if (state.phase === "ACTION_PHASE") {
       if (!selectedActionPieceId || state.actionPoints <= 0) return;

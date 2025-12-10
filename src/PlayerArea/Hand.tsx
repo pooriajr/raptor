@@ -23,9 +23,6 @@ function Hand({ player }: HandProps) {
   // Compute display modes based on phase
   const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
   const isReadyPhase = state.phase === "SCIENTIST_READY" || state.phase === "RAPTOR_READY";
-  const isCardReveal = state.phase === "CARD_REVEAL";
-  const isEffectPhase = state.phase === "EFFECT_PHASE";
-  const isActionPhase = state.phase === "ACTION_PHASE";
 
   const isThisPlayerSelecting =
     (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
@@ -38,7 +35,7 @@ function Hand({ player }: HandProps) {
   // Derive props from state
   const showPlaceholders = isSetupPhase || isReadyPhase;
   const faceDown = isOpponentSelecting;
-  const faceDownUnselected = isEffectPhase || isActionPhase || isCardReveal;
+  const faceDownUnselected = !isThisPlayerSelecting;
   const selectedCard = isThisPlayerSelecting ? interaction.selectedCard : null;
   const playedCard = isThisPlayerSelecting ? null : cards.played;
   const floatingCard =
