@@ -146,40 +146,6 @@
   min-width: 100px;
 }
 
-.discard-placeholder {
-  width: 50px;
-  height: 70px;
-  border: 2px dashed #555;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.discard-pile {
-  display: flex;
-  align-items: center;
-}
-
-.discard-card-wrapper {
-  transform: scale(0.5);
-  transform-origin: left center;
-  /* Card is 100px wide, scaled to 50px visually.
-     Use -60px margin to create ~10px overlap between 50px cards */
-  margin-left: -60px;
-}
-
-.discard-card-wrapper:first-child {
-  margin-left: 0;
-}
-
-.discard-card-wrapper .Card {
-  pointer-events: none;
-}
-
 /* Sleep tokens indicator for mother raptor */
 .sleep-tokens-section {
   flex: 0 0 auto;
