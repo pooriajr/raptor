@@ -3,31 +3,22 @@ import Hand from "./Hand";
 import Card from "./Card";
 import DoneButton from "./DoneButton";
 import { useGame } from "./state/GameContext";
+import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils";
+import {
+  getEffectPlayer,
+  getEffectInstruction,
+  isEffectConfirmEnabled,
+  shouldShowEffectUndo,
+  getCurrentEffectType,
+} from "./utils/effectUtils";
+import { hasSavedGame, loadGame } from "./utils/saveLoad";
 import "./PlayerArea.css";
 
 interface PlayerAreaProps {
   player: "raptor" | "scientist";
-  actionInfo?: {
-    phaseLabel: string;
-    progress?: React.ReactNode;
-    instruction: string;
-    actionPoints?: number;
-  };
-  actionButton?: {
-    disabled: boolean;
-    onClick: () => void;
-    isDone?: boolean;
-  };
-  undoButton?: {
-    onClick: () => void;
-    label?: string;
-  };
-  loadButton?: {
-    onClick: () => void;
-  };
 }
 
-function PlayerArea({ player, actionInfo, actionButton, undoButton, loadButton }: PlayerAreaProps) {
+function PlayerArea({ player }: PlayerAreaProps) {
   const { state, dispatch } = useGame();
   const isRaptor = player === "raptor";
 
@@ -83,6 +74,177 @@ function PlayerArea({ player, actionInfo, actionButton, undoButton, loadButton }
   const showHand = !isSetupPhase && !isReadyPhase;
   const handFaceDown = isOpponentSelecting;
   const faceDownUnselectedCards = isEffectPhase || isActionPhase || isCardReveal;
+
+  // === Action handlers ===
+
+  const handleSetupConfirm = () => {
+    if (state.phase === "RAPTOR_SETUP") {
+      dispatch({ type: "CONFIRM_RAPTOR_SETUP" });
+    } else if (state.phase === "SCIENTIST_SETUP") {
+      dispatch({ type: "START_GAME" });
+    }
+  };
+
+  const handleCardConfirm = () => {
+    if (selectedCard === null) return;
+    dispatch({ type: "PLAY_CARD", player, card: selectedCard });
+    dispatch({ type: "SELECT_CARD", player, card: null });
+  };
+
+  const handleEffectConfirm = () => {
+    const effectType = getCurrentEffectType(state);
+
+    if (effectType === "fear") {
+      dispatch({ type: "FRIGHTEN_SCIENTISTS", pieceIds: interaction.selectedEffectTargets });
+      dispatch({ type: "SET_EFFECT_TARGETS", player, pieceIds: [] });
+    } else if (effectType === "sleeping_gas") {
+      dispatch({ type: "PUT_BABIES_TO_SLEEP", pieceIds: interaction.selectedEffectTargets });
+      dispatch({ type: "SET_EFFECT_TARGETS", player, pieceIds: [] });
+    } else if (effectType === "recovery") {
+      dispatch({ type: "WAKE_BABIES", pieceIds: interaction.selectedEffectTargets });
+      dispatch({ type: "SET_EFFECT_TARGETS", player, pieceIds: [] });
+    } else if (effectType === "mothers_call") {
+      dispatch({ type: "MOTHERS_CALL", moves: interaction.pendingMothersCallMoves });
+      dispatch({ type: "CLEAR_MOTHERS_CALL_MOVES", player });
+      dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: null });
+    } else if (effectType === "disappearance") {
+      dispatch({ type: "DISAPPEARANCE" });
+    } else if (effectType === "reinforcements") {
+      dispatch({ type: "REINFORCEMENTS", placements: interaction.pendingReinforcementPlacements });
+      dispatch({ type: "CLEAR_REINFORCEMENTS", player });
+    } else if (effectType === "fire") {
+      dispatch({ type: "PLACE_FIRE", placements: interaction.pendingFirePlacements });
+      dispatch({ type: "CLEAR_FIRE_PLACEMENTS", player });
+    } else if (effectType === "jeep") {
+      dispatch({ type: "JEEP_MOVES", moves: interaction.pendingJeepMoves });
+      dispatch({ type: "CLEAR_JEEP_MOVES", player });
+      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
+    }
+  };
+
+  const handleEffectUndo = () => {
+    const effectType = getCurrentEffectType(state);
+    if (effectType === "fire") {
+      dispatch({ type: "CLEAR_FIRE_PLACEMENTS", player });
+    } else if (effectType === "jeep") {
+      dispatch({ type: "CLEAR_JEEP_MOVES", player });
+      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
+    }
+  };
+
+  const handleActionReset = () => {
+    if (state.actionPhaseSavedState) {
+      dispatch({ type: "RESET_ACTION_PHASE", savedState: state.actionPhaseSavedState });
+      dispatch({ type: "SELECT_ACTION_PIECE", player, pieceId: null });
+    }
+  };
+
+  const handleLoadGame = () => {
+    const savedState = loadGame();
+    if (savedState) {
+      dispatch({ type: "LOAD_GAME", savedState });
+    }
+  };
+
+  const handleEndActionPhase = () => {
+    dispatch({ type: "END_ACTION_PHASE" });
+  };
+
+  // === Compute action info ===
+
+  const getActionInstruction = (): string => {
+    if (state.actionPoints === 0) {
+      return "No action points remaining";
+    }
+    return isRaptor ? "Select a piece, then click to move or act" : "Select a scientist, then click to move or act";
+  };
+
+  const isThisPlayerSetup =
+    (isRaptor && state.phase === "RAPTOR_SETUP") || (!isRaptor && state.phase === "SCIENTIST_SETUP");
+  const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
+  const isThisPlayerAction = isActionPhase && state.activePlayer === player;
+
+  const actionInfo = (() => {
+    if (isRaptor && state.phase === "RAPTOR_SETUP") {
+      return {
+        phaseLabel: "Raptor Setup",
+        progress: (
+          <>
+            <span>🦖 {isMotherPlaced(state) ? "1" : "0"}/1</span>
+            <span>🦎 {countPlacedBabies(state)}/5</span>
+          </>
+        ),
+        instruction: !isMotherPlaced(state)
+          ? "Place mother on center tile"
+          : countPlacedBabies(state) < 5
+            ? "Place babies on square tiles"
+            : "Setup complete!",
+      };
+    }
+    if (!isRaptor && state.phase === "SCIENTIST_SETUP") {
+      return {
+        phaseLabel: "Scientist Setup",
+        progress: <span>🧑‍🔬 {countPlacedScientists(state)}/4</span>,
+        instruction: countPlacedScientists(state) < 4 ? "Place scientists on L-tiles" : "Setup complete!",
+      };
+    }
+    if (isThisPlayerSelecting) {
+      return {
+        phaseLabel: "Pick a Card",
+        instruction: selectedCard ? `Card ${selectedCard} selected` : "Select a card from your hand",
+      };
+    }
+    if (isThisPlayerEffect) {
+      return {
+        phaseLabel: "Effect Phase",
+        instruction: getEffectInstruction(state, player),
+      };
+    }
+    if (isThisPlayerAction) {
+      return {
+        phaseLabel: "Action Phase",
+        instruction: getActionInstruction(),
+        actionPoints: state.actionPoints,
+      };
+    }
+    return null;
+  })();
+
+  // === Compute button state ===
+
+  const hasActionsTaken =
+    state.actionPhaseSavedState !== null && state.actionPoints < state.actionPhaseSavedState.actionPoints;
+  const showLoadButton = isRaptor && state.phase === "RAPTOR_SETUP" && hasSavedGame();
+
+  const actionButton = (() => {
+    if (isThisPlayerSetup) {
+      const setupComplete = isRaptor
+        ? isMotherPlaced(state) && countPlacedBabies(state) >= 5
+        : countPlacedScientists(state) >= 4;
+      return { disabled: !setupComplete, onClick: handleSetupConfirm };
+    }
+    if (isThisPlayerSelecting) {
+      return { disabled: selectedCard === null, onClick: handleCardConfirm };
+    }
+    if (isThisPlayerEffect) {
+      return { disabled: !isEffectConfirmEnabled(state, player), onClick: handleEffectConfirm };
+    }
+    if (isThisPlayerAction) {
+      return { disabled: false, onClick: handleEndActionPhase };
+    }
+    // Not this player's turn - show done checkmark
+    return { disabled: true, onClick: () => {}, isDone: true };
+  })();
+
+  const undoButton = (() => {
+    if (isThisPlayerEffect && shouldShowEffectUndo(state, player)) {
+      return { onClick: handleEffectUndo };
+    }
+    if (isThisPlayerAction && hasActionsTaken) {
+      return { onClick: handleActionReset, label: "Reset" };
+    }
+    return null;
+  })();
 
   return (
     <div className={`player-area ${player}-area`}>
@@ -188,14 +350,12 @@ function PlayerArea({ player, actionInfo, actionButton, undoButton, loadButton }
             </div>
           </div>
         )}
-        {loadButton && (
-          <button className="load-game-button" onClick={loadButton.onClick}>
+        {showLoadButton && (
+          <button className="load-game-button" onClick={handleLoadGame}>
             Load Game
           </button>
         )}
-        {actionButton && (
-          <DoneButton disabled={actionButton.disabled} onClick={actionButton.onClick} isDone={actionButton.isDone} />
-        )}
+        <DoneButton disabled={actionButton.disabled} onClick={actionButton.onClick} isDone={actionButton.isDone} />
       </div>
     </div>
   );
