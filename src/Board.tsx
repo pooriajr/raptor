@@ -980,15 +980,26 @@ function Board() {
 
   // Calculate adjacent action targets during action phase
   // Returns { hostileTargets: string[], friendlyTargets: string[], friendlyFirePositions: {tileId, x, y}[] }
+  // Action targets with their associated actions
+  interface ActionTarget {
+    pieceId: string;
+    tileId: number;
+    x: number;
+    y: number;
+    action: GameAction;
+  }
+  interface FireTarget {
+    tileId: number;
+    x: number;
+    y: number;
+    action: GameAction;
+  }
+
   const actionTargets = (() => {
     const result = {
-      hostileTargets: [] as string[],
-      friendlyTargets: [] as string[],
-      friendlyFirePositions: [] as Array<{
-        tileId: number;
-        x: number;
-        y: number;
-      }>,
+      hostileTargets: [] as ActionTarget[],
+      friendlyTargets: [] as ActionTarget[],
+      friendlyFirePositions: [] as FireTarget[],
     };
 
     if (state.phase !== "ACTION_PHASE" || !selectedActionPieceId || state.actionPoints <= 0) {
@@ -1014,9 +1025,21 @@ function Board() {
       // Mother can kill adjacent scientists (hostile) or wake adjacent sleeping babies (friendly)
       for (const adj of adjacentPieces) {
         if (adj.type === "scientist") {
-          result.hostileTargets.push(adj.id);
+          result.hostileTargets.push({
+            pieceId: adj.id,
+            tileId: adj.tileId,
+            x: adj.x,
+            y: adj.y,
+            action: { type: "ACTION_MOTHER_KILL_SCIENTIST", targetId: adj.id },
+          });
         } else if (adj.type === "baby" && adj.isAsleep && !state.asleepThisRound.includes(adj.id)) {
-          result.friendlyTargets.push(adj.id);
+          result.friendlyTargets.push({
+            pieceId: adj.id,
+            tileId: adj.tileId,
+            x: adj.x,
+            y: adj.y,
+            action: { type: "ACTION_MOTHER_WAKE_BABY", targetId: adj.id },
+          });
         }
       }
 
@@ -1031,6 +1054,7 @@ function Board() {
             tileId: fire.tileId,
             x: fire.x,
             y: fire.y,
+            action: { type: "ACTION_MOTHER_EXTINGUISH_FIRE", tileId: fire.tileId, x: fire.x, y: fire.y },
           });
         }
       }
@@ -1044,14 +1068,29 @@ function Board() {
       // But only if they haven't used their aggressive action this round
       for (const adj of adjacentPieces) {
         if (adj.type === "baby") {
-          result.hostileTargets.push(adj.id);
+          const action: GameAction = adj.isAsleep
+            ? { type: "ACTION_SCIENTIST_CAPTURE_BABY", scientistId: selectedActionPieceId, targetId: adj.id }
+            : { type: "ACTION_SCIENTIST_SLEEP_BABY", scientistId: selectedActionPieceId, targetId: adj.id };
+          result.hostileTargets.push({
+            pieceId: adj.id,
+            tileId: adj.tileId,
+            x: adj.x,
+            y: adj.y,
+            action,
+          });
         }
       }
 
       // Scientist can also shoot the mother if they have line of sight
       const mother = state.mother;
       if (mother && hasLineOfSight(state.tiles, state.scientists, selectedPiece, mother)) {
-        result.hostileTargets.push(mother.id);
+        result.hostileTargets.push({
+          pieceId: mother.id,
+          tileId: mother.tileId,
+          x: mother.x,
+          y: mother.y,
+          action: { type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActionPieceId },
+        });
       }
     }
 
@@ -1290,64 +1329,137 @@ function Board() {
       set(createSpaceId(placement.tileId, placement.x, placement.y), "pendingDestination");
     }
 
-    // Hostile targets
-    for (const pieceId of actionTargets.hostileTargets) {
-      const piece = findPieceById(pieceId);
-      if (piece) {
-        set(createSpaceId(piece.tileId, piece.x, piece.y), "hostileTarget");
-      }
+    // Hostile targets (action phase)
+    for (const target of actionTargets.hostileTargets) {
+      set(createSpaceId(target.tileId, target.x, target.y), "hostileTarget", target.action);
     }
 
-    // Friendly targets
-    for (const pieceId of actionTargets.friendlyTargets) {
-      const piece = findPieceById(pieceId);
-      if (piece) {
-        set(createSpaceId(piece.tileId, piece.x, piece.y), "friendlyTarget");
-      }
+    // Friendly targets (action phase)
+    for (const target of actionTargets.friendlyTargets) {
+      set(createSpaceId(target.tileId, target.x, target.y), "friendlyTarget", target.action);
     }
     for (const fire of actionTargets.friendlyFirePositions) {
-      set(createSpaceId(fire.tileId, fire.x, fire.y), "friendlyTarget");
+      set(createSpaceId(fire.tileId, fire.x, fire.y), "friendlyTarget", fire.action);
     }
 
     // Effect destinations
+    // Mother's call destinations - action requires baby selection state (will be consolidated later)
     for (const dest of mothersCallDestinations) {
       set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
     }
-    for (const dest of reinforcementDestinations) {
-      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    // Reinforcement destinations - simple single action
+    if (currentPlayer) {
+      for (const dest of reinforcementDestinations) {
+        const action: GameAction = {
+          type: "ADD_REINFORCEMENT",
+          player: currentPlayer,
+          placement: { tileId: dest.tileId, x: dest.x, y: dest.y },
+        };
+        set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+      }
+      // Fire destinations - simple single action
+      for (const dest of fireDestinations) {
+        const action: GameAction = {
+          type: "ADD_FIRE_PLACEMENT",
+          player: currentPlayer,
+          position: { tileId: dest.tileId, x: dest.x, y: dest.y },
+        };
+        set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+      }
     }
-    for (const dest of fireDestinations) {
-      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
-    }
+    // Jeep destinations - action requires scientist selection state (will be consolidated later)
     for (const dest of selectedScientistJeepDestinations) {
       set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
     }
 
     // Valid moves (action phase)
-    for (const move of validMoves) {
-      set(createSpaceId(move.tileId, move.x, move.y), "validMove");
+    if (activePiece && selectedActionPieceId) {
+      for (const move of validMoves) {
+        let action: GameAction | undefined;
+        if (activePiece.type === "baby") {
+          action = {
+            type: "ACTION_MOVE_BABY",
+            pieceId: selectedActionPieceId,
+            tileId: move.tileId,
+            x: move.x,
+            y: move.y,
+          };
+        } else if (activePiece.type === "scientist") {
+          action = {
+            type: "ACTION_MOVE_SCIENTIST",
+            pieceId: selectedActionPieceId,
+            tileId: move.tileId,
+            x: move.x,
+            y: move.y,
+          };
+        } else if (activePiece.type === "mother") {
+          action = {
+            type: "ACTION_MOVE_MOTHER",
+            pieceId: selectedActionPieceId,
+            tileId: move.tileId,
+            x: move.x,
+            y: move.y,
+          };
+        }
+        set(createSpaceId(move.tileId, move.x, move.y), "validMove", action);
+      }
     }
 
     // Setup placements
     for (const space of setupPlacementSpaces) {
-      set(createSpaceId(space.tileId, space.x, space.y), "setupPlacement");
+      let action: GameAction | undefined;
+      if (state.phase === "RAPTOR_SETUP") {
+        action = !isMotherPlaced(state)
+          ? { type: "PLACE_MOTHER", tileId: space.tileId, x: space.x, y: space.y }
+          : { type: "PLACE_BABY", tileId: space.tileId, x: space.x, y: space.y };
+      } else if (state.phase === "SCIENTIST_SETUP") {
+        action = { type: "PLACE_SCIENTIST", tileId: space.tileId, x: space.x, y: space.y };
+      }
+      set(createSpaceId(space.tileId, space.x, space.y), "setupPlacement", action);
     }
 
     // Setup move targets
     if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
       for (const tile of state.tiles) {
-        const hasPieceOnTile =
+        // Find piece on this tile to determine move action
+        const pieceOnTile =
           state.phase === "RAPTOR_SETUP"
-            ? state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id)
-            : state.scientists.some((s) => s.tileId === tile.id);
+            ? state.mother?.tileId === tile.id
+              ? state.mother
+              : state.babies.find((b) => b.tileId === tile.id)
+            : state.scientists.find((s) => s.tileId === tile.id);
 
-        if (hasPieceOnTile) {
+        if (pieceOnTile) {
           for (const space of tile.spaces) {
             if (space.hasMountain || space.isUnusable) continue;
             if (state.phase === "SCIENTIST_SETUP" && space.isExit) continue;
             if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) continue;
-            set(space.id, "setupMoveTarget");
+            const action: GameAction = {
+              type: "MOVE_PIECE_ON_TILE",
+              pieceId: pieceOnTile.id,
+              tileId: tile.id,
+              x: space.coordinate.x,
+              y: space.coordinate.y,
+            };
+            set(space.id, "setupMoveTarget", action);
           }
+        }
+      }
+    }
+
+    // Mother return destinations (after disappearance effect)
+    if (state.phase === "MOTHER_RETURN") {
+      for (const tile of state.tiles) {
+        for (const space of tile.spaces) {
+          if (space.hasMountain || space.isUnusable || space.isExit) continue;
+          if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) continue;
+          const action: GameAction = {
+            type: "MOTHER_RETURN",
+            tileId: tile.id,
+            x: space.coordinate.x,
+            y: space.coordinate.y,
+          };
+          set(space.id, "effectDestination", action);
         }
       }
     }
