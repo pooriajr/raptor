@@ -15,8 +15,8 @@ export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: 
   return { tileId, x, y };
 }
 
-// Highlight types for spaces - each space can have at most one highlight
-export type HighlightType =
+// Visual styles for space highlights (CSS styling)
+export type HighlightStyle =
   | "validMove" // Action phase movement destination (green)
   | "setupPlacement" // Setup phase placement (light green)
   | "setupMoveTarget" // Moving piece within tile during setup
@@ -28,8 +28,16 @@ export type HighlightType =
   | "fire" // Existing fire token (orange)
   | "pendingFire"; // Fire to be placed (orange pulsing)
 
-// Map from SpaceId to its highlight type - each space has at most one highlight
-export type SpaceHighlights = Map<SpaceId, HighlightType>;
+// SpaceHighlight includes visual style and optional action to dispatch on click
+// Action type is generic to avoid circular dependency with GameAction
+// Some highlights (fire, pathTrail) are display-only and don't have click actions
+export interface SpaceHighlight<TAction = unknown> {
+  style: HighlightStyle;
+  action?: TAction;
+}
+
+// Map from SpaceId to its highlight - each space has at most one highlight
+export type SpaceHighlights<TAction = unknown> = Map<SpaceId, SpaceHighlight<TAction>>;
 
 export interface Space {
   id: SpaceId;

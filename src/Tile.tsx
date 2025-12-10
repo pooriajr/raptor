@@ -64,11 +64,12 @@ function Tile({
           const spaceId = space.id;
           const pieceOnSpace = pieces.find((p) => p.localX === space.coordinate.x && p.localY === space.coordinate.y);
           const pendingPreview = pendingPreviews.get(spaceId);
-          const highlight = highlights.get(spaceId);
+          const spaceHighlight = highlights.get(spaceId);
+          const highlightStyle = spaceHighlight?.style;
 
           // Piece-level effect targeting (not space-based)
           const isPieceEffectTarget =
-            pieceOnSpace && highlight !== "pathTrail" && effectTargetIds.includes(pieceOnSpace.id);
+            pieceOnSpace && highlightStyle !== "pathTrail" && effectTargetIds.includes(pieceOnSpace.id);
 
           return (
             <div
@@ -77,7 +78,7 @@ function Tile({
               data-exit={space.isExit}
               data-mountain={space.hasMountain}
               data-unusable={space.isUnusable}
-              data-highlight={highlight}
+              data-highlight={highlightStyle}
               data-has-effect-target={isPieceEffectTarget || undefined}
               onClick={() => onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y, pieceOnSpace?.id ?? null)}
             >
@@ -100,7 +101,7 @@ function Tile({
                 }
 
                 // Priority 3: Actual piece (not moving away)
-                if (pieceOnSpace && highlight !== "pathTrail") {
+                if (pieceOnSpace && highlightStyle !== "pathTrail") {
                   return (
                     <motion.span
                       layout
@@ -147,17 +148,17 @@ function Tile({
                 }
 
                 // Priority 5: Trail markers (pathTrail highlight)
-                if (highlight === "pathTrail") {
+                if (highlightStyle === "pathTrail") {
                   return <span className="path-trail">🐾</span>;
                 }
 
                 // Priority 6: Fire token (actual)
-                if (highlight === "fire") {
+                if (highlightStyle === "fire") {
                   return <span className="fire-token">🔥</span>;
                 }
 
                 // Priority 7: Pending fire
-                if (highlight === "pendingFire") {
+                if (highlightStyle === "pendingFire") {
                   return <span className="fire-token pending-fire">🔥</span>;
                 }
 

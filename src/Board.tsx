@@ -4,7 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
-import { createSpaceId, type SpaceId, type SpaceHighlights, type HighlightType } from "./types/board.ts";
+import {
+  createSpaceId,
+  type SpaceId,
+  type SpaceHighlights,
+  type SpaceHighlight,
+  type HighlightStyle,
+} from "./types/board.ts";
+import type { GameAction } from "./state/gameReducer.ts";
 import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
@@ -1216,14 +1223,14 @@ function Board() {
     return destinations;
   })();
 
-  // Build highlights map - each space has at most one highlight type
-  const highlights: SpaceHighlights = (() => {
-    const h = new Map<SpaceId, HighlightType>();
+  // Build highlights map - each space has at most one highlight with style and action
+  const highlights: SpaceHighlights<GameAction> = (() => {
+    const h = new Map<SpaceId, SpaceHighlight<GameAction>>();
 
     // Helper to set highlight (won't overwrite existing)
-    const set = (spaceId: SpaceId, type: HighlightType) => {
+    const set = (spaceId: SpaceId, style: HighlightStyle, action?: GameAction) => {
       if (!h.has(spaceId)) {
-        h.set(spaceId, type);
+        h.set(spaceId, { style, action });
       }
     };
 
