@@ -603,14 +603,14 @@ function Board() {
 
   // Unified space click handler - handles all interactions on a tile space
   const handleSpaceClick = (tileId: number, x: number, y: number, pieceId: string | null) => {
-    // Handle setup phase clicks
+    const spaceId = createSpaceId(tileId, x, y);
+
+    // Setup phase: clicking on a placed piece removes it
     if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
-      // If clicking on a placed piece during setup, remove it (only if it's the right type for this phase)
       if (pieceId) {
         const isRaptorPiece = pieceId === "mother" || pieceId.startsWith("baby-");
         const isScientistPiece = pieceId.startsWith("scientist-");
 
-        // Only allow removing raptors during raptor setup, scientists during scientist setup
         if (
           (state.phase === "RAPTOR_SETUP" && isRaptorPiece) ||
           (state.phase === "SCIENTIST_SETUP" && isScientistPiece)
@@ -618,231 +618,25 @@ function Board() {
           dispatch({ type: "REMOVE_PIECE", pieceId });
           return;
         }
-        // Clicking on wrong piece type - ignore
         return;
       }
+    }
 
-      // Check if there's already a piece on this tile that can be moved
-      // (clicking empty space on same tile moves the piece there)
-      const pieceOnTile = (() => {
-        if (state.phase === "RAPTOR_SETUP") {
-          // Check for mother on this tile
-          if (state.mother?.tileId === tileId) {
-            return state.mother;
-          }
-          // Check for baby on this tile
-          return state.babies.find((b) => b.tileId === tileId);
-        } else {
-          // Scientist setup - check for scientist on this tile
-          return state.scientists.find((s) => s.tileId === tileId);
-        }
-      })();
-
-      if (pieceOnTile) {
-        // Check if clicked space is valid (not mountain, not exit for scientists, etc.)
-        const tile = state.tiles.find((t) => t.id === tileId);
-        const space = tile?.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
-        if (space && !space.hasMountain && !space.isUnusable) {
-          // For scientists, can't move to exit spaces
-          if (state.phase === "SCIENTIST_SETUP" && space.isExit) return;
-
-          dispatch({ type: "MOVE_PIECE_ON_TILE", pieceId: pieceOnTile.id, tileId, x, y });
-          return;
-        }
-        return;
-      }
-
-      // Check if this is a valid placement space
-      const isValidPlacement = setupPlacementSpaces.some((s) => s.tileId === tileId && s.x === x && s.y === y);
-
-      if (!isValidPlacement) return;
-
-      // Place the appropriate piece based on phase and state
-      if (state.phase === "RAPTOR_SETUP") {
-        if (!isMotherPlaced(state)) {
-          dispatch({ type: "PLACE_MOTHER", tileId, x, y });
-        } else {
-          dispatch({ type: "PLACE_BABY", tileId, x, y });
-        }
-      } else if (state.phase === "SCIENTIST_SETUP") {
-        dispatch({ type: "PLACE_SCIENTIST", tileId, x, y });
+    // Check if this space has a highlight with an action
+    const highlight = highlights.get(spaceId);
+    if (highlight?.action) {
+      dispatch(highlight.action);
+      // Clear local state caches after effect destinations are clicked
+      if (highlight.style === "effectDestination") {
+        setSelectedBabyPathResults([]);
+        setSelectedScientistJeepDestinations([]);
       }
       return;
     }
 
-    // If there's a piece on this space, handle piece-related interactions first
+    // If there's a piece on this space, handle piece-related interactions
     if (pieceId) {
-      const handled = handlePieceInteraction(pieceId);
-      if (handled) return;
-    }
-
-    // Handle mother return phase - clicking to place mother back on board
-    if (state.phase === "MOTHER_RETURN") {
-      // Don't allow clicking on occupied spaces
-      if (pieceId) return;
-
-      // Validate the space is valid for mother placement
-      const tile = state.tiles.find((t) => t.id === tileId);
-      const space = tile?.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
-      if (!space || space.hasMountain || space.isUnusable || space.isExit) return;
-
-      dispatch({ type: "MOTHER_RETURN", tileId, x, y });
-      return;
-    }
-
-    // Handle action phase movement and fire extinguishing
-    if (state.phase === "ACTION_PHASE") {
-      if (!selectedActionPieceId || state.actionPoints <= 0) return;
-
-      const piece = findPieceById(selectedActionPieceId);
-      if (!piece) return;
-
-      // Check if clicking on an adjacent fire (mother extinguishing)
-      if (piece.type === "mother" && state.activePlayer === "raptor") {
-        const isAdjacentFire = actionTargets.friendlyFirePositions.some(
-          (f) => f.tileId === tileId && f.x === x && f.y === y,
-        );
-        if (isAdjacentFire) {
-          dispatch({
-            type: "ACTION_MOTHER_EXTINGUISH_FIRE",
-            tileId,
-            x,
-            y,
-          });
-          return;
-        }
-      }
-
-      // Dispatch the appropriate move action
-      if (piece.type === "baby") {
-        dispatch({
-          type: "ACTION_MOVE_BABY",
-          pieceId: selectedActionPieceId,
-          tileId,
-          x,
-          y,
-        });
-        // Keep piece selected for chaining (selection persists)
-      } else if (piece.type === "scientist") {
-        dispatch({
-          type: "ACTION_MOVE_SCIENTIST",
-          pieceId: selectedActionPieceId,
-          tileId,
-          x,
-          y,
-        });
-        // Keep piece selected for chaining (selection persists)
-      } else if (piece.type === "mother") {
-        dispatch({
-          type: "ACTION_MOVE_MOTHER",
-          pieceId: selectedActionPieceId,
-          tileId,
-          x,
-          y,
-        });
-        // Keep piece selected for chaining (selection persists)
-      }
-      return;
-    }
-
-    if (state.phase !== "EFFECT_PHASE") return;
-
-    const effectType = getCurrentEffectType(state);
-    const player = currentPlayer;
-    if (!player) return;
-
-    if (effectType === "mothers_call") {
-      if (selectedBabyForCall === null) return;
-
-      // Find the path for this destination from cached results
-      const pathResult = selectedBabyPathResults.find(
-        (pr) => pr.position.tileId === tileId && pr.position.x === x && pr.position.y === y,
-      );
-
-      // Add to pending moves with path
-      dispatch({
-        type: "ADD_MOTHERS_CALL_MOVE",
-        player,
-        move: {
-          babyId: selectedBabyForCall,
-          destinationTileId: tileId,
-          destinationX: x,
-          destinationY: y,
-          path: pathResult?.path ?? [],
-        },
-      });
-      dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: null });
-      setSelectedBabyPathResults([]);
-    } else if (effectType === "reinforcements") {
-      // Check if already selected (toggle off)
-      const alreadySelected = pendingReinforcementPlacements.some((p) => p.tileId === tileId && p.x === x && p.y === y);
-
-      if (alreadySelected) {
-        // Remove from pending - need to clear and re-add filtered list
-        dispatch({ type: "CLEAR_REINFORCEMENTS", player });
-        pendingReinforcementPlacements
-          .filter((p) => !(p.tileId === tileId && p.x === x && p.y === y))
-          .forEach((p) =>
-            dispatch({ type: "ADD_REINFORCEMENT", player, placement: { tileId: p.tileId, x: p.x, y: p.y } }),
-          );
-      } else {
-        const limit = getEffectLimit(state);
-        const atLimit = pendingReinforcementPlacements.length >= limit;
-
-        if (atLimit) {
-          // At limit - remove oldest and add new
-          dispatch({ type: "CLEAR_REINFORCEMENTS", player });
-          [...pendingReinforcementPlacements.slice(1), { tileId, x, y }].forEach((p) =>
-            dispatch({ type: "ADD_REINFORCEMENT", player, placement: { tileId: p.tileId, x: p.x, y: p.y } }),
-          );
-        } else {
-          // New placement
-          dispatch({ type: "ADD_REINFORCEMENT", player, placement: { tileId, x, y } });
-        }
-      }
-    } else if (effectType === "fire") {
-      // Fire placement: no undo, no replace - just add until limit
-      const limit = getEffectLimit(state);
-      if (pendingFirePlacements.length >= limit) {
-        // At limit - do nothing, user must use Reset button
-        return;
-      }
-
-      // Add new fire placement
-      dispatch({ type: "ADD_FIRE_PLACEMENT", player, position: { tileId, x, y } });
-    } else if (effectType === "jeep") {
-      // Jeep move: add move for selected scientist
-      if (selectedScientistForJeep === null) return;
-
-      // Find the destination with path from cached results
-      const destination = selectedScientistJeepDestinations.find((d) => d.tileId === tileId && d.x === x && d.y === y);
-      if (!destination) return;
-
-      // Get the scientist's effective position (start of this move)
-      const scientist = findPieceById(selectedScientistForJeep);
-      if (!scientist) return;
-
-      const fromPos = getScientistEffectivePosition(scientist, pendingJeepMoves);
-
-      // Add the move
-      dispatch({
-        type: "ADD_JEEP_MOVE",
-        player,
-        move: {
-          scientistId: selectedScientistForJeep,
-          fromTileId: fromPos.tileId,
-          fromX: fromPos.x,
-          fromY: fromPos.y,
-          toTileId: tileId,
-          toX: x,
-          toY: y,
-          path: destination.path,
-        },
-      });
-
-      // Clear selection - user can select another scientist or same one again
-      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
-      setSelectedScientistJeepDestinations([]);
+      handlePieceInteraction(pieceId);
     }
   };
 
