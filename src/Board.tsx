@@ -140,11 +140,7 @@ function adaptPieceForRender(piece: PieceState) {
   };
 }
 
-interface BoardProps {
-  showCoordinates?: boolean;
-}
-
-function Board({ showCoordinates = false }: BoardProps) {
+function Board() {
   const { state, dispatch } = useGame();
 
   // Helper to get current player based on phase
@@ -1313,7 +1309,7 @@ function Board({ showCoordinates = false }: BoardProps) {
                 hostileTargetIds={actionTargets.hostileTargets}
                 friendlyTargetIds={actionTargets.friendlyTargets}
                 friendlyFirePositions={actionTargets.friendlyFirePositions}
-                showCoordinates={showCoordinates}
+                showCoordinates={state.showCoordinates}
                 onSpaceClick={handleSpaceClick}
               />
             );

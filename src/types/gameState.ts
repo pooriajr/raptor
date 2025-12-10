@@ -161,6 +161,8 @@ export interface GameState {
   scientistInteraction: InteractionState;
   // Action phase saved state for reset
   actionPhaseSavedState: ActionPhaseSavedState | null;
+  // Dev/debug options
+  showCoordinates: boolean;
 }
 
 // Create a shuffled deck of cards 1-9
@@ -243,5 +245,6 @@ export function createInitialGameState(): GameState {
     raptorInteraction: createInitialInteractionState(),
     scientistInteraction: createInitialInteractionState(),
     actionPhaseSavedState: null,
+    showCoordinates: false,
   };
 }

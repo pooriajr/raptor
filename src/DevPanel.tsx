@@ -3,12 +3,7 @@ import "./DevPanel.css";
 import { useGame } from "./state/GameContext.tsx";
 import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils.ts";
 
-interface DevPanelProps {
-  showCoordinates: boolean;
-  onToggleCoordinates: (show: boolean) => void;
-}
-
-function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
+function DevPanel() {
   const { state, dispatch } = useGame();
   const [collapsed, setCollapsed] = useState(true);
 
@@ -100,7 +95,11 @@ function DevPanel({ showCoordinates, onToggleCoordinates }: DevPanelProps) {
 
       <div className="section">
         <label>
-          <input type="checkbox" checked={showCoordinates} onChange={(e) => onToggleCoordinates(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={state.showCoordinates}
+            onChange={() => dispatch({ type: "TOGGLE_SHOW_COORDINATES" })}
+          />
           Show coordinates
         </label>
       </div>

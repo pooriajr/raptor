@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Board from "./Board.tsx";
 import PlayerArea from "./PlayerArea.tsx";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
@@ -18,7 +17,6 @@ import "./GameLayout.css";
 
 function GameLayout() {
   const { state, dispatch } = useGame();
-  const [showCoordinates, setShowCoordinates] = useState(false);
 
   // Helper to get current player based on phase
   const getCurrentPlayer = (): "raptor" | "scientist" | null => {
@@ -250,7 +248,7 @@ function GameLayout() {
       />
 
       {/* Game board */}
-      <Board showCoordinates={showCoordinates} />
+      <Board />
 
       {/* Scientist player area (bottom) */}
       <PlayerArea
@@ -321,7 +319,7 @@ function GameLayout() {
       {state.phase === "CARD_REVEAL" && <CardRevealOverlay />}
       {state.phase === "SCIENTIST_READY" && <PlayerReadyScreen player="scientist" />}
       {state.phase === "RAPTOR_READY" && <PlayerReadyScreen player="raptor" />}
-      <DevPanel showCoordinates={showCoordinates} onToggleCoordinates={setShowCoordinates} />
+      <DevPanel />
     </div>
   );
 }
