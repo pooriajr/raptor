@@ -3,23 +3,29 @@ import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
 import DoneButton from "./DoneButton";
 import UndoButton from "./UndoButton";
-import Tracker from "./Tracker";
 import { useGame } from "../state/GameContext";
-import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "../utils/pieceUtils";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
 import { hasSavedGame, loadGame } from "../utils/saveLoad";
 import "./PlayerArea.css";
 
-interface PlayerAreaProps {
-  player: "raptor" | "scientist";
+interface SetupInfo {
+  phaseLabel: string;
+  progress: React.ReactNode;
+  instruction: string;
 }
 
-function PlayerArea({ player }: PlayerAreaProps) {
-  const { state, dispatch } = useGame();
-  const isRaptor = player === "raptor";
+interface PlayerAreaBaseProps {
+  player: "raptor" | "scientist";
+  trackers: React.ReactNode;
+  setupInfo: SetupInfo | null;
+  actionInstruction: string;
+}
 
-  const interaction = isRaptor ? state.raptorInteraction : state.scientistInteraction;
-  const cards = isRaptor ? state.raptorCards : state.scientistCards;
+function PlayerAreaBase({ player, trackers, setupInfo, actionInstruction }: PlayerAreaBaseProps) {
+  const { state, dispatch } = useGame();
+
+  const cards = player === "raptor" ? state.raptorCards : state.scientistCards;
+  const interaction = player === "raptor" ? state.raptorInteraction : state.scientistInteraction;
 
   const isEffectPhase = state.phase === "EFFECT_PHASE";
   const isActionPhase = state.phase === "ACTION_PHASE";
@@ -38,40 +44,14 @@ function PlayerArea({ player }: PlayerAreaProps) {
     }
   };
 
-  const getActionInstruction = (): string => {
-    if (state.actionPoints === 0) {
-      return "No action points remaining";
-    }
-    return isRaptor ? "Select a piece, then click to move or act" : "Select a scientist, then click to move or act";
-  };
-
   const actionInfo = (() => {
-    if (isRaptor && state.phase === "RAPTOR_SETUP") {
-      return {
-        phaseLabel: "Raptor Setup",
-        progress: (
-          <>
-            <span>🦖 {isMotherPlaced(state) ? "1" : "0"}/1</span>
-            <span>🦎 {countPlacedBabies(state)}/5</span>
-          </>
-        ),
-        instruction: !isMotherPlaced(state)
-          ? "Place mother on center tile"
-          : countPlacedBabies(state) < 5
-            ? "Place babies on square tiles"
-            : "Setup complete!",
-      };
-    }
-    if (!isRaptor && state.phase === "SCIENTIST_SETUP") {
-      return {
-        phaseLabel: "Scientist Setup",
-        progress: <span>🧑‍🔬 {countPlacedScientists(state)}/4</span>,
-        instruction: countPlacedScientists(state) < 4 ? "Place scientists on L-tiles" : "Setup complete!",
-      };
+    if (setupInfo) {
+      return setupInfo;
     }
     if (isThisPlayerSelecting) {
       return {
         phaseLabel: "Pick a Card",
+        progress: null,
         instruction: interaction.selectedCard
           ? `Card ${interaction.selectedCard} selected`
           : "Select a card from your hand",
@@ -80,35 +60,29 @@ function PlayerArea({ player }: PlayerAreaProps) {
     if (isThisPlayerEffect) {
       return {
         phaseLabel: "Effect Phase",
+        progress: null,
         instruction: getEffectInstruction(state, player),
       };
     }
     if (isThisPlayerAction) {
       return {
         phaseLabel: "Action Phase",
-        instruction: getActionInstruction(),
+        progress: null,
+        instruction: actionInstruction,
         actionPoints: state.actionPoints,
       };
     }
     return null;
   })();
 
-  const showLoadButton = isRaptor && state.phase === "RAPTOR_SETUP" && hasSavedGame();
+  const showLoadButton = player === "raptor" && state.phase === "RAPTOR_SETUP" && hasSavedGame();
 
   return (
     <div className={`player-area ${player}-area`}>
       <div className="player-area-left">
         <CardDeck player={player} cardCount={cards.deck.length} />
         <DiscardPile player={player} />
-
-        {isRaptor ? (
-          <>
-            <Tracker label="Escaped" emoji="🦎" current={state.escapedBabies ?? 0} max={3} />
-            <Tracker label="Mother Sleep Tokens" emoji="💉" current={state.motherSleepTokens ?? 0} max={5} />
-          </>
-        ) : (
-          <Tracker label="Captured" emoji="🦎" current={state.capturedBabies ?? 0} max={3} />
-        )}
+        {trackers}
       </div>
 
       <div className="player-area-center">
@@ -118,7 +92,7 @@ function PlayerArea({ player }: PlayerAreaProps) {
       <div className="player-area-action">
         {actionInfo && (
           <div className="action-info">
-            {actionInfo.actionPoints !== undefined && (
+            {"actionPoints" in actionInfo && actionInfo.actionPoints !== undefined && (
               <div className="action-points-display">
                 <span className="action-points-value">{actionInfo.actionPoints}</span>
                 <span className="action-points-label">AP</span>
@@ -143,4 +117,4 @@ function PlayerArea({ player }: PlayerAreaProps) {
   );
 }
 
-export default PlayerArea;
+export default PlayerAreaBase;

@@ -1,1 +1,2 @@
-export { default } from "./PlayerArea";
+export { default as RaptorPlayerArea } from "./RaptorPlayerArea";
+export { default as ScientistPlayerArea } from "./ScientistPlayerArea";
