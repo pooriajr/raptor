@@ -1,6 +1,7 @@
 import "./Tile.css";
 import { motion } from "framer-motion";
-import type { Tile as TileType, SpaceHighlights, SpaceId } from "./types/board.ts";
+import type { Tile as TileType } from "./types/board.ts";
+import type { SpaceHighlights, SpaceId } from "./types/highlights.ts";
 
 // Adapted piece interface - works with plain data
 interface AdaptedPiece {

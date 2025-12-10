@@ -10,7 +10,7 @@ import {
   type SpaceHighlights,
   type SpaceHighlight,
   type HighlightStyle,
-} from "./types/board.ts";
+} from "./types/highlights.ts";
 import type { GameAction } from "./state/gameReducer.ts";
 import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
