@@ -15,43 +15,21 @@ export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: 
   return { tileId, x, y };
 }
 
-// Consolidated space highlighting - uses Sets for O(1) lookup
-export interface SpaceHighlights {
-  // Destinations (clickable spaces to move/place things)
-  validMoves: Set<SpaceId>; // Action phase movement
-  setupPlacements: Set<SpaceId>; // Setup phase placement
-  setupMoveTargets: Set<SpaceId>; // Moving piece within tile during setup
-  effectDestinations: Set<SpaceId>; // Effect targets (Mother's Call, reinforcements, fire, jeep)
+// Highlight types for spaces - each space can have at most one highlight
+export type HighlightType =
+  | "validMove" // Action phase movement destination (green)
+  | "setupPlacement" // Setup phase placement (light green)
+  | "setupMoveTarget" // Moving piece within tile during setup
+  | "effectDestination" // Effect targets like Mother's Call, reinforcements, fire, jeep (teal)
+  | "pendingDestination" // Where pieces will move to on confirm (solid green)
+  | "pathTrail" // Intermediate path positions / origins (footprints)
+  | "hostileTarget" // Enemy pieces that can be attacked (red)
+  | "friendlyTarget" // Friendly pieces/fire that can be interacted with (purple)
+  | "fire" // Existing fire token (orange)
+  | "pendingFire"; // Fire to be placed (orange pulsing)
 
-  // Pending states (showing what will happen on confirm)
-  pendingDestinations: Set<SpaceId>; // Where pieces will move to
-  pendingOrigins: Set<SpaceId>; // Where pieces are moving from (show trail)
-  pathTrails: Set<SpaceId>; // Intermediate path positions
-
-  // Combat targets
-  hostileTargets: Set<SpaceId>; // Enemy pieces that can be attacked
-  friendlyTargets: Set<SpaceId>; // Friendly pieces/fire that can be interacted with
-
-  // Static tokens
-  fireTokens: Set<SpaceId>; // Existing fire
-  pendingFire: Set<SpaceId>; // Fire to be placed
-}
-
-export function createEmptyHighlights(): SpaceHighlights {
-  return {
-    validMoves: new Set(),
-    setupPlacements: new Set(),
-    setupMoveTargets: new Set(),
-    effectDestinations: new Set(),
-    pendingDestinations: new Set(),
-    pendingOrigins: new Set(),
-    pathTrails: new Set(),
-    hostileTargets: new Set(),
-    friendlyTargets: new Set(),
-    fireTokens: new Set(),
-    pendingFire: new Set(),
-  };
-}
+// Map from SpaceId to its highlight type - each space has at most one highlight
+export type SpaceHighlights = Map<SpaceId, HighlightType>;
 
 export interface Space {
   id: SpaceId;

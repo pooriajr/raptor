@@ -112,37 +112,90 @@
   z-index: 20;
 }
 
-/* Valid move highlighting - show when dragging starts or piece selected */
-.space[data-valid-move="true"] {
+/* ===========================================
+   SPACE HIGHLIGHTS - using data-highlight attr
+   =========================================== */
+
+/* Valid move - action phase movement destination (green) */
+.space[data-highlight="validMove"] {
   cursor: pointer;
   background-color: #a8d590 !important;
   border-color: #6f9d4a !important;
   box-shadow: inset 0 0 8px rgba(111, 157, 74, 0.4);
 }
 
-/* Valid setup placement highlighting */
-.space[data-valid-setup-placement="true"] {
+/* Setup placement - setup phase placement (light green) */
+.space[data-highlight="setupPlacement"] {
   cursor: pointer;
   background-color: #b8e0a8 !important;
   border-color: #6aad5a !important;
   box-shadow: inset 0 0 8px rgba(106, 173, 90, 0.4);
 }
 
-.space[data-valid-setup-placement="true"]:hover {
+.space[data-highlight="setupPlacement"]:hover {
   background-color: #90d5a8 !important;
   border-color: #4a9d6f !important;
   box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
 }
 
-/* Setup move target - hover effect only, no permanent highlight */
-.space[data-setup-move-target="true"] {
+/* Setup move target - moving piece within tile during setup (hover only) */
+.space[data-highlight="setupMoveTarget"] {
   cursor: pointer;
 }
 
-.space[data-setup-move-target="true"]:hover {
+.space[data-highlight="setupMoveTarget"]:hover {
   background-color: #90d5a8 !important;
   border-color: #4a9d6f !important;
   box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
+}
+
+/* Effect destination - Mother's Call, reinforcements, fire, jeep (teal) */
+.space[data-highlight="effectDestination"] {
+  cursor: pointer;
+  background-color: #90d5c8 !important;
+  border-color: #4a9d8f !important;
+  animation: pulse-destination 1s ease-in-out infinite;
+}
+
+/* Pending destination - where pieces will move to on confirm (solid green) */
+.space[data-highlight="pendingDestination"] {
+  background-color: #7dd5a0 !important;
+  border-color: #4a9d6f !important;
+  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.8);
+}
+
+/* Path trail - intermediate path positions / origins (footprints) */
+.space[data-highlight="pathTrail"] {
+  background-color: #b8d4a8 !important;
+  border-color: #8ab87a !important;
+}
+
+/* Hostile target - enemy pieces that can be attacked (red) */
+.space[data-highlight="hostileTarget"] {
+  cursor: pointer;
+  background-color: #e89090 !important;
+  border-color: #c45050 !important;
+  box-shadow: inset 0 0 8px rgba(196, 80, 80, 0.4);
+}
+
+/* Friendly target - friendly pieces/fire that can be interacted with (purple) */
+.space[data-highlight="friendlyTarget"] {
+  cursor: pointer;
+  background-color: #c8a0e8 !important;
+  border-color: #9060c0 !important;
+  box-shadow: inset 0 0 8px rgba(144, 96, 192, 0.4);
+}
+
+/* Fire - existing fire token (orange) */
+.space[data-highlight="fire"] {
+  background-color: #e8a060 !important;
+  border-color: #c07030 !important;
+}
+
+/* Pending fire - fire to be placed (orange pulsing) */
+.space[data-highlight="pendingFire"] {
+  background-color: #e8a060 !important;
+  border-color: #c07030 !important;
 }
 
 /* Piece status indicators */
@@ -213,30 +266,6 @@
   transform: scale(1.1);
 }
 
-/* Hostile target - red tile highlight (scientist can act on baby, mother can kill scientist) */
-.space[data-hostile-target="true"] {
-  cursor: pointer;
-  background-color: #e89090 !important;
-  border-color: #c45050 !important;
-  box-shadow: inset 0 0 8px rgba(196, 80, 80, 0.4);
-}
-
-/* Friendly target - purple tile highlight (mother waking sleeping baby) */
-.space[data-friendly-target="true"] {
-  cursor: pointer;
-  background-color: #c8a0e8 !important;
-  border-color: #9060c0 !important;
-  box-shadow: inset 0 0 8px rgba(144, 96, 192, 0.4);
-}
-
-/* Effect destination spaces (e.g., Mother's Call destination) */
-.space[data-effect-destination="true"] {
-  cursor: pointer;
-  background-color: #90d5c8 !important;
-  border-color: #4a9d8f !important;
-  animation: pulse-destination 1s ease-in-out infinite;
-}
-
 @keyframes pulse-destination {
   0%,
   100% {
@@ -245,19 +274,6 @@
   50% {
     box-shadow: inset 0 0 16px rgba(74, 157, 143, 1);
   }
-}
-
-/* Pending destination - already selected, solid green */
-.space[data-pending-destination="true"] {
-  background-color: #7dd5a0 !important;
-  border-color: #4a9d6f !important;
-  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.8);
-}
-
-/* Path trail - shows the route a baby will take */
-.space[data-path-trail="true"] {
-  background-color: #b8d4a8 !important;
-  border-color: #8ab87a !important;
 }
 
 .path-trail {
@@ -293,18 +309,6 @@
     opacity: 1;
     transform: scale(1.1);
   }
-}
-
-/* Space with fire - orange tint */
-.space[data-has-fire="true"] {
-  background-color: #e8a060 !important;
-  border-color: #c07030 !important;
-}
-
-/* Jeep trail (smoke puffs) */
-.jeep-trail {
-  font-size: 36px;
-  opacity: 0.7;
 }
 
 /* Jeep car at destination */

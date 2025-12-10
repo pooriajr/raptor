@@ -64,22 +64,11 @@ function Tile({
           const spaceId = space.id;
           const pieceOnSpace = pieces.find((p) => p.localX === space.coordinate.x && p.localY === space.coordinate.y);
           const pendingPreview = pendingPreviews.get(spaceId);
+          const highlight = highlights.get(spaceId);
 
-          // O(1) lookups using Sets
-          const isValidMove = highlights.validMoves.has(spaceId);
-          const isValidSetupPlacement = highlights.setupPlacements.has(spaceId);
-          const isSetupMoveTarget = highlights.setupMoveTargets.has(spaceId);
-          const isEffectDestination = highlights.effectDestinations.has(spaceId);
-          const isPendingDestination = highlights.pendingDestinations.has(spaceId);
-          const isPendingOrigin = highlights.pendingOrigins.has(spaceId);
-          const isPathTrail = highlights.pathTrails.has(spaceId);
-          const isHostileTarget = highlights.hostileTargets.has(spaceId);
-          const isFriendlyTarget = highlights.friendlyTargets.has(spaceId);
-          const hasFireToken = highlights.fireTokens.has(spaceId);
-          const isPendingFire = highlights.pendingFire.has(spaceId);
-
-          // Piece-level effect targeting
-          const isPieceEffectTarget = pieceOnSpace && !isPendingOrigin && effectTargetIds.includes(pieceOnSpace.id);
+          // Piece-level effect targeting (not space-based)
+          const isPieceEffectTarget =
+            pieceOnSpace && highlight !== "pathTrail" && effectTargetIds.includes(pieceOnSpace.id);
 
           return (
             <div
@@ -88,16 +77,8 @@ function Tile({
               data-exit={space.isExit}
               data-mountain={space.hasMountain}
               data-unusable={space.isUnusable}
-              data-valid-move={isValidMove}
-              data-valid-setup-placement={isValidSetupPlacement}
-              data-setup-move-target={isSetupMoveTarget}
-              data-effect-destination={isEffectDestination}
-              data-pending-destination={isPendingDestination || isPendingFire}
-              data-has-fire={hasFireToken}
-              data-path-trail={isPathTrail}
-              data-has-effect-target={isPieceEffectTarget}
-              data-hostile-target={isHostileTarget}
-              data-friendly-target={isFriendlyTarget}
+              data-highlight={highlight}
+              data-has-effect-target={isPieceEffectTarget || undefined}
               onClick={() => onSpaceClick(tile.id, space.coordinate.x, space.coordinate.y, pieceOnSpace?.id ?? null)}
             >
               {/* Show coordinates for debugging */}
@@ -119,7 +100,7 @@ function Tile({
                 }
 
                 // Priority 3: Actual piece (not moving away)
-                if (pieceOnSpace && !isPendingOrigin) {
+                if (pieceOnSpace && highlight !== "pathTrail") {
                   return (
                     <motion.span
                       layout
@@ -165,18 +146,18 @@ function Tile({
                   }
                 }
 
-                // Priority 5: Trail markers
-                if (isPendingOrigin || isPathTrail) {
+                // Priority 5: Trail markers (pathTrail highlight)
+                if (highlight === "pathTrail") {
                   return <span className="path-trail">🐾</span>;
                 }
 
                 // Priority 6: Fire token (actual)
-                if (hasFireToken) {
+                if (highlight === "fire") {
                   return <span className="fire-token">🔥</span>;
                 }
 
                 // Priority 7: Pending fire
-                if (isPendingFire) {
+                if (highlight === "pendingFire") {
                   return <span className="fire-token pending-fire">🔥</span>;
                 }
 

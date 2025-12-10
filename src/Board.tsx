@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
-import { createSpaceId, createEmptyHighlights, type SpaceId, type SpaceHighlights } from "./types/board.ts";
+import { createSpaceId, type SpaceId, type SpaceHighlights, type HighlightType } from "./types/board.ts";
 import { getPieceEmoji, isMotherPlaced } from "./utils/pieceUtils.ts";
 import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
@@ -1216,21 +1216,117 @@ function Board() {
     return destinations;
   })();
 
-  // Build consolidated highlights object
+  // Build highlights map - each space has at most one highlight type
   const highlights: SpaceHighlights = (() => {
-    const h = createEmptyHighlights();
+    const h = new Map<SpaceId, HighlightType>();
+
+    // Helper to set highlight (won't overwrite existing)
+    const set = (spaceId: SpaceId, type: HighlightType) => {
+      if (!h.has(spaceId)) {
+        h.set(spaceId, type);
+      }
+    };
+
+    // Fire tokens (existing)
+    for (const fire of state.fireTokens) {
+      set(createSpaceId(fire.tileId, fire.x, fire.y), "fire");
+    }
+
+    // Pending fire
+    for (const fire of pendingFirePlacements) {
+      set(createSpaceId(fire.tileId, fire.x, fire.y), "pendingFire");
+    }
+
+    // Path trails (origins and intermediate positions)
+    for (const move of pendingMothersCallMoves) {
+      const baby = state.babies.find((b) => b.id === move.babyId);
+      if (baby) {
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "pathTrail");
+      }
+      for (const pos of move.path) {
+        set(createSpaceId(pos.tileId, pos.x, pos.y), "pathTrail");
+      }
+    }
+
+    // Jeep origins and paths
+    for (const move of pendingJeepMoves) {
+      const isFirstMove = !pendingJeepMoves.some(
+        (m) =>
+          m.scientistId === move.scientistId &&
+          m.toTileId === move.fromTileId &&
+          m.toX === move.fromX &&
+          m.toY === move.fromY,
+      );
+      if (isFirstMove) {
+        set(createSpaceId(move.fromTileId, move.fromX, move.fromY), "pathTrail");
+      }
+      for (const pos of move.path) {
+        set(createSpaceId(pos.tileId, pos.x, pos.y), "pathTrail");
+      }
+      const hasSubsequentMove = pendingJeepMoves.some(
+        (m2) =>
+          m2.scientistId === move.scientistId &&
+          m2.fromTileId === move.toTileId &&
+          m2.fromX === move.toX &&
+          m2.fromY === move.toY,
+      );
+      if (hasSubsequentMove) {
+        set(createSpaceId(move.toTileId, move.toX, move.toY), "pathTrail");
+      }
+    }
+
+    // Pending destinations
+    for (const move of pendingMothersCallMoves) {
+      set(createSpaceId(move.destinationTileId, move.destinationX, move.destinationY), "pendingDestination");
+    }
+    for (const placement of pendingReinforcementPlacements) {
+      set(createSpaceId(placement.tileId, placement.x, placement.y), "pendingDestination");
+    }
+
+    // Hostile targets
+    for (const pieceId of actionTargets.hostileTargets) {
+      const piece = findPieceById(pieceId);
+      if (piece) {
+        set(createSpaceId(piece.tileId, piece.x, piece.y), "hostileTarget");
+      }
+    }
+
+    // Friendly targets
+    for (const pieceId of actionTargets.friendlyTargets) {
+      const piece = findPieceById(pieceId);
+      if (piece) {
+        set(createSpaceId(piece.tileId, piece.x, piece.y), "friendlyTarget");
+      }
+    }
+    for (const fire of actionTargets.friendlyFirePositions) {
+      set(createSpaceId(fire.tileId, fire.x, fire.y), "friendlyTarget");
+    }
+
+    // Effect destinations
+    for (const dest of mothersCallDestinations) {
+      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    }
+    for (const dest of reinforcementDestinations) {
+      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    }
+    for (const dest of fireDestinations) {
+      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    }
+    for (const dest of selectedScientistJeepDestinations) {
+      set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination");
+    }
 
     // Valid moves (action phase)
     for (const move of validMoves) {
-      h.validMoves.add(createSpaceId(move.tileId, move.x, move.y));
+      set(createSpaceId(move.tileId, move.x, move.y), "validMove");
     }
 
     // Setup placements
     for (const space of setupPlacementSpaces) {
-      h.setupPlacements.add(createSpaceId(space.tileId, space.x, space.y));
+      set(createSpaceId(space.tileId, space.x, space.y), "setupPlacement");
     }
 
-    // Setup move targets (moving piece within tile)
+    // Setup move targets
     if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
       for (const tile of state.tiles) {
         const hasPieceOnTile =
@@ -1243,102 +1339,10 @@ function Board() {
             if (space.hasMountain || space.isUnusable) continue;
             if (state.phase === "SCIENTIST_SETUP" && space.isExit) continue;
             if (isSpaceOccupied(tile.id, space.coordinate.x, space.coordinate.y)) continue;
-            h.setupMoveTargets.add(space.id);
+            set(space.id, "setupMoveTarget");
           }
         }
       }
-    }
-
-    // Effect destinations
-    for (const dest of mothersCallDestinations) {
-      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
-    }
-    for (const dest of reinforcementDestinations) {
-      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
-    }
-    for (const dest of fireDestinations) {
-      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
-    }
-    for (const dest of selectedScientistJeepDestinations) {
-      h.effectDestinations.add(createSpaceId(dest.tileId, dest.x, dest.y));
-    }
-
-    // Pending destinations (where pieces will move to)
-    for (const move of pendingMothersCallMoves) {
-      h.pendingDestinations.add(createSpaceId(move.destinationTileId, move.destinationX, move.destinationY));
-    }
-    for (const placement of pendingReinforcementPlacements) {
-      h.pendingDestinations.add(createSpaceId(placement.tileId, placement.x, placement.y));
-    }
-
-    // Pending origins (where pieces are moving from) and path trails
-    for (const move of pendingMothersCallMoves) {
-      const baby = state.babies.find((b) => b.id === move.babyId);
-      if (baby) {
-        h.pendingOrigins.add(createSpaceId(baby.tileId, baby.x, baby.y));
-      }
-      for (const pos of move.path) {
-        h.pathTrails.add(createSpaceId(pos.tileId, pos.x, pos.y));
-      }
-    }
-
-    // Jeep origins and paths
-    for (const move of pendingJeepMoves) {
-      // Check if this is the first move for this scientist (origin)
-      const isFirstMove = !pendingJeepMoves.some(
-        (m) =>
-          m.scientistId === move.scientistId &&
-          m.toTileId === move.fromTileId &&
-          m.toX === move.fromX &&
-          m.toY === move.fromY,
-      );
-      if (isFirstMove) {
-        h.pendingOrigins.add(createSpaceId(move.fromTileId, move.fromX, move.fromY));
-      }
-      // Add path positions
-      for (const pos of move.path) {
-        h.pathTrails.add(createSpaceId(pos.tileId, pos.x, pos.y));
-      }
-      // Add intermediate stops (destinations that have subsequent moves)
-      const hasSubsequentMove = pendingJeepMoves.some(
-        (m2) =>
-          m2.scientistId === move.scientistId &&
-          m2.fromTileId === move.toTileId &&
-          m2.fromX === move.toX &&
-          m2.fromY === move.toY,
-      );
-      if (hasSubsequentMove) {
-        h.pathTrails.add(createSpaceId(move.toTileId, move.toX, move.toY));
-      }
-    }
-
-    // Hostile targets (pieces that can be attacked)
-    for (const pieceId of actionTargets.hostileTargets) {
-      const piece = findPieceById(pieceId);
-      if (piece) {
-        h.hostileTargets.add(createSpaceId(piece.tileId, piece.x, piece.y));
-      }
-    }
-
-    // Friendly targets (pieces/fire that can be interacted with)
-    for (const pieceId of actionTargets.friendlyTargets) {
-      const piece = findPieceById(pieceId);
-      if (piece) {
-        h.friendlyTargets.add(createSpaceId(piece.tileId, piece.x, piece.y));
-      }
-    }
-    for (const fire of actionTargets.friendlyFirePositions) {
-      h.friendlyTargets.add(createSpaceId(fire.tileId, fire.x, fire.y));
-    }
-
-    // Fire tokens
-    for (const fire of state.fireTokens) {
-      h.fireTokens.add(createSpaceId(fire.tileId, fire.x, fire.y));
-    }
-
-    // Pending fire
-    for (const fire of pendingFirePlacements) {
-      h.pendingFire.add(createSpaceId(fire.tileId, fire.x, fire.y));
     }
 
     return h;
