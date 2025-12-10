@@ -2,13 +2,13 @@ import CardDeck from "./CardDeck";
 import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
 import DoneButton from "./DoneButton";
+import UndoButton from "./UndoButton";
 import { useGame } from "./state/GameContext";
 import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils";
 import {
   getEffectPlayer,
   getEffectInstruction,
   isEffectConfirmEnabled,
-  shouldShowEffectUndo,
   getCurrentEffectType,
 } from "./utils/effectUtils";
 import { hasSavedGame, loadGame } from "./utils/saveLoad";
@@ -121,23 +121,6 @@ function PlayerArea({ player }: PlayerAreaProps) {
     }
   };
 
-  const handleEffectUndo = () => {
-    const effectType = getCurrentEffectType(state);
-    if (effectType === "fire") {
-      dispatch({ type: "CLEAR_FIRE_PLACEMENTS", player });
-    } else if (effectType === "jeep") {
-      dispatch({ type: "CLEAR_JEEP_MOVES", player });
-      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
-    }
-  };
-
-  const handleActionReset = () => {
-    if (state.actionPhaseSavedState) {
-      dispatch({ type: "RESET_ACTION_PHASE", savedState: state.actionPhaseSavedState });
-      dispatch({ type: "SELECT_ACTION_PIECE", player, pieceId: null });
-    }
-  };
-
   const handleLoadGame = () => {
     const savedState = loadGame();
     if (savedState) {
@@ -211,8 +194,6 @@ function PlayerArea({ player }: PlayerAreaProps) {
 
   // === Compute button state ===
 
-  const hasActionsTaken =
-    state.actionPhaseSavedState !== null && state.actionPoints < state.actionPhaseSavedState.actionPoints;
   const showLoadButton = isRaptor && state.phase === "RAPTOR_SETUP" && hasSavedGame();
 
   const actionButton = (() => {
@@ -233,16 +214,6 @@ function PlayerArea({ player }: PlayerAreaProps) {
     }
     // Not this player's turn - show done checkmark
     return { disabled: true, onClick: () => {}, isDone: true };
-  })();
-
-  const undoButton = (() => {
-    if (isThisPlayerEffect && shouldShowEffectUndo(state, player)) {
-      return { onClick: handleEffectUndo };
-    }
-    if (isThisPlayerAction && hasActionsTaken) {
-      return { onClick: handleActionReset, label: "Reset" };
-    }
-    return null;
   })();
 
   return (
@@ -327,11 +298,7 @@ function PlayerArea({ player }: PlayerAreaProps) {
               <div className="action-phase-label">{actionInfo.phaseLabel}</div>
               {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
               <div className="action-instruction">{actionInfo.instruction}</div>
-              {undoButton && (
-                <button className="reset-button" onClick={undoButton.onClick} title={undoButton.label || "Undo"}>
-                  {undoButton.label || "↩"}
-                </button>
-              )}
+              <UndoButton player={player} />
             </div>
           </div>
         )}
