@@ -1,5 +1,7 @@
 .DiscardPile {
   min-width: 100px;
+  transform: scale(0.85);
+  transform-origin: center center;
 }
 
 .DiscardPile .discard-placeholder {
