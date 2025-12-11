@@ -1,12 +1,7 @@
 // Visual styles for clickable spaces (CSS styling)
 export type SpaceStyle =
-  | "validMove" // Action phase movement destination (green)
-  | "setupPlacement" // Setup phase placement (light green)
-  | "setupMoveTarget" // Moving piece within tile during setup
-  | "effectTarget" // Selectable pieces for effect phase (gold) - step 1 of two-step effects
-  | "effectDestination" // Effect destinations like Mother's Call, reinforcements, fire, jeep (teal)
+  | "selectable" // Any clickable/interactive space (blue)
   | "hostileTarget" // Enemy pieces that can be attacked (red)
-  | "friendlyTarget" // Friendly pieces/fire that can be interacted with (purple)
   | "fire"; // Existing fire token (orange)
 
 // SpaceId is a unique identifier for a space: "tileId-x-y"

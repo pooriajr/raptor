@@ -97,7 +97,7 @@ interface FireTarget {
 
 interface ActionTargets {
   hostileTargets: ActionTarget[];
-  friendlyTargets: ActionTarget[];
+  selectables: ActionTarget[];
   friendlyFirePositions: FireTarget[];
 }
 
@@ -105,7 +105,7 @@ interface ActionTargets {
 function getActionTargets(state: GameState, selectedActorId: string | null): ActionTargets {
   const result: ActionTargets = {
     hostileTargets: [],
-    friendlyTargets: [],
+    selectables: [],
     friendlyFirePositions: [],
   };
 
@@ -134,7 +134,7 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
           action: { type: "ACTION_MOTHER_KILL_SCIENTIST", targetId: adj.id },
         });
       } else if (adj.type === "baby" && adj.isAsleep && !state.asleepThisRound.includes(adj.id)) {
-        result.friendlyTargets.push({
+        result.selectables.push({
           pieceId: adj.id,
           tileId: adj.tileId,
           x: adj.x,
@@ -245,11 +245,11 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   for (const target of actionTargets.hostileTargets) {
     set(createSpaceId(target.tileId, target.x, target.y), "hostileTarget", target.action);
   }
-  for (const target of actionTargets.friendlyTargets) {
-    set(createSpaceId(target.tileId, target.x, target.y), "friendlyTarget", target.action);
+  for (const target of actionTargets.selectables) {
+    set(createSpaceId(target.tileId, target.x, target.y), "selectable", target.action);
   }
   for (const fire of actionTargets.friendlyFirePositions) {
-    set(createSpaceId(fire.tileId, fire.x, fire.y), "friendlyTarget", fire.action);
+    set(createSpaceId(fire.tileId, fire.x, fire.y), "selectable", fire.action);
   }
 
   // Effect phase highlights
@@ -262,7 +262,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
       for (const scientist of state.scientists) {
         if (scientist.tileId === -1 || scientist.isFrightened) continue;
         const action: GameAction = { type: "FRIGHTEN_SCIENTIST", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "effectTarget", action);
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
       }
     }
 
@@ -271,7 +271,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
       for (const baby of state.babies) {
         if (baby.tileId === -1 || baby.isAsleep) continue;
         const action: GameAction = { type: "PUT_BABY_TO_SLEEP", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "effectTarget", action);
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
       }
     }
 
@@ -280,7 +280,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
       for (const baby of state.babies) {
         if (baby.tileId === -1 || !baby.isAsleep) continue;
         const action: GameAction = { type: "WAKE_BABY", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "effectTarget", action);
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
       }
     }
 
@@ -299,7 +299,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
             x: dest.x,
             y: dest.y,
           };
-          set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+          set(createSpaceId(dest.tileId, dest.x, dest.y), "selectable", action);
         }
       } else {
         // Step 1: Highlight babies that can be called (have reachable destinations)
@@ -308,7 +308,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
           if (destinations.length > 0) {
             const action: GameAction = { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
-            set(createSpaceId(baby.tileId, baby.x, baby.y), "effectTarget", action);
+            set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
           }
         }
       }
@@ -329,7 +329,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           if (!space || space.hasMountain) continue;
           if (isSpaceOccupied(state, tile.id, x, edgeY)) continue;
           const action: GameAction = { type: "PLACE_REINFORCEMENT", tileId: tile.id, x, y: edgeY };
-          set(createSpaceId(tile.id, x, edgeY), "effectDestination", action);
+          set(createSpaceId(tile.id, x, edgeY), "selectable", action);
         }
       }
     }
@@ -337,7 +337,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     // Recovery: highlight mother if she has sleep tokens
     if (effectType === "recovery" && state.mother && state.motherSleepTokens > 0 && state.mother.tileId !== -1) {
       const action: GameAction = { type: "REMOVE_MOTHER_SLEEP_TOKEN" };
-      set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "effectTarget", action);
+      set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "selectable", action);
     }
 
     // Fire: highlight valid fire placement spaces
@@ -377,7 +377,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           x: local.localX,
           y: local.localY,
         };
-        set(createSpaceId(local.tileId, local.localX, local.localY), "effectDestination", action);
+        set(createSpaceId(local.tileId, local.localX, local.localY), "selectable", action);
       }
     }
 
@@ -403,7 +403,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
             y: dest.y,
             path: dest.path,
           };
-          set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+          set(createSpaceId(dest.tileId, dest.x, dest.y), "selectable", action);
         }
       } else {
         // Step 1: Highlight scientists that can use jeep (have reachable destinations)
@@ -412,7 +412,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           const destinations = getJeepDestinationsWithPaths(state.tiles, allPieces, state.fireTokens, scientist, []);
           if (destinations.length > 0) {
             const action: GameAction = { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
-            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "effectTarget", action);
+            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
           }
         }
       }
@@ -431,7 +431,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           selectedActorId === state.mother.id
             ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
             : { type: "SELECT_ACTOR", player: "raptor", pieceId: state.mother.id };
-        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "validMove", action);
+        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "selectable", action);
       }
       // Babies can be selected (awake only)
       for (const baby of state.babies) {
@@ -440,7 +440,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           selectedActorId === baby.id
             ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
             : { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "validMove", action);
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
       }
     } else if (player === "scientist") {
       for (const scientist of state.scientists) {
@@ -450,7 +450,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         if (scientist.isFrightened) {
           if (state.actionPoints > 0 && !state.frightenedThisRound.includes(scientist.id)) {
             const action: GameAction = { type: "ACTION_SCIENTIST_STAND_UP", scientistId: scientist.id };
-            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "friendlyTarget", action);
+            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
           }
           continue;
         }
@@ -460,7 +460,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           selectedActorId === scientist.id
             ? { type: "SELECT_ACTOR", player: "scientist", pieceId: null }
             : { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "validMove", action);
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
       }
     }
   }
@@ -468,8 +468,8 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   // Valid moves (action phase) - destinations for selected piece
   const activePiece = selectedActorId ? findPieceById(state, selectedActorId) : null;
   if (activePiece && selectedActorId && state.phase === "ACTION_PHASE") {
-    const validMoves = getValidMoves(state, activePiece, selectedActorId);
-    for (const move of validMoves) {
+    const selectables = getValidMoves(state, activePiece, selectedActorId);
+    for (const move of selectables) {
       let action: GameAction | undefined;
       if (activePiece.type === "baby") {
         action = {
@@ -496,7 +496,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           y: move.y,
         };
       }
-      set(createSpaceId(move.tileId, move.x, move.y), "validMove", action);
+      set(createSpaceId(move.tileId, move.x, move.y), "selectable", action);
     }
   }
 
@@ -506,18 +506,18 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     if (state.phase === "RAPTOR_SETUP") {
       if (state.mother && state.mother.tileId !== -1) {
         const action: GameAction = { type: "REMOVE_PIECE", pieceId: state.mother.id };
-        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "setupPlacement", action);
+        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "selectable", action);
       }
       for (const baby of state.babies) {
         if (baby.tileId === -1) continue;
         const action: GameAction = { type: "REMOVE_PIECE", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "setupPlacement", action);
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
       }
     } else {
       for (const scientist of state.scientists) {
         if (scientist.tileId === -1) continue;
         const action: GameAction = { type: "REMOVE_PIECE", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "setupPlacement", action);
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
       }
     }
 
@@ -533,7 +533,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         } else if (state.phase === "SCIENTIST_SETUP") {
           action = { type: "PLACE_SCIENTIST", tileId, x, y };
         }
-        set(createSpaceId(tileId, x, y), "setupPlacement", action);
+        set(createSpaceId(tileId, x, y), "selectable", action);
       }
     }
 
@@ -558,7 +558,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
             x: space.coordinate.x,
             y: space.coordinate.y,
           };
-          set(space.id, "setupMoveTarget", action);
+          set(space.id, "selectable", action);
         }
       }
     }
@@ -581,8 +581,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           x: space.coordinate.x,
           y: space.coordinate.y,
         };
-        // Use setupPlacement style for mother's current position, effectDestination for others
-        set(space.id, isMotherHere ? "setupPlacement" : "effectDestination", action);
+        set(space.id, "selectable", action);
       }
     }
   }

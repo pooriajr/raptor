@@ -34,53 +34,18 @@
    SPACE STYLES - using data-style attr
    =========================================== */
 
-/* Valid move - action phase movement destination (green) */
-.space[data-style="validMove"] {
+/* Selectable - any clickable/interactive space (blue) */
+.space[data-style="selectable"] {
   cursor: pointer;
-  background-color: #a8d590 !important;
-  border-color: #6f9d4a !important;
-  box-shadow: inset 0 0 8px rgba(111, 157, 74, 0.4);
+  background-color: #90c0e8 !important;
+  border-color: #4a8ac0 !important;
+  box-shadow: inset 0 0 8px rgba(74, 138, 192, 0.4);
 }
 
-/* Setup placement - setup phase placement (light green) */
-.space[data-style="setupPlacement"] {
-  cursor: pointer;
-  background-color: #b8e0a8 !important;
-  border-color: #6aad5a !important;
-  box-shadow: inset 0 0 8px rgba(106, 173, 90, 0.4);
-}
-
-.space[data-style="setupPlacement"]:hover {
-  background-color: #90d5a8 !important;
-  border-color: #4a9d6f !important;
-  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
-}
-
-/* Setup move target - moving piece within tile during setup (hover only) */
-.space[data-style="setupMoveTarget"] {
-  cursor: pointer;
-}
-
-.space[data-style="setupMoveTarget"]:hover {
-  background-color: #90d5a8 !important;
-  border-color: #4a9d6f !important;
-  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
-}
-
-/* Effect target - selectable pieces for two-step effects (gold) */
-.space[data-style="effectTarget"] {
-  cursor: pointer;
-  background-color: #e8d590 !important;
-  border-color: #c9a84a !important;
-  animation: pulse-target 1s ease-in-out infinite;
-}
-
-/* Effect destination - Mother's Call, reinforcements, fire, jeep (teal) */
-.space[data-style="effectDestination"] {
-  cursor: pointer;
-  background-color: #90d5c8 !important;
-  border-color: #4a9d8f !important;
-  animation: pulse-destination 1s ease-in-out infinite;
+.space[data-style="selectable"]:hover {
+  background-color: #70a8d8 !important;
+  border-color: #3a7ab0 !important;
+  box-shadow: inset 0 0 12px rgba(58, 122, 176, 0.6);
 }
 
 /* Hostile target - enemy pieces that can be attacked (red) */
@@ -91,12 +56,10 @@
   box-shadow: inset 0 0 8px rgba(196, 80, 80, 0.4);
 }
 
-/* Friendly target - friendly pieces/fire that can be interacted with (purple) */
-.space[data-style="friendlyTarget"] {
-  cursor: pointer;
-  background-color: #c8a0e8 !important;
-  border-color: #9060c0 !important;
-  box-shadow: inset 0 0 8px rgba(144, 96, 192, 0.4);
+.space[data-style="hostileTarget"]:hover {
+  background-color: #d87070 !important;
+  border-color: #b04040 !important;
+  box-shadow: inset 0 0 12px rgba(176, 64, 64, 0.6);
 }
 
 /* Fire - existing fire token (orange) */
@@ -125,28 +88,4 @@
   font-size: 42px;
   position: absolute;
   z-index: 5;
-}
-
-/* ===========================================
-   ANIMATIONS
-   =========================================== */
-
-@keyframes pulse-target {
-  0%,
-  100% {
-    box-shadow: inset 0 0 8px rgba(201, 168, 74, 0.6);
-  }
-  50% {
-    box-shadow: inset 0 0 16px rgba(201, 168, 74, 1);
-  }
-}
-
-@keyframes pulse-destination {
-  0%,
-  100% {
-    box-shadow: inset 0 0 8px rgba(74, 157, 143, 0.6);
-  }
-  50% {
-    box-shadow: inset 0 0 16px rgba(74, 157, 143, 1);
-  }
 }
