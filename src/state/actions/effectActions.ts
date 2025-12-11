@@ -96,7 +96,6 @@ export function handleDisappearance(state: GameState): GameState {
 
 export function handleMotherReturn(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   if (state.phase !== "MOTHER_RETURN") return state;
-  if (!state.motherDisappeared) return state;
 
   const tile = state.tiles.find((t) => t.id === action.tileId);
   if (!tile) return state;
@@ -104,13 +103,15 @@ export function handleMotherReturn(state: GameState, action: { tileId: number; x
   const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
   if (!space || space.hasMountain || space.isUnusable || space.isExit) return state;
 
-  if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
+  // Check if space is occupied (excluding mother herself, since she can be repositioned)
+  const isMotherHere =
+    state.mother.tileId === action.tileId && state.mother.x === action.x && state.mother.y === action.y;
+  if (!isMotherHere && isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
 
-  // Just place the mother - phase transition to ROUND_END is handled by ADVANCE_PHASE
+  // Place the mother - phase transition to ROUND_END is handled by ADVANCE_PHASE
   return {
     ...state,
     mother: { ...state.mother, tileId: action.tileId, x: action.x, y: action.y },
-    motherDisappeared: false,
   };
 }
 

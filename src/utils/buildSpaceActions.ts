@@ -569,14 +569,20 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     for (const tile of state.tiles) {
       for (const space of tile.spaces) {
         if (space.hasMountain || space.isUnusable || space.isExit) continue;
-        if (isSpaceOccupied(state, tile.id, space.coordinate.x, space.coordinate.y)) continue;
+        // Allow clicking on mother's current position (to see it's selected) or any empty space
+        const isMotherHere =
+          state.mother.tileId === tile.id &&
+          state.mother.x === space.coordinate.x &&
+          state.mother.y === space.coordinate.y;
+        if (!isMotherHere && isSpaceOccupied(state, tile.id, space.coordinate.x, space.coordinate.y)) continue;
         const action: GameAction = {
           type: "MOTHER_RETURN",
           tileId: tile.id,
           x: space.coordinate.x,
           y: space.coordinate.y,
         };
-        set(space.id, "effectDestination", action);
+        // Use setupPlacement style for mother's current position, effectDestination for others
+        set(space.id, isMotherHere ? "setupPlacement" : "effectDestination", action);
       }
     }
   }

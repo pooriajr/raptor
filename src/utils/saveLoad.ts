@@ -9,8 +9,8 @@ export function saveGame(state: GameState): void {
   try {
     const serialized = JSON.stringify(state);
     localStorage.setItem(SAVE_KEY, serialized);
-  } catch (e) {
-    console.error("Failed to save game:", e);
+  } catch {
+    // localStorage not available (e.g., in tests) or storage full
   }
 }
 
@@ -27,13 +27,12 @@ export function loadGame(): GameState | null {
 
     // Basic validation - check for required fields
     if (!state.phase || !state.tiles || !state.mother) {
-      console.warn("Invalid save data");
       return null;
     }
 
     return state;
-  } catch (e) {
-    console.error("Failed to load game:", e);
+  } catch {
+    // localStorage not available (e.g., in tests) or parse error
     return null;
   }
 }
@@ -42,12 +41,20 @@ export function loadGame(): GameState | null {
  * Check if a saved game exists
  */
 export function hasSavedGame(): boolean {
-  return localStorage.getItem(SAVE_KEY) !== null;
+  try {
+    return localStorage.getItem(SAVE_KEY) !== null;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Delete saved game from localStorage
  */
 export function deleteSave(): void {
-  localStorage.removeItem(SAVE_KEY);
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    // localStorage not available (e.g., in tests)
+  }
 }

@@ -63,7 +63,8 @@ function CardResolution() {
         raptorContent = effectContent;
         scientistContent = apContent;
         // Raptor has effect, scientist has action points
-        raptorActive = state.phase === "EFFECT_PHASE";
+        // MOTHER_RETURN is part of raptor's turn (after effect phase)
+        raptorActive = state.phase === "EFFECT_PHASE" || state.phase === "MOTHER_RETURN";
         scientistActive = state.phase === "ACTION_PHASE";
         // Effect phase is done when we're in action phase or later
         raptorDone = state.phase === "ACTION_PHASE" || isRoundEnd;
@@ -73,9 +74,9 @@ function CardResolution() {
         raptorContent = apContent;
         // Scientist has effect, raptor has action points
         scientistActive = state.phase === "EFFECT_PHASE";
-        raptorActive = state.phase === "ACTION_PHASE";
+        raptorActive = state.phase === "ACTION_PHASE" || state.phase === "MOTHER_RETURN";
         // Effect phase is done when we're in action phase or later
-        scientistDone = state.phase === "ACTION_PHASE" || isRoundEnd;
+        scientistDone = state.phase === "ACTION_PHASE" || state.phase === "MOTHER_RETURN" || isRoundEnd;
         raptorDone = isRoundEnd;
       }
     } else {

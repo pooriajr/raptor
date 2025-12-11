@@ -1,13 +1,14 @@
 .CardResolution {
   width: 240px;
   height: 240px;
-  border-radius: 20%;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #1a1a1a;
-  border: 6px solid #444;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(145deg, #252525, #1a1a1a);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .CardResolution .half {
@@ -20,7 +21,7 @@
 
 .CardResolution .half.raptor {
   background: linear-gradient(180deg, #2d5a27 0%, #1a3518 100%);
-  color: #8bc34a;
+  color: #a5d6a7;
 }
 
 .CardResolution .half.raptor.active {
@@ -29,7 +30,7 @@
 
 .CardResolution .half.scientist {
   background: linear-gradient(0deg, #8a5a1a 0%, #5a3810 100%);
-  color: #ffb347;
+  color: #ffcc80;
 }
 
 .CardResolution .half.scientist.active {
@@ -62,8 +63,9 @@
 }
 
 .CardResolution .divider {
-  height: 4px;
-  background: #555;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .CardResolution .effect {
@@ -106,8 +108,8 @@
 }
 
 .CardResolution .action-points .number {
+  font-family: var(--font-display);
   font-size: 3.6rem;
-  font-weight: bold;
   line-height: 1;
 }
 

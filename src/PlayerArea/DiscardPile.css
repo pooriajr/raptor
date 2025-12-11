@@ -22,14 +22,18 @@
   align-items: center;
 }
 
-.discard-card-wrapper .Card {
-  pointer-events: none;
-}
-
 .discard-card-wrapper {
   margin-left: -105px;
+  transition:
+    transform 0.15s ease,
+    z-index 0s;
 }
 
 .discard-card-wrapper:first-child {
   margin-left: 0;
+}
+
+.discard-card-wrapper:hover {
+  z-index: 100;
+  transform: translateY(-10px);
 }
