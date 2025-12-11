@@ -1,19 +1,6 @@
 import type { GameState, PieceState } from "@/types/gameState.ts";
-import {
-  isSpaceOccupied,
-  tileHasRaptor,
-  tileHasScientist,
-  spaceHasMountain,
-  isRaptorSetupComplete,
-} from "@/utils/boardUtils.ts";
-import { transitionToPhase } from "@/state/phaseTransition.ts";
-import {
-  isPlaced,
-  isMotherPlaced,
-  getUnplacedScientists,
-  getUnplacedBabies,
-  countPlacedScientists,
-} from "@/utils/pieceUtils.ts";
+import { isSpaceOccupied, tileHasRaptor, tileHasScientist, spaceHasMountain } from "@/utils/boardUtils.ts";
+import { isPlaced, isMotherPlaced, getUnplacedScientists, getUnplacedBabies } from "@/utils/pieceUtils.ts";
 
 // Action types for setup phase
 export type SetupAction =
@@ -21,9 +8,7 @@ export type SetupAction =
   | { type: "PLACE_MOTHER"; tileId: number; x: number; y: number }
   | { type: "PLACE_BABY"; tileId: number; x: number; y: number }
   | { type: "REMOVE_PIECE"; pieceId: string }
-  | { type: "MOVE_PIECE_ON_TILE"; pieceId: string; tileId: number; x: number; y: number }
-  | { type: "CONFIRM_RAPTOR_SETUP" }
-  | { type: "START_GAME" };
+  | { type: "MOVE_PIECE_ON_TILE"; pieceId: string; tileId: number; x: number; y: number };
 
 export function handlePlaceScientist(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in scientist setup phase
@@ -132,22 +117,7 @@ export function handlePlaceBaby(state: GameState, action: { tileId: number; x: n
   };
 }
 
-export function handleConfirmRaptorSetup(state: GameState): GameState {
-  // Validate: must be in raptor setup phase with complete setup
-  if (state.phase !== "RAPTOR_SETUP") return state;
-  if (!isRaptorSetupComplete(state)) return state;
-
-  return transitionToPhase(state, "SCIENTIST_SETUP");
-}
-
-export function handleStartGame(state: GameState): GameState {
-  // Validate: must be in scientist setup phase with 4 scientists placed
-  if (state.phase !== "SCIENTIST_SETUP") return state;
-  if (countPlacedScientists(state) !== 4) return state;
-
-  // Go to scientist ready screen first (scientist picks first)
-  return transitionToPhase(state, "SCIENTIST_READY");
-}
+// CONFIRM_RAPTOR_SETUP and START_GAME are now handled by ADVANCE_PHASE
 
 export function handleRemovePiece(state: GameState, action: { pieceId: string }): GameState {
   // Only allow during setup phases
@@ -257,6 +227,4 @@ export const setupHandlers = {
   PLACE_BABY: handlePlaceBaby,
   REMOVE_PIECE: handleRemovePiece,
   MOVE_PIECE_ON_TILE: handleMovePieceOnTile,
-  CONFIRM_RAPTOR_SETUP: handleConfirmRaptorSetup,
-  START_GAME: handleStartGame,
 };

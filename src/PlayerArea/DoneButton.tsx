@@ -1,6 +1,7 @@
 import { useGame } from "../state/GameContext";
-import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "../utils/pieceUtils";
+import { countPlacedScientists } from "../utils/pieceUtils";
 import { getEffectPlayer } from "../utils/effectUtils";
+import { isRaptorSetupComplete } from "../utils/boardUtils";
 import "./DoneButton.css";
 
 interface DoneButtonProps {
@@ -27,56 +28,39 @@ function DoneButton({ player }: DoneButtonProps) {
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
   const isThisPlayerAction = isActionPhase && state.activePlayer === player;
 
-  // === Handlers ===
+  // === Handler ===
 
-  const handleSetupConfirm = () => {
-    if (state.phase === "RAPTOR_SETUP") {
-      dispatch({ type: "CONFIRM_RAPTOR_SETUP" });
-    } else if (state.phase === "SCIENTIST_SETUP") {
-      dispatch({ type: "START_GAME" });
+  const handleClick = () => {
+    // For card selection, first set the played card
+    if (isThisPlayerSelecting && selectedCard !== null) {
+      dispatch({ type: "PLAY_CARD", player, card: selectedCard });
+      dispatch({ type: "SELECT_CARD", player, card: null });
     }
+    // Then advance the phase
+    dispatch({ type: "ADVANCE_PHASE" });
   };
 
-  const handleCardConfirm = () => {
-    if (selectedCard === null) return;
-    dispatch({ type: "PLAY_CARD", player, card: selectedCard });
-    dispatch({ type: "SELECT_CARD", player, card: null });
-  };
+  // === Compute button disabled state ===
 
-  const handleEffectConfirm = () => {
-    dispatch({ type: "END_EFFECT_PHASE" });
-  };
-
-  const handleEndActionPhase = () => {
-    dispatch({ type: "END_ACTION_PHASE" });
-  };
-
-  // === Compute button state ===
-
-  const { disabled, onClick } = (() => {
+  const disabled = (() => {
     if (isThisPlayerSetup) {
-      const setupComplete = isRaptor
-        ? isMotherPlaced(state) && countPlacedBabies(state) >= 5
-        : countPlacedScientists(state) >= 4;
-      return { disabled: !setupComplete, onClick: handleSetupConfirm };
+      const setupComplete = isRaptor ? isRaptorSetupComplete(state) : countPlacedScientists(state) >= 4;
+      return !setupComplete;
     }
     if (isThisPlayerSelecting) {
-      return { disabled: selectedCard === null, onClick: handleCardConfirm };
+      return selectedCard === null;
     }
-    if (isThisPlayerEffect) {
-      return { disabled: false, onClick: handleEffectConfirm };
-    }
-    if (isThisPlayerAction) {
-      return { disabled: false, onClick: handleEndActionPhase };
+    if (isThisPlayerEffect || isThisPlayerAction) {
+      return false;
     }
     // Not this player's turn
-    return { disabled: true, onClick: () => {} };
+    return true;
   })();
 
   const className = `done-button ${disabled ? "done-button--disabled" : "done-button--ready"}`;
 
   return (
-    <button className={className} disabled={disabled} onClick={onClick}>
+    <button className={className} disabled={disabled} onClick={handleClick}>
       <span className="done-button__edge" />
       <span className="done-button__front">Done</span>
     </button>

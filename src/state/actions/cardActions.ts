@@ -1,12 +1,9 @@
 import type { GameState, CardState, Player } from "@/types/gameState.ts";
-import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Action types for card phase
 export type CardAction =
-  | { type: "PLAYER_READY"; player: "raptor" | "scientist" }
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
-  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number }
-  | { type: "CONFIRM_REVEAL" };
+  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number };
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -168,15 +165,7 @@ export function getActionPhaseState(state: GameState): Partial<GameState> {
   };
 }
 
-export function handlePlayerReady(state: GameState, action: { player: "raptor" | "scientist" }): GameState {
-  if (action.player === "scientist" && state.phase === "SCIENTIST_READY") {
-    return transitionToPhase(state, "SCIENTIST_CARD_SELECTION");
-  }
-  if (action.player === "raptor" && state.phase === "RAPTOR_READY") {
-    return transitionToPhase(state, "RAPTOR_CARD_SELECTION");
-  }
-  return state;
-}
+// PLAYER_READY is now handled by ADVANCE_PHASE
 
 export function handleDrawCards(state: GameState, action: { player: "raptor" | "scientist" }): GameState {
   if (action.player === "raptor") {
@@ -193,21 +182,18 @@ export function handleDrawCards(state: GameState, action: { player: "raptor" | "
 }
 
 export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: number }): GameState {
+  // Just set the played card - phase transition is handled by ADVANCE_PHASE
   if (action.player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") {
-    // Mark card as played (keep in hand until explicitly removed later)
-    const newState = {
+    return {
       ...state,
       scientistCards: {
         ...state.scientistCards,
         played: action.card,
       },
     };
-    return transitionToPhase(newState, "RAPTOR_READY");
   }
   if (action.player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION") {
-    // Mark card as played (keep in hand until explicitly removed later)
-    // Also reset observation - raptor has seen the card and made their choice
-    const newState = {
+    return {
       ...state,
       raptorCards: {
         ...state.raptorCards,
@@ -215,22 +201,14 @@ export function handlePlayCard(state: GameState, action: { player: "raptor" | "s
       },
       observationActive: false,
     };
-    return transitionToPhase(newState, "CARD_REVEAL");
   }
   return state;
 }
 
-export function handleConfirmReveal(state: GameState): GameState {
-  if (state.scientistCards.played === state.raptorCards.played) {
-    return transitionToPhase(state, "ROUND_END");
-  }
-  return transitionToPhase(state, "EFFECT_PHASE");
-}
+// CONFIRM_REVEAL is now handled by ADVANCE_PHASE
 
 // Handler map for card actions
 export const cardHandlers = {
-  PLAYER_READY: handlePlayerReady,
   DRAW_CARDS: handleDrawCards,
   PLAY_CARD: handlePlayCard,
-  CONFIRM_REVEAL: handleConfirmReveal,
 };

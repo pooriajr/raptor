@@ -6,7 +6,6 @@ import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates
 import { BabyRaptor } from "@/pieces/BabyRaptor.ts";
 import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
-import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Saved state for action phase reset
 export interface ActionPhaseSavedState {
@@ -60,7 +59,6 @@ export type ActionPhaseAction =
     }
   | { type: "ACTION_SCIENTIST_SHOOT_MOTHER"; scientistId: string }
   | { type: "ACTION_SCIENTIST_STAND_UP"; scientistId: string }
-  | { type: "END_ACTION_PHASE" }
   | { type: "RESET_ACTION_PHASE"; savedState: ActionPhaseSavedState };
 
 export function handleActionMoveBaby(
@@ -408,17 +406,7 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
   };
 }
 
-export function handleEndActionPhase(state: GameState): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-
-  // If mother disappeared this round, go to MOTHER_RETURN phase first
-  if (state.motherDisappeared) {
-    return transitionToPhase(state, "MOTHER_RETURN");
-  }
-
-  // Transition to round end phase - this triggers END_ROUND action
-  return transitionToPhase(state, "ROUND_END");
-}
+// END_ACTION_PHASE is now handled by ADVANCE_PHASE
 
 export function handleResetActionPhase(state: GameState, action: { savedState: ActionPhaseSavedState }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
@@ -446,6 +434,5 @@ export const actionPhaseHandlers = {
   ACTION_SCIENTIST_CAPTURE_BABY: handleScientistCaptureBaby,
   ACTION_SCIENTIST_SHOOT_MOTHER: handleScientistShootMother,
   ACTION_SCIENTIST_STAND_UP: handleScientistStandUp,
-  END_ACTION_PHASE: handleEndActionPhase,
   RESET_ACTION_PHASE: handleResetActionPhase,
 };

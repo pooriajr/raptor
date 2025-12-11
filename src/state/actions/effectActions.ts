@@ -2,8 +2,6 @@ import type { GameState } from "@/types/gameState.ts";
 import { findById, getAllPieces, isSpaceOccupied } from "@/utils/boardUtils.ts";
 import { getReachableDestinationsOnMotherTile } from "@/utils/pathfinding.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
-import { getActionPhaseState } from "@/state/actions/cardActions.ts";
-import { transitionToPhase } from "@/state/phaseTransition.ts";
 
 // Action types for effect phase - single target actions (executed immediately)
 export type EffectAction =
@@ -24,7 +22,6 @@ export type EffectAction =
   | { type: "WAKE_BABY"; pieceId: string }
   | { type: "REMOVE_MOTHER_SLEEP_TOKEN" }
   | { type: "MOTHER_RETURN"; tileId: number; x: number; y: number }
-  | { type: "END_EFFECT_PHASE" }
   | { type: "REVERT_EFFECT_PHASE" };
 
 // Helper to decrement effect actions remaining
@@ -109,12 +106,12 @@ export function handleMotherReturn(state: GameState, action: { tileId: number; x
 
   if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
 
-  const newState = {
+  // Just place the mother - phase transition to ROUND_END is handled by ADVANCE_PHASE
+  return {
     ...state,
     mother: { ...state.mother, tileId: action.tileId, x: action.x, y: action.y },
     motherDisappeared: false,
   };
-  return transitionToPhase(newState, "ROUND_END");
 }
 
 export function handleWakeBaby(state: GameState, action: { pieceId: string }): GameState {
@@ -249,11 +246,7 @@ export function handleMoveJeep(
   });
 }
 
-export function handleEndEffectPhase(state: GameState): GameState {
-  if (state.phase !== "EFFECT_PHASE") return state;
-  const newState = { ...state, ...getActionPhaseState(state) };
-  return transitionToPhase(newState, "ACTION_PHASE");
-}
+// END_EFFECT_PHASE is now handled by ADVANCE_PHASE
 
 export function handleRevertEffectPhase(state: GameState): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
@@ -280,6 +273,5 @@ export const effectHandlers = {
   PLACE_REINFORCEMENT: handlePlaceReinforcement,
   PLACE_FIRE_TOKEN: handlePlaceFireToken,
   MOVE_JEEP: handleMoveJeep,
-  END_EFFECT_PHASE: handleEndEffectPhase,
   REVERT_EFFECT_PHASE: handleRevertEffectPhase,
 };

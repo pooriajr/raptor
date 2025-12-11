@@ -14,7 +14,7 @@ function PlayerReadyScreen({ player }: PlayerReadyScreenProps) {
   const emoji = isScientist ? "🔬" : "🦖";
 
   const handleReady = () => {
-    dispatch({ type: "PLAYER_READY", player });
+    dispatch({ type: "ADVANCE_PHASE" });
   };
 
   return (

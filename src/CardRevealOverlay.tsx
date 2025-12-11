@@ -71,7 +71,7 @@ function CardRevealOverlay() {
               </div>
             )}
 
-            <button className="confirm-button" onClick={() => dispatch({ type: "CONFIRM_REVEAL" })}>
+            <button className="confirm-button" onClick={() => dispatch({ type: "ADVANCE_PHASE" })}>
               {sameCards ? "End Round" : "Continue"}
             </button>
           </>

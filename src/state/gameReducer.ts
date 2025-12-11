@@ -10,7 +10,8 @@ export type GameAction =
   | h.ActionPhaseAction
   | h.RoundAction
   | h.DevAction
-  | h.InteractionAction;
+  | h.InteractionAction
+  | h.PhaseAction;
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   // prettier-ignore
@@ -21,13 +22,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "PLACE_BABY": return h.handlePlaceBaby(state, action);
     case "REMOVE_PIECE": return h.handleRemovePiece(state, action);
     case "MOVE_PIECE_ON_TILE": return h.handleMovePieceOnTile(state, action);
-    case "CONFIRM_RAPTOR_SETUP": return h.handleConfirmRaptorSetup(state);
-    case "START_GAME": return h.handleStartGame(state);
     // Card actions
-    case "PLAYER_READY": return h.handlePlayerReady(state, action);
     case "DRAW_CARDS": return h.handleDrawCards(state, action);
     case "PLAY_CARD": return h.handlePlayCard(state, action);
-    case "CONFIRM_REVEAL": return h.handleConfirmReveal(state);
     // Effect actions (immediate, single-target)
     case "FRIGHTEN_SCIENTIST": return h.handleFrightenScientist(state, action);
     case "PUT_BABY_TO_SLEEP": return h.handlePutBabyToSleep(state, action);
@@ -39,7 +36,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "PLACE_REINFORCEMENT": return h.handlePlaceReinforcement(state, action);
     case "PLACE_FIRE_TOKEN": return h.handlePlaceFireToken(state, action);
     case "MOVE_JEEP": return h.handleMoveJeep(state, action);
-    case "END_EFFECT_PHASE": return h.handleEndEffectPhase(state);
     case "REVERT_EFFECT_PHASE": return h.handleRevertEffectPhase(state);
     // Action phase actions
     case "ACTION_MOVE_BABY": return h.handleActionMoveBaby(state, action);
@@ -52,10 +48,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "ACTION_SCIENTIST_CAPTURE_BABY": return h.handleScientistCaptureBaby(state, action);
     case "ACTION_SCIENTIST_SHOOT_MOTHER": return h.handleScientistShootMother(state, action);
     case "ACTION_SCIENTIST_STAND_UP": return h.handleScientistStandUp(state, action);
-    case "END_ACTION_PHASE": return h.handleEndActionPhase(state);
     case "RESET_ACTION_PHASE": return h.handleResetActionPhase(state, action);
     // Round actions
     case "END_ROUND": return h.handleEndRound(state);
+    // Phase actions
+    case "ADVANCE_PHASE": return h.handleAdvancePhase(state);
     // Dev actions
     case "DEV_SKIP_TO_EFFECT": return h.handleDevSkipToEffect(state, action);
     case "DEV_SKIP_TO_ACTION": return h.handleDevSkipToAction(state, action);
