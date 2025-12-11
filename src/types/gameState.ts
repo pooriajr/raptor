@@ -27,6 +27,8 @@ export interface PieceState {
   y: number;
   isAsleep?: boolean; // Baby raptors can be put to sleep
   isFrightened?: boolean; // Scientists can be frightened
+  isEscaped?: boolean; // Baby raptors that escaped the board (raptor win condition)
+  isCaptured?: boolean; // Baby raptors captured by scientists (scientist win condition)
 }
 
 // Card state for each player
@@ -96,8 +98,6 @@ export interface GameState {
   observationActive: boolean; // Whether raptor can see scientist's card next selection (from disappearance)
   // Win condition tracking
   motherSleepTokens: number; // Sleep tokens on mother (scientist wins at 5)
-  capturedBabies: number; // Babies captured by scientists (scientist wins at 3)
-  escapedBabies: number; // Babies that escaped the board (raptor wins at 3)
   // UI/Interaction state - per player
   raptorInteraction: InteractionState;
   scientistInteraction: InteractionState;
@@ -172,8 +172,7 @@ export function createInitialGameState(): GameState {
     motherDisappeared: false,
     observationActive: false,
     motherSleepTokens: 0,
-    capturedBabies: 0,
-    escapedBabies: 0,
+
     raptorInteraction: createInitialInteractionState(),
     scientistInteraction: createInitialInteractionState(),
     effectActionsRemaining: 0,

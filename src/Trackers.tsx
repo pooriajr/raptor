@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext";
 import "./Trackers.css";
 
@@ -13,8 +14,40 @@ function TrackerPips({ emoji, current, max }: { emoji: string; current: number; 
   );
 }
 
+function BabyTrackerPips({ babies, max }: { babies: { id: string }[]; max: number }) {
+  return (
+    <span className="tracker-pips">
+      {Array.from({ length: max }).map((_, i) => {
+        const baby = babies[i];
+        const isFilled = baby !== undefined;
+
+        return (
+          <motion.span
+            key={baby?.id ?? `empty-${i}`}
+            layoutId={baby ? `piece-${baby.id}` : undefined}
+            className={`tracker-pip ${isFilled ? "filled" : "empty"}`}
+            transition={{
+              layout: {
+                type: "spring",
+                stiffness: 100,
+                damping: 20,
+                duration: 0.5,
+              },
+            }}
+          >
+            🦎
+          </motion.span>
+        );
+      })}
+    </span>
+  );
+}
+
 function Trackers() {
   const { state } = useGame();
+
+  const escapedBabies = state.babies.filter((b) => b.isEscaped);
+  const capturedBabies = state.babies.filter((b) => b.isCaptured);
 
   return (
     <div className="Trackers">
@@ -22,7 +55,7 @@ function Trackers() {
         <div className="tracker-header">Raptor</div>
         <div className="tracker-row">
           <span className="tracker-label">Escaped</span>
-          <TrackerPips emoji="🦎" current={state.escapedBabies ?? 0} max={3} />
+          <BabyTrackerPips babies={escapedBabies} max={3} />
         </div>
         <div className="tracker-row">
           <span className="tracker-label">Sleep Tokens</span>
@@ -34,7 +67,7 @@ function Trackers() {
         <div className="tracker-header">Scientist</div>
         <div className="tracker-row">
           <span className="tracker-label">Captured</span>
-          <TrackerPips emoji="🦎" current={state.capturedBabies ?? 0} max={3} />
+          <BabyTrackerPips babies={capturedBabies} max={3} />
         </div>
       </div>
     </div>

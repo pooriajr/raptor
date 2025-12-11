@@ -98,11 +98,11 @@ export function handleActionMoveBaby(
   const isExit = targetSpace?.isExit ?? false;
 
   if (isExit) {
-    // Baby escapes - remove from board and increment escaped count
+    // Baby escapes - mark as escaped and remove from board
+    const updatedBaby = { ...baby, tileId: -1, x: -1, y: -1, isEscaped: true };
     return {
       ...state,
-      babies: state.babies.filter((b) => b.id !== action.pieceId),
-      escapedBabies: state.escapedBabies + 1,
+      babies: state.babies.map((b) => (b.id === baby.id ? updatedBaby : b)),
       actionPoints: state.actionPoints - 1,
     };
   }
@@ -349,11 +349,11 @@ export function handleScientistCaptureBaby(
   // Must be adjacent
   if (!arePiecesAdjacent(scientist, baby)) return state;
 
-  // Remove baby and increment captured count
+  // Mark baby as captured and remove from board
+  const updatedBaby = { ...baby, tileId: -1, x: -1, y: -1, isCaptured: true };
   return {
     ...state,
-    babies: state.babies.filter((b) => b.id !== action.targetId),
-    capturedBabies: state.capturedBabies + 1,
+    babies: state.babies.map((b) => (b.id === baby.id ? updatedBaby : b)),
     actionPoints: state.actionPoints - 1,
     aggressiveActionsUsed: [...state.aggressiveActionsUsed, action.scientistId],
   };

@@ -55,14 +55,12 @@
 
 .tracker-pip {
   font-size: 2rem;
-  opacity: 0.25;
-  filter: grayscale(1);
-  transition:
-    opacity 0.3s,
-    filter 0.3s;
+  transition: filter 0.3s ease;
+  filter: grayscale(1) contrast(0) brightness(0.3) drop-shadow(1px 0 0 currentColor) drop-shadow(-1px 0 0 currentColor)
+    drop-shadow(0 1px 0 currentColor) drop-shadow(0 -1px 0 currentColor);
 }
 
 .tracker-pip.filled {
-  opacity: 1;
-  filter: none;
+  filter: grayscale(0) contrast(1) brightness(1) drop-shadow(1px 0 0 currentColor) drop-shadow(-1px 0 0 currentColor)
+    drop-shadow(0 1px 0 currentColor) drop-shadow(0 -1px 0 currentColor);
 }
