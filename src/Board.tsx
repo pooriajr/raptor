@@ -91,6 +91,7 @@ function Board() {
 
   const currentPlayer = state.activePlayer;
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
+  const selectedActorId = interaction.selectedActorId;
 
   const prevPhaseRef = useRef(state.phase);
 
@@ -124,7 +125,6 @@ function Board() {
   }, [state.phase, dispatch]);
 
   // Read action phase state from context
-  const selectedActionPieceId = interaction.selectedActionPieceId;
   const actionPhaseSavedState = state.actionPhaseSavedState;
 
   // Helper to get all pieces as a single array
@@ -159,7 +159,7 @@ function Board() {
       }
     } else {
       if (currentPlayer) {
-        dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId: null });
+        dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId: null });
       }
       dispatch({ type: "CLEAR_ACTION_PHASE_STATE" });
     }
@@ -216,8 +216,8 @@ function Board() {
       if (!piece) return false;
 
       // Check if clicking on an action target
-      if (selectedActionPieceId && state.actionPoints > 0) {
-        const selectedPiece = findPieceById(selectedActionPieceId);
+      if (selectedActorId && state.actionPoints > 0) {
+        const selectedPiece = findPieceById(selectedActorId);
         if (selectedPiece) {
           const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
           const targetGlobal = localToGlobal(piece.tileId, piece.x, piece.y);
@@ -246,13 +246,13 @@ function Board() {
                 if (piece.isAsleep) {
                   dispatch({
                     type: "ACTION_SCIENTIST_CAPTURE_BABY",
-                    scientistId: selectedActionPieceId,
+                    scientistId: selectedActorId,
                     targetId: pieceId,
                   });
                 } else {
                   dispatch({
                     type: "ACTION_SCIENTIST_SLEEP_BABY",
-                    scientistId: selectedActionPieceId,
+                    scientistId: selectedActorId,
                     targetId: pieceId,
                   });
                 }
@@ -270,7 +270,7 @@ function Board() {
             piece.type === "mother"
           ) {
             if (hasLineOfSight(state.tiles, state.scientists, selectedPiece, piece)) {
-              dispatch({ type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActionPieceId });
+              dispatch({ type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActorId });
               return true;
             }
           }
@@ -290,7 +290,7 @@ function Board() {
         if (state.actionPoints > 0 && !state.frightenedThisRound.includes(pieceId)) {
           dispatch({ type: "ACTION_SCIENTIST_STAND_UP", scientistId: pieceId });
           if (currentPlayer) {
-            dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId });
+            dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
           }
         }
         return true;
@@ -298,10 +298,10 @@ function Board() {
 
       // Toggle selection
       if (currentPlayer) {
-        if (selectedActionPieceId === pieceId) {
-          dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId: null });
+        if (selectedActorId === pieceId) {
+          dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId: null });
         } else {
-          dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId });
+          dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
         }
       }
       return true;
@@ -402,7 +402,7 @@ function Board() {
   const validSetupTileIds = new Set(getValidSetupTiles());
 
   // Get selected action piece for movement
-  const activePieceId = state.phase === "ACTION_PHASE" ? selectedActionPieceId : null;
+  const activePieceId = state.phase === "ACTION_PHASE" ? selectedActorId : null;
   const activePiece = activePieceId ? findPieceById(activePieceId) : null;
 
   // Calculate valid moves for action phase
@@ -453,16 +453,16 @@ function Board() {
       friendlyFirePositions: [] as FireTarget[],
     };
 
-    if (state.phase !== "ACTION_PHASE" || !selectedActionPieceId || state.actionPoints <= 0) return result;
+    if (state.phase !== "ACTION_PHASE" || !selectedActorId || state.actionPoints <= 0) return result;
 
-    const selectedPiece = findPieceById(selectedActionPieceId);
+    const selectedPiece = findPieceById(selectedActorId);
     if (!selectedPiece) return result;
 
     const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
     const adjacentCoords = getAdjacentGlobalCoordinates(selectedGlobal.globalX, selectedGlobal.globalY);
     const allPieces = getAllPieces();
     const adjacentPieces = allPieces.filter((p) => {
-      if (p.id === selectedActionPieceId) return false;
+      if (p.id === selectedActorId) return false;
       const pGlobal = localToGlobal(p.tileId, p.x, p.y);
       return adjacentCoords.some((adj) => adj.globalX === pGlobal.globalX && adj.globalY === pGlobal.globalY);
     });
@@ -507,8 +507,8 @@ function Board() {
       for (const adj of adjacentPieces) {
         if (adj.type === "baby") {
           const action: GameAction = adj.isAsleep
-            ? { type: "ACTION_SCIENTIST_CAPTURE_BABY", scientistId: selectedActionPieceId, targetId: adj.id }
-            : { type: "ACTION_SCIENTIST_SLEEP_BABY", scientistId: selectedActionPieceId, targetId: adj.id };
+            ? { type: "ACTION_SCIENTIST_CAPTURE_BABY", scientistId: selectedActorId, targetId: adj.id }
+            : { type: "ACTION_SCIENTIST_SLEEP_BABY", scientistId: selectedActorId, targetId: adj.id };
           result.hostileTargets.push({ pieceId: adj.id, tileId: adj.tileId, x: adj.x, y: adj.y, action });
         }
       }
@@ -519,7 +519,7 @@ function Board() {
           tileId: mother.tileId,
           x: mother.x,
           y: mother.y,
-          action: { type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActionPieceId },
+          action: { type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActorId },
         });
       }
     }
@@ -555,21 +555,33 @@ function Board() {
     if (state.phase === "EFFECT_PHASE" && state.effectActionsRemaining > 0) {
       const effectType = getCurrentEffectType(state);
 
-      // Mother's Call: highlight destinations for babies that can reach mother
+      // Mother's Call: two-step selection - first select baby, then destination
       if (effectType === "mothers_call" && state.mother) {
         const allPieces = getAllPieces();
-        for (const baby of state.babies) {
-          if (baby.tileId === -1) continue;
-          const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
+        const selectedBaby = selectedActorId ? state.babies.find((b) => b.id === selectedActorId) : null;
+
+        if (selectedBaby && selectedBaby.tileId !== -1) {
+          // Step 2: Show destinations for the selected baby only
+          const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, selectedBaby, state.mother);
           for (const dest of destinations) {
             const action: GameAction = {
               type: "CALL_BABY",
-              babyId: baby.id,
+              babyId: selectedBaby.id,
               tileId: dest.tileId,
               x: dest.x,
               y: dest.y,
             };
             set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+          }
+        } else {
+          // Step 1: Highlight babies that can be called (have reachable destinations)
+          for (const baby of state.babies) {
+            if (baby.tileId === -1) continue;
+            const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
+            if (destinations.length > 0) {
+              const action: GameAction = { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
+              set(createSpaceId(baby.tileId, baby.x, baby.y), "effectTarget", action);
+            }
           }
         }
       }
@@ -635,21 +647,24 @@ function Board() {
         }
       }
 
-      // Jeep: highlight destinations for scientists
+      // Jeep: two-step selection - first select scientist, then destination
       if (effectType === "jeep") {
-        for (const scientist of state.scientists) {
-          if (scientist.tileId === -1 || scientist.isFrightened) continue;
+        const allPieces = getAllPieces();
+        const selectedScientist = selectedActorId ? state.scientists.find((s) => s.id === selectedActorId) : null;
+
+        if (selectedScientist && selectedScientist.tileId !== -1 && !selectedScientist.isFrightened) {
+          // Step 2: Show destinations for the selected scientist only
           const destinations = getJeepDestinationsWithPaths(
             state.tiles,
-            getAllPieces(),
+            allPieces,
             state.fireTokens,
-            scientist,
+            selectedScientist,
             [],
           );
           for (const dest of destinations) {
             const action: GameAction = {
               type: "MOVE_JEEP",
-              scientistId: scientist.id,
+              scientistId: selectedScientist.id,
               tileId: dest.tileId,
               x: dest.x,
               y: dest.y,
@@ -657,18 +672,28 @@ function Board() {
             };
             set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
           }
+        } else {
+          // Step 1: Highlight scientists that can use jeep (have reachable destinations)
+          for (const scientist of state.scientists) {
+            if (scientist.tileId === -1 || scientist.isFrightened) continue;
+            const destinations = getJeepDestinationsWithPaths(state.tiles, allPieces, state.fireTokens, scientist, []);
+            if (destinations.length > 0) {
+              const action: GameAction = { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
+              set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "effectTarget", action);
+            }
+          }
         }
       }
     }
 
     // Valid moves (action phase)
-    if (activePiece && selectedActionPieceId) {
+    if (activePiece && selectedActorId) {
       for (const move of validMoves) {
         let action: GameAction | undefined;
         if (activePiece.type === "baby") {
           action = {
             type: "ACTION_MOVE_BABY",
-            pieceId: selectedActionPieceId,
+            pieceId: selectedActorId,
             tileId: move.tileId,
             x: move.x,
             y: move.y,
@@ -676,7 +701,7 @@ function Board() {
         } else if (activePiece.type === "scientist") {
           action = {
             type: "ACTION_MOVE_SCIENTIST",
-            pieceId: selectedActionPieceId,
+            pieceId: selectedActorId,
             tileId: move.tileId,
             x: move.x,
             y: move.y,
@@ -684,7 +709,7 @@ function Board() {
         } else if (activePiece.type === "mother") {
           action = {
             type: "ACTION_MOVE_MOTHER",
-            pieceId: selectedActionPieceId,
+            pieceId: selectedActorId,
             tileId: move.tileId,
             x: move.x,
             y: move.y,

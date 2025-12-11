@@ -24,7 +24,7 @@ function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick
   // Get interaction state for current player
   const currentPlayer = state.activePlayer;
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
-  const selectedActionPieceId = interaction.selectedActionPieceId;
+  const selectedActorId = interaction.selectedActorId;
 
   // Determine if this piece is an effect target
   const effectTargetIds = getEffectTargetIds(state);
@@ -51,7 +51,7 @@ function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick
         pieceOnSpace={pieceOnSpace}
         highlightStyle={highlightStyle}
         effectTargetIds={effectTargetIds}
-        selectedActionPieceId={selectedActionPieceId}
+        selectedActorId={selectedActorId}
       />
     </div>
   );
@@ -63,16 +63,10 @@ interface SpaceContentProps {
   pieceOnSpace: PieceState | null;
   highlightStyle?: HighlightStyle;
   effectTargetIds: string[];
-  selectedActionPieceId: string | null;
+  selectedActorId: string | null;
 }
 
-function SpaceContent({
-  space,
-  pieceOnSpace,
-  highlightStyle,
-  effectTargetIds,
-  selectedActionPieceId,
-}: SpaceContentProps) {
+function SpaceContent({ space, pieceOnSpace, highlightStyle, effectTargetIds, selectedActorId }: SpaceContentProps) {
   // Priority 1: Mountain
   if (space.hasMountain) {
     return <span className="mountain">⛰️</span>;
@@ -86,7 +80,7 @@ function SpaceContent({
   // Priority 3: Actual piece (not moving away)
   if (pieceOnSpace && highlightStyle !== "pathTrail") {
     const isEffectTarget = effectTargetIds.includes(pieceOnSpace.id);
-    const isActionSelected = selectedActionPieceId === pieceOnSpace.id;
+    const isActionSelected = selectedActorId === pieceOnSpace.id;
 
     return (
       <motion.span
@@ -150,6 +144,7 @@ function getEffectTargetIds(state: ReturnType<typeof useGame>["state"]): string[
   const effectCard = raptorHasEffect ? raptorCard : scientistCard;
 
   // Determine effect type from card
+  // Note: Mother's Call and Jeep are handled via highlights in Board.tsx (two-step selection)
   if (raptorHasEffect) {
     // Raptor effects
     if (effectCard === 3 || effectCard === 8) {
@@ -160,20 +155,11 @@ function getEffectTargetIds(state: ReturnType<typeof useGame>["state"]): string[
       // Recovery - sleeping babies
       return state.babies.filter((b) => b.isAsleep).map((b) => b.id);
     }
-    if (effectCard === 1 || effectCard === 4) {
-      // Mother's Call - babies that can reach mother
-      // This is computed elsewhere, return empty for now (handled by highlights)
-      return state.babies.map((b) => b.id);
-    }
   } else {
     // Scientist effects
     if (effectCard === 1 || effectCard === 4) {
       // Sleeping Gas - awake babies
       return state.babies.filter((b) => !b.isAsleep).map((b) => b.id);
-    }
-    if (effectCard === 3 || effectCard === 8) {
-      // Jeep - scientists
-      return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
     }
   }
 

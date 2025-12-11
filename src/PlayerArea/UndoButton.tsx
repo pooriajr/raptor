@@ -24,7 +24,7 @@ function UndoButton({ player }: UndoButtonProps) {
   const handleActionReset = () => {
     if (state.actionPhaseSavedState) {
       dispatch({ type: "RESET_ACTION_PHASE", savedState: state.actionPhaseSavedState });
-      dispatch({ type: "SELECT_ACTION_PIECE", player, pieceId: null });
+      dispatch({ type: "SELECT_ACTOR", player, pieceId: null });
     }
   };
 

@@ -65,7 +65,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     // Interaction actions
     case "SELECT_CARD": return h.interactionHandlers.SELECT_CARD(state, action);
     case "SET_NEW_DRAW": return h.interactionHandlers.SET_NEW_DRAW(state, action);
-    case "SELECT_ACTION_PIECE": return h.interactionHandlers.SELECT_ACTION_PIECE(state, action);
+    case "SELECT_ACTOR": return h.interactionHandlers.SELECT_ACTOR(state, action);
     case "SAVE_ACTION_PHASE_STATE": return h.interactionHandlers.SAVE_ACTION_PHASE_STATE(state, action);
     case "CLEAR_ACTION_PHASE_STATE": return h.interactionHandlers.CLEAR_ACTION_PHASE_STATE(state);
     case "RESET_INTERACTION": return h.interactionHandlers.RESET_INTERACTION(state, action);

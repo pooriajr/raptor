@@ -59,8 +59,8 @@ export interface InteractionState {
   // Card selection
   selectedCard: number | null;
   isNewDraw: boolean;
-  // Action phase piece selection
-  selectedActionPieceId: string | null;
+  // Actor selection (used for both action phase and effect phase)
+  selectedActorId: string | null;
 }
 
 // Create initial interaction state
@@ -68,7 +68,7 @@ export function createInitialInteractionState(): InteractionState {
   return {
     selectedCard: null,
     isNewDraw: false,
-    selectedActionPieceId: null,
+    selectedActorId: null,
   };
 }
 

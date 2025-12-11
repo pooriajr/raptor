@@ -82,6 +82,8 @@ export function handleCallBaby(
     babies: state.babies.map((b) =>
       b.id === action.babyId ? { ...b, tileId: action.tileId, x: action.x, y: action.y } : b,
     ),
+    // Clear actor selection after completing the move
+    raptorInteraction: { ...state.raptorInteraction, selectedActorId: null },
   });
 }
 
@@ -242,6 +244,8 @@ export function handleMoveJeep(
     ...state,
     scientists: updatedScientists,
     fireTokens: updatedFireTokens,
+    // Clear actor selection after completing the move
+    scientistInteraction: { ...state.scientistInteraction, selectedActorId: null },
   });
 }
 
