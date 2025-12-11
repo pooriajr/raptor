@@ -800,20 +800,24 @@ describe("Game Reducer - Card System", () => {
     it("initial state has shuffled deck of cards 1-9 for each player", () => {
       const state = createInitialGameState();
 
-      // Both decks should have 9 cards
+      // Raptor has 6 cards in deck (3 drawn to hand), scientist has 9
       expect(state.scientistCards.deck).toHaveLength(9);
-      expect(state.raptorCards.deck).toHaveLength(9);
+      expect(state.raptorCards.deck).toHaveLength(6);
 
-      // Both decks should contain cards 1-9
+      // All cards should be accounted for (deck + hand = 9)
       expect([...state.scientistCards.deck].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      expect([...state.raptorCards.deck].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      expect([...state.raptorCards.deck, ...state.raptorCards.hand].sort((a, b) => a - b)).toEqual([
+        1, 2, 3, 4, 5, 6, 7, 8, 9,
+      ]);
     });
 
-    it("initial state has empty hands", () => {
+    it("raptor starts with hand drawn, scientist hand empty until their setup", () => {
       const state = createInitialGameState();
 
+      // Raptor draws at start of game (RAPTOR_SETUP)
+      expect(state.raptorCards.hand).toHaveLength(3);
+      // Scientist draws when entering SCIENTIST_SETUP
       expect(state.scientistCards.hand).toHaveLength(0);
-      expect(state.raptorCards.hand).toHaveLength(0);
     });
 
     it("initial state has no played cards", () => {
@@ -944,7 +948,19 @@ describe("Game Reducer - Card System", () => {
 
     it("draws for raptor player", () => {
       let state = createInitialGameState();
-      expect(state.raptorCards.hand).toHaveLength(0);
+      // Raptor already has 3 cards drawn at game start
+      expect(state.raptorCards.hand).toHaveLength(3);
+
+      // Simulate having only 2 cards in hand to test draw
+      state = {
+        ...state,
+        raptorCards: {
+          ...state.raptorCards,
+          hand: state.raptorCards.hand.slice(0, 2),
+          deck: [...state.raptorCards.deck, state.raptorCards.hand[2]],
+        },
+      };
+      expect(state.raptorCards.hand).toHaveLength(2);
 
       state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
 

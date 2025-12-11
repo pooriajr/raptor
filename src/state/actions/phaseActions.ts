@@ -163,12 +163,11 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
   }
 
   switch (enteringPhase) {
-    case "SCIENTIST_CARD_SELECTION":
-      // Draw cards for both players
+    case "SCIENTIST_SETUP":
+      // Scientist draws their initial hand when entering setup
       newState = {
         ...newState,
         scientistCards: drawToHand(newState.scientistCards),
-        raptorCards: drawToHand(newState.raptorCards),
       };
       break;
 

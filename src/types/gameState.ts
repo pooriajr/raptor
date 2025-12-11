@@ -161,6 +161,18 @@ export function createInitialScientists(): PieceState[] {
   }));
 }
 
+// Create initial card state with hand already drawn
+function createInitialCardStateWithHand(): CardState {
+  const deck = createShuffledDeck();
+  // Draw 3 cards to hand
+  return {
+    deck: deck.slice(3),
+    hand: deck.slice(0, 3),
+    played: null,
+    discard: [],
+  };
+}
+
 // Create initial game state - raptor sets up first
 export function createInitialGameState(): GameState {
   return {
@@ -171,8 +183,8 @@ export function createInitialGameState(): GameState {
     scientists: createInitialScientists(),
     scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     fireTokens: [],
-    raptorCards: createInitialCardState(),
-    scientistCards: createInitialCardState(),
+    raptorCards: createInitialCardStateWithHand(), // Raptor draws at start of their setup
+    scientistCards: createInitialCardState(), // Scientist draws when entering their setup
     actionPoints: 0,
     activePlayer: "raptor",
     aggressiveActionsUsed: [],
