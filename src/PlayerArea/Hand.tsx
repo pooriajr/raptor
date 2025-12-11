@@ -45,7 +45,7 @@ function Hand({ player }: HandProps) {
   return (
     <div className={`Hand ${player}`}>
       <div className="hand-cards">
-        {handCards.map((value) => {
+        {handCards.map((value, index) => {
           const isSelected = value === selectedCard;
           const isPlayed = value === playedCard;
           const isFloating = value === floatingCard;
@@ -63,6 +63,7 @@ function Hand({ player }: HandProps) {
                 dimmed={isDimmed}
                 floating={isFloating}
                 layoutId={`card-${player}-${value}`}
+                layoutDelay={index * 0.1 + 0.1}
               />
             </div>
           );

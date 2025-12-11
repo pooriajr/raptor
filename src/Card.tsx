@@ -13,6 +13,7 @@ interface CardProps {
   floating?: boolean; // Gentle up/down animation to indicate this card was played
   initialPosition?: { x: number; y: number };
   animationDelay?: number;
+  layoutDelay?: number; // Delay for layoutId animations (staggering cards)
   layoutId?: string; // For cross-container animations
 }
 
@@ -26,6 +27,7 @@ function Card({
   floating = false,
   initialPosition,
   animationDelay = 0,
+  layoutDelay = 0,
   layoutId,
 }: CardProps) {
   const isInteractive = onClick && !selected;
@@ -76,12 +78,26 @@ function Card({
                 type: "tween",
                 ease: "easeOut",
               },
+              layout: {
+                duration: 0.3,
+                delay: layoutDelay,
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+              },
             }
           : {
               duration: 0.25,
               delay: animationDelay,
               type: "tween",
               ease: "easeOut",
+              layout: {
+                duration: 0.3,
+                delay: layoutDelay,
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+              },
             }
       }
       whileHover={isInteractive ? { scale: 1.05 } : undefined}

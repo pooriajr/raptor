@@ -12,9 +12,6 @@
 
 .card-wrapper {
   position: relative;
-  transition:
-    transform 0.2s ease,
-    z-index 0s;
   margin-left: -15px;
   z-index: 1;
 }
@@ -28,14 +25,42 @@
   margin-left: 0;
 }
 
+/* Fan effect - uses CSS animation to delay the transform */
+@keyframes fan-left {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes fan-middle {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fan-right {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(5deg);
+  }
+}
+
 .card-wrapper:nth-child(1) {
-  transform: rotate(-5deg);
+  animation: fan-left 0.3s ease 0.2s forwards;
 }
 
 .card-wrapper:nth-child(2) {
-  transform: translateY(-10px);
+  animation: fan-middle 0.3s ease 0.3s forwards;
 }
 
 .card-wrapper:nth-child(3) {
-  transform: rotate(5deg);
+  animation: fan-right 0.3s ease 0.4s forwards;
 }
