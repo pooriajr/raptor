@@ -13,6 +13,7 @@ interface CardProps {
   floating?: boolean; // Gentle up/down animation to indicate this card was played
   initialPosition?: { x: number; y: number };
   animationDelay?: number;
+  layoutId?: string; // For cross-container animations
 }
 
 function Card({
@@ -25,6 +26,7 @@ function Card({
   floating = false,
   initialPosition,
   animationDelay = 0,
+  layoutId,
 }: CardProps) {
   const isInteractive = onClick && !selected;
   const [showTooltip, setShowTooltip] = useState(false);
@@ -39,6 +41,7 @@ function Card({
   return (
     <motion.div
       className={`Card ${player} ${selected ? "selected" : ""} ${dimmed ? "dimmed" : ""}`}
+      layoutId={layoutId}
       onClick={onClick}
       onMouseEnter={() => faceUp && setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}

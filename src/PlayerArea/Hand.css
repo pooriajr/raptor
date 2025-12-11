@@ -2,47 +2,40 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.Hand.raptor {
-  border: 2px solid #3d6a37;
-}
-
-.Hand.scientist {
-  border: 2px solid #2a4a6c;
 }
 
 .hand-cards {
   display: flex;
-  gap: 12px;
   perspective: 1000px;
   position: relative;
 }
 
 .card-wrapper {
   position: relative;
+  transition:
+    transform 0.2s ease,
+    z-index 0s;
+  margin-left: -15px;
+  z-index: 1;
 }
 
-/* Placeholder mode - dimmed appearance */
-.Hand.placeholder-mode {
-  opacity: 0.4;
+.card-wrapper:hover,
+.card-wrapper:has(.Card.selected) {
+  z-index: 10;
 }
 
-.card-placeholder {
-  width: 100px;
-  height: 140px;
-  border-radius: 8px;
-  border: 2px dashed #555;
-  background: rgba(0, 0, 0, 0.2);
+.card-wrapper:first-child {
+  margin-left: 0;
 }
 
-.card-placeholder-under {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 0;
+.card-wrapper:nth-child(1) {
+  transform: rotate(-5deg);
+}
+
+.card-wrapper:nth-child(2) {
+  transform: translateY(-10px);
+}
+
+.card-wrapper:nth-child(3) {
+  transform: rotate(5deg);
 }

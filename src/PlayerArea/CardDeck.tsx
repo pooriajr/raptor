@@ -1,34 +1,33 @@
+import Card from "../Card";
 import "./CardDeck.css";
 
 interface CardDeckProps {
   player: "raptor" | "scientist";
-  cardCount: number;
+  deck: number[];
 }
 
-function CardDeck({ player, cardCount }: CardDeckProps) {
-  // Create offset cards for the stack effect (show up to 4 cards in stack)
-  const stackLayers = Math.min(cardCount, 4);
-
+function CardDeck({ player, deck }: CardDeckProps) {
   return (
     <div className={`CardDeck ${player}`}>
-      <div className="deck-label">{player === "raptor" ? "Raptor" : "Scientist"}</div>
       <div className="deck-stack">
-        <div className="deck-stack-inner">
-          {Array.from({ length: stackLayers }).map((_, index) => (
-            <div
-              key={index}
-              className="card card-back"
-              style={{
-                transform: `translate(${index * 2}px, ${index * 2}px)`,
-                zIndex: stackLayers - index,
-              }}
-            >
-              <div className="card-pattern">{player === "raptor" ? "🦖" : "🔬"}</div>
-            </div>
-          ))}
-        </div>
+        {deck.length === 0 ? (
+          <div className="deck-placeholder" />
+        ) : (
+          <div className="deck-stack-inner">
+            {[...deck].reverse().map((cardValue, index) => (
+              <div
+                key={cardValue}
+                className="deck-card-wrapper"
+                style={{
+                  transform: `translate(${-index * 2}px, ${-index * 2}px)`,
+                }}
+              >
+                <Card value={cardValue} player={player} faceUp={false} layoutId={`card-${player}-${cardValue}`} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="card-count">{cardCount} cards</div>
     </div>
   );
 }

@@ -3,10 +3,10 @@
 }
 
 .DiscardPile .discard-placeholder {
-  width: 50px;
-  height: 70px;
+  width: 150px;
+  height: 210px;
   border: 2px dashed #555;
-  border-radius: 4px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,18 +20,14 @@
   align-items: center;
 }
 
+.discard-card-wrapper .Card {
+  pointer-events: none;
+}
+
 .discard-card-wrapper {
-  transform: scale(0.5);
-  transform-origin: left center;
-  /* Card is 100px wide, scaled to 50px visually.
-     Use -60px margin to create ~10px overlap between 50px cards */
-  margin-left: -60px;
+  margin-left: -105px;
 }
 
 .discard-card-wrapper:first-child {
   margin-left: 0;
-}
-
-.discard-card-wrapper .Card {
-  pointer-events: none;
 }

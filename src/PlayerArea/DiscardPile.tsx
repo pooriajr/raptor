@@ -18,12 +18,8 @@ function DiscardPile({ player }: DiscardPileProps) {
       ) : (
         <div className="discard-cards">
           {discardPile.map((cardValue, index) => (
-            <div
-              key={`${cardValue}-${index}`}
-              className="discard-card-wrapper"
-              style={{ marginLeft: index > 0 ? "-30px" : "0" }}
-            >
-              <Card value={cardValue} player={player} faceUp />
+            <div key={`${cardValue}-${index}`} className="discard-card-wrapper">
+              <Card value={cardValue} player={player} faceUp layoutId={`card-${player}-${cardValue}`} />
             </div>
           ))}
         </div>

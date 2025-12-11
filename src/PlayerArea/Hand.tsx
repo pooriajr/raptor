@@ -8,7 +8,6 @@ interface HandProps {
 }
 
 const HAND_SIZE = 3;
-const DECK_POSITION = { x: -300, y: 0 };
 
 function Hand({ player }: HandProps) {
   const { state, dispatch } = useGame();
@@ -105,8 +104,7 @@ function Hand({ player }: HandProps) {
                   selected={isSelected || isPlayed}
                   dimmed={isDimmed}
                   floating={isFloating}
-                  initialPosition={isNewDraw ? DECK_POSITION : undefined}
-                  animationDelay={isNewDraw ? index * 0.15 : 0}
+                  layoutId={`card-${player}-${value}`}
                 />
               )}
               {!hasCard && !isNewDraw && <div className="card-placeholder" />}

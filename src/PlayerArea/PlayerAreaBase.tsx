@@ -1,3 +1,4 @@
+import { LayoutGroup } from "framer-motion";
 import CardDeck from "./CardDeck";
 import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
@@ -83,42 +84,44 @@ function PlayerAreaBase({
   const showLoadButton = player === "raptor" && state.phase === "RAPTOR_SETUP" && hasSavedGame();
 
   return (
-    <div className={`player-area ${player}-area`}>
-      <div className="player-area-left">
-        <CardDeck player={player} cardCount={cards.deck.length} />
-        <DiscardPile player={player} />
-        {trackers}
-      </div>
+    <LayoutGroup id={`${player}-cards`}>
+      <div className={`player-area ${player}-area`}>
+        <div className="player-area-left">
+          <CardDeck player={player} deck={cards.deck} />
+          <DiscardPile player={player} />
+          {trackers}
+        </div>
 
-      <div className="player-area-center">
-        <Hand player={player} />
-      </div>
+        <div className="player-area-center">
+          <Hand player={player} />
+        </div>
 
-      <div className="player-area-action">
-        {actionInfo && (
-          <div className="action-info">
-            {"actionPoints" in actionInfo && actionInfo.actionPoints !== undefined && (
-              <div className="action-points-display">
-                <span className="action-points-value">{actionInfo.actionPoints}</span>
-                <span className="action-points-label">AP</span>
+        <div className="player-area-action">
+          {actionInfo && (
+            <div className="action-info">
+              {"actionPoints" in actionInfo && actionInfo.actionPoints !== undefined && (
+                <div className="action-points-display">
+                  <span className="action-points-value">{actionInfo.actionPoints}</span>
+                  <span className="action-points-label">AP</span>
+                </div>
+              )}
+              <div className="action-text">
+                <div className="action-phase-label">{actionInfo.phaseLabel}</div>
+                {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
+                <div className="action-instruction">{actionInfo.instruction}</div>
+                <UndoButton player={player} />
               </div>
-            )}
-            <div className="action-text">
-              <div className="action-phase-label">{actionInfo.phaseLabel}</div>
-              {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
-              <div className="action-instruction">{actionInfo.instruction}</div>
-              <UndoButton player={player} />
             </div>
-          </div>
-        )}
-        {showLoadButton && (
-          <button className="load-game-button" onClick={handleLoadGame}>
-            Load Game
-          </button>
-        )}
-        <DoneButton player={player} />
+          )}
+          {showLoadButton && (
+            <button className="load-game-button" onClick={handleLoadGame}>
+              Load Game
+            </button>
+          )}
+          <DoneButton player={player} />
+        </div>
       </div>
-    </div>
+    </LayoutGroup>
   );
 }
 
