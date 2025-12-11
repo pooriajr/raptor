@@ -3,7 +3,6 @@ import CardDeck from "./CardDeck";
 import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
 import DoneButton from "./DoneButton";
-import UndoButton from "./UndoButton";
 import { useGame } from "../state/GameContext";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
 import { CARDS } from "@/data/cards.ts";
@@ -89,7 +88,6 @@ function PlayerAreaBase({
                 <div className="action-phase-label">{actionInfo.phaseLabel}</div>
                 {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
                 <div className="action-instruction">{actionInfo.instruction}</div>
-                <UndoButton player={player} />
               </div>
             </div>
           )}

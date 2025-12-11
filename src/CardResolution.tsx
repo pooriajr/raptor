@@ -28,7 +28,7 @@ function CardResolution() {
             <span className="icon">{activeEffectCard.icon}</span>
             <span className="label">{activeEffectCard.name}</span>
           </div>
-          {activeEffectCard.effectCount > 1 && (
+          {activeEffectCard.effectCount > 0 && (
             <AnimatePresence mode="popLayout">
               <motion.span
                 key={effectActionsRemaining}

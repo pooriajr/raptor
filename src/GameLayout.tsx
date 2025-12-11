@@ -1,5 +1,5 @@
 import Board from "./Board.tsx";
-import { RaptorPlayerArea, ScientistPlayerArea } from "./PlayerArea";
+import { RaptorPlayerArea, ScientistPlayerArea, UndoButton } from "./PlayerArea";
 import CardResolution from "./CardResolution.tsx";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
@@ -24,7 +24,9 @@ function GameLayout() {
           <Board />
         </div>
         <div className="side-column right">
+          <UndoButton player="raptor" />
           <CardResolution />
+          <UndoButton player="scientist" />
         </div>
       </div>
       <ScientistPlayerArea />
