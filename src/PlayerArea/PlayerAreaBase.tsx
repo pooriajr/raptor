@@ -6,7 +6,6 @@ import DoneButton from "./DoneButton";
 import UndoButton from "./UndoButton";
 import { useGame } from "../state/GameContext";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
-import { hasSavedGame, loadGame } from "../utils/saveLoad";
 import type { CardState, InteractionState } from "../types/gameState";
 import "./PlayerArea.css";
 
@@ -35,20 +34,13 @@ function PlayerAreaBase({
   isSelectingCard,
   actionInstruction,
 }: PlayerAreaBaseProps) {
-  const { state, dispatch } = useGame();
+  const { state } = useGame();
 
   const isEffectPhase = state.phase === "EFFECT_PHASE";
   const isActionPhase = state.phase === "ACTION_PHASE";
 
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
   const isThisPlayerAction = isActionPhase && state.activePlayer === player;
-
-  const handleLoadGame = () => {
-    const savedState = loadGame();
-    if (savedState) {
-      dispatch({ type: "LOAD_GAME", savedState });
-    }
-  };
 
   const actionInfo = (() => {
     if (setupInfo) {
@@ -81,8 +73,6 @@ function PlayerAreaBase({
     return null;
   })();
 
-  const showLoadButton = player === "raptor" && state.phase === "RAPTOR_SETUP" && hasSavedGame();
-
   return (
     <LayoutGroup id={`${player}-cards`}>
       <div className={`player-area ${player}-area`}>
@@ -112,11 +102,6 @@ function PlayerAreaBase({
                 <UndoButton player={player} />
               </div>
             </div>
-          )}
-          {showLoadButton && (
-            <button className="load-game-button" onClick={handleLoadGame}>
-              Load Game
-            </button>
           )}
           <DoneButton player={player} />
         </div>
