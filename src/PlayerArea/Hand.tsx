@@ -53,8 +53,10 @@ function Hand({ player }: HandProps) {
   const canSelect = !faceDown && !showPrivacyScreen;
   const hasSelection = selectedCardId != null;
 
+  const handClassName = `Hand ${player}${isThisPlayerSelecting ? " selecting" : ""}`;
+
   return (
-    <div className={`Hand ${player}`}>
+    <div className={handClassName}>
       <div className="hand-cards">
         {handCards.map((card, index) => {
           const isSelected = card.id === selectedCardId;

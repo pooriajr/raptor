@@ -68,11 +68,10 @@ const MOUNTAIN_PATTERNS: MountainPattern[] = [
     { x: 0, y: 0 },
     { x: 2, y: 0 },
   ],
-  // Pattern 5: Three corners (3 mountains)
+  // Pattern 5: Center and corner (2 mountains)
   [
-    { x: 0, y: 0 },
+    { x: 1, y: 1 },
     { x: 2, y: 0 },
-    { x: 0, y: 2 },
   ],
 ];
 

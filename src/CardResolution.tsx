@@ -22,26 +22,23 @@ function CardResolution() {
   if (showResolution) {
     if (activeEffectCard) {
       // Someone gets the effect, other gets action points
+      const { effectCount, icon, name } = activeEffectCard;
+      const usedCount = effectCount - effectActionsRemaining;
+
       const effectContent = (
         <div className="effect">
-          <div className="effect-info">
-            <span className="icon">{activeEffectCard.icon}</span>
-            <span className="label">{activeEffectCard.name}</span>
+          <div className="effect-icons">
+            {effectCount > 0 ? (
+              Array.from({ length: effectCount }, (_, i) => (
+                <span key={i} className={`icon${i < usedCount ? " used" : ""}`}>
+                  {icon}
+                </span>
+              ))
+            ) : (
+              <span className="icon">{icon}</span>
+            )}
           </div>
-          {activeEffectCard.effectCount > 0 && (
-            <AnimatePresence mode="popLayout">
-              <motion.span
-                key={effectActionsRemaining}
-                className="effect-count"
-                initial={{ scale: 1.4, opacity: 0 }}
-                animate={{ scale: 1, opacity: 0.9 }}
-                exit={{ scale: 0.6, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                ×{effectActionsRemaining}
-              </motion.span>
-            </AnimatePresence>
-          )}
+          <span className="label">{name}</span>
         </div>
       );
       const apContent = (

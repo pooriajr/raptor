@@ -28,7 +28,7 @@ function Card({
   layoutDelay = 0,
   layoutId,
 }: CardProps) {
-  const { value, player, name, icon, description } = card;
+  const { value, player, name, icon, description, effectCount } = card;
   const isInteractive = onClick && !selected;
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -106,7 +106,16 @@ function Card({
       {/* Front face - shows the card value */}
       <div className="card-face card-front">
         <div className="card-value">{value}</div>
-        <div className="card-icon">{icon}</div>
+        <div className="card-icon">
+          {effectCount <= 2 ? (
+            icon.repeat(Math.max(1, effectCount))
+          ) : (
+            <>
+              <div>{icon.repeat(2)}</div>
+              <div>{icon.repeat(effectCount - 2)}</div>
+            </>
+          )}
+        </div>
         <div className="card-effect">{name}</div>
       </div>
 

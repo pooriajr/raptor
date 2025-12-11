@@ -75,6 +75,13 @@
   font-size: 48px;
   margin: 6px 0;
   filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex: 1;
+  padding-top: 20px;
 }
 
 .card-effect {
@@ -83,6 +90,8 @@
   padding: 0 9px;
   opacity: 0.9;
   line-height: 1.2;
+  margin-top: auto;
+  padding-bottom: 10px;
 }
 
 .card-pattern {
@@ -100,7 +109,7 @@
   padding: 10px 14px;
   border-radius: 8px;
   width: 200px;
-  z-index: 100;
+  z-index: 10000;
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }

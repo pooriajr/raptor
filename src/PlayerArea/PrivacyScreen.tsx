@@ -17,7 +17,8 @@ function PrivacyScreen({ player, visible, onDismiss }: PrivacyScreenProps) {
       {visible && (
         <motion.div
           className={`privacy-screen ${player}`}
-          initial={{ y: 0 }}
+          initial={{ y: isScientist ? "100%" : "-100%" }}
+          animate={{ y: 0 }}
           exit={{ y: isScientist ? "100%" : "-100%" }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
           onClick={onDismiss}

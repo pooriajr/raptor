@@ -5,6 +5,8 @@
   width: 100%;
   padding: 1.75rem;
   background: rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 100;
 }
 
 .player-area-left {
