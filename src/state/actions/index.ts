@@ -8,7 +8,7 @@ export { type InteractionAction } from "./interactionActions.ts";
 
 export { handlePlaceScientist, handlePlaceMother, handlePlaceBaby, handleRemovePiece, handleMovePieceOnTile, handleConfirmRaptorSetup, handleStartGame } from "./setupActions.ts";
 export { handlePlayerReady, handleDrawCards, handlePlayCard, handleConfirmReveal } from "./cardActions.ts";
-export { handleFrightenScientists, handlePutBabiesToSleep, handleMothersCall, handleDisappearance, handleMotherReturn, handleWakeBabies, handleRecovery, handleReinforcements, handlePlaceFire, handleJeepMoves, handleEndEffectPhase } from "./effectActions.ts";
+export { handleFrightenScientist, handlePutBabyToSleep, handleCallBaby, handleDisappearance, handleMotherReturn, handleWakeBaby, handleRemoveMotherSleepToken, handlePlaceReinforcement, handlePlaceFireToken, handleMoveJeep, handleEndEffectPhase, handleRevertEffectPhase } from "./effectActions.ts";
 export { handleActionMoveBaby, handleActionMoveScientist, handleActionMoveMother, handleMotherKillScientist, handleMotherWakeBaby, handleMotherExtinguishFire, handleScientistSleepBaby, handleScientistCaptureBaby, handleScientistShootMother, handleScientistStandUp, handleEndActionPhase, handleResetActionPhase } from "./actionPhaseActions.ts";
 export { handleEndRound } from "./roundActions.ts";
 export { handleDevSkipToEffect, handleDevSkipToAction, handleDevSkipToCardSelection, handleLoadGame, handleToggleShowCoordinates } from "./devActions.ts";

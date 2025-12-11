@@ -1,35 +1,9 @@
+import { createSpaceId, type SpaceId } from "./highlights.ts";
+
 export interface Coordinate {
   x: number;
   y: number;
 }
-
-// SpaceId is a unique identifier for a space: "tileId-x-y"
-export type SpaceId = string;
-
-export function createSpaceId(tileId: number, x: number, y: number): SpaceId {
-  return `${tileId}-${x}-${y}`;
-}
-
-export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: number } {
-  const [tileId, x, y] = spaceId.split("-").map(Number);
-  return { tileId, x, y };
-}
-
-// Highlight types for spaces - each space can have at most one highlight
-export type HighlightType =
-  | "validMove" // Action phase movement destination (green)
-  | "setupPlacement" // Setup phase placement (light green)
-  | "setupMoveTarget" // Moving piece within tile during setup
-  | "effectDestination" // Effect targets like Mother's Call, reinforcements, fire, jeep (teal)
-  | "pendingDestination" // Where pieces will move to on confirm (solid green)
-  | "pathTrail" // Intermediate path positions / origins (footprints)
-  | "hostileTarget" // Enemy pieces that can be attacked (red)
-  | "friendlyTarget" // Friendly pieces/fire that can be interacted with (purple)
-  | "fire" // Existing fire token (orange)
-  | "pendingFire"; // Fire to be placed (orange pulsing)
-
-// Map from SpaceId to its highlight type - each space has at most one highlight
-export type SpaceHighlights = Map<SpaceId, HighlightType>;
 
 export interface Space {
   id: SpaceId;

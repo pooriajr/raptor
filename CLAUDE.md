@@ -266,4 +266,15 @@ RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTI
 - State lives in single GameState object at App level via useReducer
 - Pieces in state are plain objects; piece classes encapsulate movement/action logic
 - Phase-based state machine controls valid actions at each point
-- Effect phase uses pending state in Board.tsx for multi-step selections before dispatching
+
+### Snapshot-Revert Pattern
+
+Both Effect Phase and Action Phase use a **snapshot-revert pattern** for undoable actions:
+
+1. **On phase entry**: Save a snapshot of entire game state
+2. **During phase**: Execute actions immediately (state updates right away)
+3. **Track limits**: Use counters like `effectActionsRemaining` or `actionPoints` to enforce limits
+4. **On confirm (Done)**: Discard the snapshot, proceed to next phase
+5. **On revert (Undo)**: Restore the snapshot, resetting all changes made during the phase
+
+This pattern keeps UI simple - components just render actual state, no "pending" vs "real" distinction needed.

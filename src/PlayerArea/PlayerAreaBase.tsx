@@ -66,7 +66,7 @@ function PlayerAreaBase({
       return {
         phaseLabel: "Effect Phase",
         progress: null,
-        instruction: getEffectInstruction(state, player),
+        instruction: getEffectInstruction(state),
       };
     }
     if (isThisPlayerAction) {
