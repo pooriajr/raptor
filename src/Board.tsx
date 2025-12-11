@@ -3,7 +3,7 @@ import Tile from "./Tile.tsx";
 import { useEffect } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import { buildHighlights, getValidSetupTileIds } from "./utils/buildHighlights.ts";
+import { getValidSetupTileIds } from "./utils/buildHighlights.ts";
 
 function Board() {
   const { state, dispatch } = useGame();
@@ -59,17 +59,7 @@ function Board() {
     }
   }, [state.phase, dispatch]);
 
-  // Build highlights from state
-  const highlights = buildHighlights(state);
   const validSetupTileIds = getValidSetupTileIds(state);
-
-  // Space click handler - just dispatch the highlight action
-  const handleSpaceClick = (_tileId: number, _x: number, _y: number, spaceId: string) => {
-    const highlight = highlights.get(spaceId);
-    if (highlight?.action) {
-      dispatch(highlight.action);
-    }
-  };
 
   return (
     <div className="board-container">
@@ -79,10 +69,8 @@ function Board() {
             <Tile
               key={tile.id}
               tile={tile}
-              highlights={highlights}
               isValidSetupTile={validSetupTileIds.has(tile.id)}
               showCoordinates={state.showCoordinates}
-              onSpaceClick={handleSpaceClick}
             />
           ))}
         </div>

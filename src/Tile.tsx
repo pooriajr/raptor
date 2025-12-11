@@ -1,17 +1,14 @@
 import "./Tile.css";
 import type { Tile as TileType } from "./types/board.ts";
-import type { SpaceHighlights } from "./types/highlights.ts";
 import Space from "./Space.tsx";
 
 interface TileProps {
   tile: TileType;
-  highlights: SpaceHighlights;
   isValidSetupTile?: boolean;
   showCoordinates?: boolean;
-  onSpaceClick: (tileId: number, x: number, y: number, spaceId: string) => void;
 }
 
-function Tile({ tile, highlights, isValidSetupTile = false, showCoordinates = false, onSpaceClick }: TileProps) {
+function Tile({ tile, isValidSetupTile = false, showCoordinates = false }: TileProps) {
   return (
     <div
       className="Tile"
@@ -24,14 +21,7 @@ function Tile({ tile, highlights, isValidSetupTile = false, showCoordinates = fa
 
       <div className="spaces-grid">
         {tile.spaces.map((space) => (
-          <Space
-            key={space.id}
-            tileId={tile.id}
-            space={space}
-            highlight={highlights.get(space.id)}
-            showCoordinates={showCoordinates}
-            onSpaceClick={onSpaceClick}
-          />
+          <Space key={space.id} space={space} showCoordinates={showCoordinates} />
         ))}
       </div>
     </div>

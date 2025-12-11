@@ -1,22 +1,27 @@
 import "./Tile.css";
 import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import type { HighlightStyle } from "./types/highlights.ts";
 import type { Space as SpaceType } from "./types/board.ts";
-import type { PieceState } from "./types/gameState.ts";
+import type { PieceState, GameState } from "./types/gameState.ts";
+import type { HighlightStyle, SpaceHighlights } from "./types/highlights.ts";
+import { parseSpaceId } from "./types/highlights.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
+import { buildHighlights } from "./utils/buildHighlights.ts";
+import type { GameAction } from "./state/gameReducer.ts";
 
 interface SpaceProps {
-  tileId: number;
   space: SpaceType;
-  highlight?: { style: HighlightStyle; action?: unknown };
   showCoordinates?: boolean;
-  onSpaceClick: (tileId: number, x: number, y: number, spaceId: string) => void;
 }
 
-function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick }: SpaceProps) {
-  const { state } = useGame();
+function Space({ space, showCoordinates = false }: SpaceProps) {
+  const { state, dispatch } = useGame();
+  const highlights: SpaceHighlights<GameAction> = buildHighlights(state);
+  const highlight = highlights.get(space.id);
   const highlightStyle = highlight?.style;
+
+  // Parse space.id to get tileId for piece lookup
+  const { tileId } = parseSpaceId(space.id);
 
   // Find piece on this space
   const pieceOnSpace = findPieceOnSpace(state, tileId, space.coordinate.x, space.coordinate.y);
@@ -26,6 +31,12 @@ function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
   const selectedActorId = interaction.selectedActorId;
 
+  const handleClick = () => {
+    if (highlight?.action) {
+      dispatch(highlight.action);
+    }
+  };
+
   return (
     <div
       className="space"
@@ -33,7 +44,7 @@ function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick
       data-mountain={space.hasMountain}
       data-unusable={space.isUnusable}
       data-highlight={highlightStyle}
-      onClick={() => onSpaceClick(tileId, space.coordinate.x, space.coordinate.y, space.id)}
+      onClick={handleClick}
     >
       {showCoordinates && (
         <span className="coord">
@@ -107,12 +118,7 @@ function SpaceContent({ space, pieceOnSpace, highlightStyle, selectedActorId }: 
 }
 
 // Helper to find piece on a specific space
-function findPieceOnSpace(
-  state: ReturnType<typeof useGame>["state"],
-  tileId: number,
-  x: number,
-  y: number,
-): PieceState | null {
+function findPieceOnSpace(state: GameState, tileId: number, x: number, y: number): PieceState | null {
   if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) {
     return state.mother;
   }
