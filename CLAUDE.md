@@ -155,7 +155,7 @@ npm run preview
 - **CardDeck.tsx**: Visual card deck display
 - **Hand.tsx**: Player's hand of cards with selection UI
 - **CardRevealOverlay.tsx**: Card reveal animation with effect/action point display
-- **PlayerReadyScreen.tsx**: Screen shown between player turns
+- **PrivacyScreen.tsx**: Overlay on hand during opponent's card selection
 - **DevPanel.tsx**: Development tools for testing (auto-setup, skip to effects)
 - **PlayerArea/**: Player-specific UI components (DoneButton, UndoButton, Tracker, etc.)
 
@@ -203,9 +203,9 @@ Logic classes instantiated from `PieceState` for computing valid moves and actio
 ### Game Phases
 
 ```
-RAPTOR_SETUP → SCIENTIST_SETUP → SCIENTIST_CARD_SELECTION →
+MAIN_MENU → RAPTOR_SETUP → SCIENTIST_SETUP → SCIENTIST_CARD_SELECTION →
 RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTION_PHASE →
-MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_CARD_SELECTION
+MOTHER_RETURN (if disappearance) → ROUND_END → back to SCIENTIST_CARD_SELECTION
 ```
 
 Note: Card selection phases use a privacy screen overlay on the hand that the selecting player must click to dismiss before seeing their cards.
@@ -238,13 +238,13 @@ Note: Card selection phases use a privacy screen overlay on the hand that the se
 
 ### Snapshot-Revert Pattern
 
-Both Effect Phase and Action Phase use a **snapshot-revert pattern** for undoable actions:
+Both Effect Phase and Action Phase use a **snapshot-revert pattern** for undoable actions via a single `undoSnapshot` field:
 
-1. **On phase entry**: Save a snapshot of entire game state
+1. **On phase entry**: Save game state to `undoSnapshot`
 2. **During phase**: Execute actions immediately (state updates right away)
 3. **Track limits**: Use counters like `effectActionsRemaining` or `actionPoints`
-4. **On confirm (Done)**: Discard the snapshot, proceed to next phase
-5. **On revert (Undo)**: Restore the snapshot, resetting all changes
+4. **On confirm (Done)**: Clear `undoSnapshot`, proceed to next phase
+5. **On revert (Undo)**: Restore from `undoSnapshot`, resetting all changes
 
 This keeps UI simple - components render actual state, no "pending" vs "real" distinction.
 
@@ -275,8 +275,8 @@ Mother's Call and Jeep use two-step selection via `selectedActorId`:
 - ✅ Line of sight calculation for scientist shooting
 - ✅ Snapshot-revert pattern for both effect and action phases
 - ✅ Two-step selection for Mother's Call and Jeep effects
-- ✅ Win condition tracking (escapedBabies, capturedBabies, motherSleepTokens)
-- ✅ Comprehensive test suite (145 tests)
+- ✅ Win condition tracking (isEscaped/isCaptured on babies, motherSleepTokens)
+- ✅ Comprehensive test suite (144 tests)
 
 ### Next Steps
 
