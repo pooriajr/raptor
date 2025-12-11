@@ -4,18 +4,16 @@ import Space from "./Space.tsx";
 
 interface TileProps {
   tile: TileType;
-  isValidSetupTile?: boolean;
   showCoordinates?: boolean;
 }
 
-function Tile({ tile, isValidSetupTile = false, showCoordinates = false }: TileProps) {
+function Tile({ tile, showCoordinates = false }: TileProps) {
   return (
     <div
       className="Tile"
       data-shape={tile.shape}
       data-side={tile.shape === "L" ? tile.side : undefined}
       data-exit-position={tile.shape === "L" ? tile.exitPosition : undefined}
-      data-valid-setup-tile={isValidSetupTile}
     >
       {showCoordinates && <div className="tile-label">Tile {tile.id}</div>}
 

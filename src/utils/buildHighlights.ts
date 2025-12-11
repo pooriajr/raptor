@@ -583,8 +583,3 @@ export function buildHighlights(state: GameState): SpaceHighlights<GameAction> {
 
   return h;
 }
-
-// Export helper for Board.tsx to get valid setup tile IDs
-export function getValidSetupTileIds(state: GameState): Set<number> {
-  return new Set(getValidSetupTiles(state));
-}

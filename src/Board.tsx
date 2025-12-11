@@ -3,7 +3,6 @@ import Tile from "./Tile.tsx";
 import { useEffect } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import { getValidSetupTileIds } from "./utils/buildHighlights.ts";
 
 function Board() {
   const { state, dispatch } = useGame();
@@ -59,19 +58,12 @@ function Board() {
     }
   }, [state.phase, dispatch]);
 
-  const validSetupTileIds = getValidSetupTileIds(state);
-
   return (
     <div className="board-container">
       <LayoutGroup>
         <div className="Board">
           {state.tiles.map((tile) => (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              isValidSetupTile={validSetupTileIds.has(tile.id)}
-              showCoordinates={state.showCoordinates}
-            />
+            <Tile key={tile.id} tile={tile} showCoordinates={state.showCoordinates} />
           ))}
         </div>
       </LayoutGroup>
