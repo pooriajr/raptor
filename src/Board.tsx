@@ -1,6 +1,6 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
@@ -11,7 +11,6 @@ function Board() {
   const { state, dispatch } = useGame();
 
   const currentPlayer = state.activePlayer;
-  const prevPhaseRef = useRef(state.phase);
 
   // Reset selected card when phase changes
   useEffect(() => {
@@ -19,28 +18,6 @@ function Board() {
       dispatch({ type: "SELECT_CARD", player: currentPlayer, card: null });
     }
   }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Draw cards when entering card selection phases
-  useEffect(() => {
-    const phaseChanged = state.phase !== prevPhaseRef.current;
-    prevPhaseRef.current = state.phase;
-
-    if (!phaseChanged) return;
-
-    const isScientistSelection = state.phase === "SCIENTIST_CARD_SELECTION";
-    const isRaptorSelection = state.phase === "RAPTOR_CARD_SELECTION";
-
-    if (isScientistSelection || isRaptorSelection) {
-      const player = isScientistSelection ? "scientist" : "raptor";
-
-      dispatch({ type: "DRAW_CARDS", player });
-      dispatch({ type: "SET_NEW_DRAW", player, isNewDraw: true });
-      const timeout = setTimeout(() => {
-        dispatch({ type: "SET_NEW_DRAW", player, isNewDraw: false });
-      }, 1500);
-      return () => clearTimeout(timeout);
-    }
-  }, [state.phase, dispatch]);
 
   // Helper to find a piece by ID
   const findPieceById = (id: string): PieceState | undefined => {

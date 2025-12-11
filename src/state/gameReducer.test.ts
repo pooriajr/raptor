@@ -81,8 +81,7 @@ function getToCardSelectionPhase(initialState: GameState, player: "scientist" | 
     return state;
   }
 
-  // Draw cards for scientist and play one
-  state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
+  // Cards are auto-drawn on phase entry, play one
   const scientistCard = state.scientistCards.hand[0];
   state = gameReducer(state, {
     type: "PLAY_CARD",
@@ -887,7 +886,9 @@ describe("Game Reducer - Card System", () => {
 
   describe("DRAW_CARDS Action", () => {
     it("draws up to 3 cards from deck to hand", () => {
-      let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
+      // Start with initial state (empty hands) - don't transition to card selection
+      // which now auto-draws
+      let state = createInitialGameState();
       expect(state.scientistCards.hand).toHaveLength(0);
       expect(state.scientistCards.deck).toHaveLength(9);
 
@@ -898,7 +899,7 @@ describe("Game Reducer - Card System", () => {
     });
 
     it("draws cards from the top of the deck", () => {
-      let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
+      let state = createInitialGameState();
       const topThreeCards = state.scientistCards.deck.slice(0, 3);
 
       state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
@@ -907,7 +908,7 @@ describe("Game Reducer - Card System", () => {
     });
 
     it("does not draw if hand already has 3 cards", () => {
-      let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
+      let state = createInitialGameState();
       state = gameReducer(state, { type: "DRAW_CARDS", player: "scientist" });
       const handBefore = [...state.scientistCards.hand];
       const deckBefore = [...state.scientistCards.deck];
@@ -919,7 +920,7 @@ describe("Game Reducer - Card System", () => {
     });
 
     it("draws only needed cards if hand has some cards", () => {
-      let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
+      let state = createInitialGameState();
 
       // Manually set hand to 2 cards to test partial draw
       state = {
@@ -941,11 +942,21 @@ describe("Game Reducer - Card System", () => {
     });
 
     it("draws for raptor player", () => {
-      let state = getToCardSelectionPhase(createInitialGameState(), "raptor");
+      let state = createInitialGameState();
       expect(state.raptorCards.hand).toHaveLength(0);
 
       state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
 
+      expect(state.raptorCards.hand).toHaveLength(3);
+      expect(state.raptorCards.deck).toHaveLength(6);
+    });
+
+    it("auto-draws for both players when entering SCIENTIST_CARD_SELECTION", () => {
+      let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
+
+      // Cards should already be drawn for both players
+      expect(state.scientistCards.hand).toHaveLength(3);
+      expect(state.scientistCards.deck).toHaveLength(6);
       expect(state.raptorCards.hand).toHaveLength(3);
       expect(state.raptorCards.deck).toHaveLength(6);
     });

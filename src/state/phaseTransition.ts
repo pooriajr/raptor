@@ -1,6 +1,7 @@
 import type { GameState, GamePhase, Player } from "@/types/gameState";
 import { saveGame } from "@/utils/saveLoad";
 import { getEffectLimit } from "@/utils/effectUtils";
+import { drawToHand } from "./actions/cardActions";
 
 function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | null {
   if (phase.startsWith("RAPTOR")) return "raptor";
@@ -31,6 +32,15 @@ export function transitionToPhase(state: GameState, phase: GamePhase): GameState
     phase,
     activePlayer,
   };
+
+  // Draw cards for both players when entering scientist card selection
+  if (phase === "SCIENTIST_CARD_SELECTION") {
+    newState = {
+      ...newState,
+      scientistCards: drawToHand(newState.scientistCards),
+      raptorCards: drawToHand(newState.raptorCards),
+    };
+  }
 
   // Save snapshot when entering effect phase
   if (phase === "EFFECT_PHASE") {
