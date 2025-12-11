@@ -83,11 +83,11 @@
 }
 
 /* ===========================================
-   SPACE HIGHLIGHTS - using data-highlight attr
+   SPACE STYLES - using data-style attr
    =========================================== */
 
 /* Valid move - action phase movement destination (green) */
-.space[data-highlight="validMove"] {
+.space[data-style="validMove"] {
   cursor: pointer;
   background-color: #a8d590 !important;
   border-color: #6f9d4a !important;
@@ -95,32 +95,32 @@
 }
 
 /* Setup placement - setup phase placement (light green) */
-.space[data-highlight="setupPlacement"] {
+.space[data-style="setupPlacement"] {
   cursor: pointer;
   background-color: #b8e0a8 !important;
   border-color: #6aad5a !important;
   box-shadow: inset 0 0 8px rgba(106, 173, 90, 0.4);
 }
 
-.space[data-highlight="setupPlacement"]:hover {
+.space[data-style="setupPlacement"]:hover {
   background-color: #90d5a8 !important;
   border-color: #4a9d6f !important;
   box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
 }
 
 /* Setup move target - moving piece within tile during setup (hover only) */
-.space[data-highlight="setupMoveTarget"] {
+.space[data-style="setupMoveTarget"] {
   cursor: pointer;
 }
 
-.space[data-highlight="setupMoveTarget"]:hover {
+.space[data-style="setupMoveTarget"]:hover {
   background-color: #90d5a8 !important;
   border-color: #4a9d6f !important;
   box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
 }
 
 /* Effect target - selectable pieces for two-step effects (gold) */
-.space[data-highlight="effectTarget"] {
+.space[data-style="effectTarget"] {
   cursor: pointer;
   background-color: #e8d590 !important;
   border-color: #c9a84a !important;
@@ -128,7 +128,7 @@
 }
 
 /* Effect destination - Mother's Call, reinforcements, fire, jeep (teal) */
-.space[data-highlight="effectDestination"] {
+.space[data-style="effectDestination"] {
   cursor: pointer;
   background-color: #90d5c8 !important;
   border-color: #4a9d8f !important;
@@ -136,20 +136,20 @@
 }
 
 /* Pending destination - where pieces will move to on confirm (solid green) */
-.space[data-highlight="pendingDestination"] {
+.space[data-style="pendingDestination"] {
   background-color: #7dd5a0 !important;
   border-color: #4a9d6f !important;
   box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.8);
 }
 
 /* Path trail - intermediate path positions / origins (footprints) */
-.space[data-highlight="pathTrail"] {
+.space[data-style="pathTrail"] {
   background-color: #b8d4a8 !important;
   border-color: #8ab87a !important;
 }
 
 /* Hostile target - enemy pieces that can be attacked (red) */
-.space[data-highlight="hostileTarget"] {
+.space[data-style="hostileTarget"] {
   cursor: pointer;
   background-color: #e89090 !important;
   border-color: #c45050 !important;
@@ -157,7 +157,7 @@
 }
 
 /* Friendly target - friendly pieces/fire that can be interacted with (purple) */
-.space[data-highlight="friendlyTarget"] {
+.space[data-style="friendlyTarget"] {
   cursor: pointer;
   background-color: #c8a0e8 !important;
   border-color: #9060c0 !important;
@@ -165,13 +165,13 @@
 }
 
 /* Fire - existing fire token (orange) */
-.space[data-highlight="fire"] {
+.space[data-style="fire"] {
   background-color: #e8a060 !important;
   border-color: #c07030 !important;
 }
 
 /* Pending fire - fire to be placed (orange pulsing) */
-.space[data-highlight="pendingFire"] {
+.space[data-style="pendingFire"] {
   background-color: #e8a060 !important;
   border-color: #c07030 !important;
 }

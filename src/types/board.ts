@@ -1,4 +1,4 @@
-import { createSpaceId, type SpaceId } from "./highlights.ts";
+import { createSpaceId, type SpaceId } from "./spaceActions.ts";
 
 export interface Coordinate {
   x: number;

@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
 import type { PieceState, GameState } from "./types/gameState.ts";
-import type { HighlightStyle, SpaceHighlights } from "./types/highlights.ts";
-import { parseSpaceId } from "./types/highlights.ts";
+import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
+import { parseSpaceId } from "./types/spaceActions.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
-import { buildHighlights } from "./utils/buildHighlights.ts";
+import { buildSpaceActions } from "./utils/buildSpaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
 
 interface SpaceProps {
@@ -15,9 +15,9 @@ interface SpaceProps {
 
 function Space({ space }: SpaceProps) {
   const { state, dispatch } = useGame();
-  const highlights: SpaceHighlights<GameAction> = buildHighlights(state);
-  const highlight = highlights.get(space.id);
-  const highlightStyle = highlight?.style;
+  const spaceActions: SpaceActions<GameAction> = buildSpaceActions(state);
+  const spaceAction = spaceActions.get(space.id);
+  const style = spaceAction?.style;
 
   // Parse space.id to get tileId for piece lookup
   const { tileId } = parseSpaceId(space.id);
@@ -31,8 +31,8 @@ function Space({ space }: SpaceProps) {
   const selectedActorId = interaction.selectedActorId;
 
   const handleClick = () => {
-    if (highlight?.action) {
-      dispatch(highlight.action);
+    if (spaceAction?.action) {
+      dispatch(spaceAction.action);
     }
   };
 
@@ -42,15 +42,10 @@ function Space({ space }: SpaceProps) {
       data-exit={space.isExit}
       data-mountain={space.hasMountain}
       data-unusable={space.isUnusable}
-      data-highlight={highlightStyle}
+      data-style={style}
       onClick={handleClick}
     >
-      <SpaceContent
-        space={space}
-        pieceOnSpace={pieceOnSpace}
-        highlightStyle={highlightStyle}
-        selectedActorId={selectedActorId}
-      />
+      <SpaceContent space={space} pieceOnSpace={pieceOnSpace} style={style} selectedActorId={selectedActorId} />
     </div>
   );
 }
@@ -59,11 +54,11 @@ function Space({ space }: SpaceProps) {
 interface SpaceContentProps {
   space: SpaceType;
   pieceOnSpace: PieceState | null;
-  highlightStyle?: HighlightStyle;
+  style?: SpaceStyle;
   selectedActorId: string | null;
 }
 
-function SpaceContent({ space, pieceOnSpace, highlightStyle, selectedActorId }: SpaceContentProps) {
+function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceContentProps) {
   // Priority 1: Mountain
   if (space.hasMountain) {
     return <span className="mountain">⛰️</span>;
@@ -75,7 +70,7 @@ function SpaceContent({ space, pieceOnSpace, highlightStyle, selectedActorId }: 
   }
 
   // Priority 3: Actual piece (not moving away)
-  if (pieceOnSpace && highlightStyle !== "pathTrail") {
+  if (pieceOnSpace && style !== "pathTrail") {
     const isSelected = selectedActorId === pieceOnSpace.id;
 
     return (
@@ -98,13 +93,13 @@ function SpaceContent({ space, pieceOnSpace, highlightStyle, selectedActorId }: 
     );
   }
 
-  // Priority 4: Trail markers (pathTrail highlight)
-  if (highlightStyle === "pathTrail") {
+  // Priority 4: Trail markers (pathTrail style)
+  if (style === "pathTrail") {
     return <span className="path-trail">🐾</span>;
   }
 
   // Priority 5: Fire token (actual)
-  if (highlightStyle === "fire") {
+  if (style === "fire") {
     return <span className="fire-token">🔥</span>;
   }
 

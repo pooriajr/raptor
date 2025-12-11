@@ -3,10 +3,10 @@ import type { GameAction } from "../state/gameReducer";
 import {
   createSpaceId,
   type SpaceId,
-  type SpaceHighlights,
-  type SpaceHighlight,
-  type HighlightStyle,
-} from "../types/highlights";
+  type SpaceActions,
+  type SpaceAction,
+  type SpaceStyle,
+} from "../types/spaceActions";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates";
 import { getReachableDestinationsOnMotherTile, getJeepDestinationsWithPaths } from "./pathfinding";
 import { getCurrentEffectType } from "./effectUtils";
@@ -221,12 +221,12 @@ function getValidMoves(
 
 /**
  * Build the highlights map from game state.
- * Returns a map of SpaceId -> SpaceHighlight with visual style and optional click action.
+ * Returns a map of SpaceId -> SpaceAction with visual style and optional click action.
  */
-export function buildHighlights(state: GameState): SpaceHighlights<GameAction> {
-  const h = new Map<SpaceId, SpaceHighlight<GameAction>>();
+export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
+  const h = new Map<SpaceId, SpaceAction<GameAction>>();
 
-  const set = (spaceId: SpaceId, style: HighlightStyle, action?: GameAction) => {
+  const set = (spaceId: SpaceId, style: SpaceStyle, action?: GameAction) => {
     if (!h.has(spaceId)) h.set(spaceId, { style, action });
   };
 

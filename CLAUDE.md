@@ -178,7 +178,7 @@ npm run preview
 - **gameState.ts**: GameState, PieceState, CardState, FireToken, InteractionState
 - **board.ts**: Coordinate, Space, SquareTile, LTile types + `createBoard()`
 - **coordinates.ts**: Global coordinate system (localToGlobal, globalToLocal, adjacency)
-- **highlights.ts**: SpaceHighlight, HighlightStyle types for board highlighting
+- **spaceActions.ts**: SpaceAction, SpaceStyle types for board highlighting
 
 ### Utilities (`src/utils/`)
 
@@ -208,9 +208,9 @@ RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTI
 MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_READY
 ```
 
-### Highlight System
+### Space Actions System
 
-`buildHighlights.ts` builds a `SpaceHighlights` map that associates each space with:
+`buildSpaceActions.ts` builds a `SpaceActions` map that associates each space with:
 
 - A visual style (e.g., `validMove`, `effectTarget`, `hostileTarget`)
 - An optional action to dispatch on click
@@ -218,12 +218,12 @@ MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_READY
 **IMPORTANT RULES:**
 
 - Pieces are never directly clickable - only Spaces receive click events
-- All click handling goes through the highlights system
-- If a space has a highlight with an action, clicking dispatches that action
-- If a space has no highlight action, clicking does nothing
-- Board.tsx should NOT have any click handling logic outside of dispatching highlight actions
+- All click handling goes through the space actions system
+- If a space has an action, clicking dispatches that action
+- If a space has no action, clicking does nothing
+- Board.tsx should NOT have any click handling logic outside of dispatching space actions
 
-**Highlight styles:**
+**Space styles:**
 
 - `validMove` - Action phase movement (green)
 - `setupPlacement` / `setupMoveTarget` - Setup phase (light green)

@@ -1,5 +1,5 @@
-// Visual styles for space highlights (CSS styling)
-export type HighlightStyle =
+// Visual styles for clickable spaces (CSS styling)
+export type SpaceStyle =
   | "validMove" // Action phase movement destination (green)
   | "setupPlacement" // Setup phase placement (light green)
   | "setupMoveTarget" // Moving piece within tile during setup
@@ -24,13 +24,13 @@ export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: 
   return { tileId, x, y };
 }
 
-// SpaceHighlight includes visual style and optional action to dispatch on click
-// Action type is generic to avoid circular dependency with GameAction
-// Some highlights (fire, pathTrail) are display-only and don't have click actions
-export interface SpaceHighlight<TAction = unknown> {
-  style: HighlightStyle;
+// SpaceAction represents what happens when a space is clicked
+// Style is the visual affordance, action is what gets dispatched
+// Some spaces (fire, pathTrail) are display-only and don't have click actions
+export interface SpaceAction<TAction = unknown> {
+  style: SpaceStyle;
   action?: TAction;
 }
 
-// Map from SpaceId to its highlight - each space has at most one highlight
-export type SpaceHighlights<TAction = unknown> = Map<SpaceId, SpaceHighlight<TAction>>;
+// Map from SpaceId to its action - each space has at most one action
+export type SpaceActions<TAction = unknown> = Map<SpaceId, SpaceAction<TAction>>;
