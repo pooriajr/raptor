@@ -177,6 +177,12 @@ function DevPanel() {
           </button>
           <button
             className="skip-btn raptor-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 8, scientistCard: 9 })}
+          >
+            Fear (2)
+          </button>
+          <button
+            className="skip-btn raptor-effect"
             onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 9 })}
           >
             Recovery (2)
@@ -198,6 +204,12 @@ function DevPanel() {
             onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 1 })}
           >
             Sleep Gas (1)
+          </button>
+          <button
+            className="skip-btn scientist-effect"
+            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 4 })}
+          >
+            Sleep Gas (2)
           </button>
           <button
             className="skip-btn scientist-effect"
