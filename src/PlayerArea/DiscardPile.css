@@ -4,6 +4,10 @@
   transform-origin: center center;
 }
 
+.DiscardPile:hover {
+  z-index: 100;
+}
+
 .DiscardPile .discard-placeholder {
   width: 150px;
   height: 210px;
@@ -23,17 +27,43 @@
 }
 
 .discard-card-wrapper {
-  margin-left: -105px;
-  transition:
-    transform 0.15s ease,
-    z-index 0s;
+  margin-left: -115px;
+  transition: transform 0.2s ease;
 }
 
 .discard-card-wrapper:first-child {
   margin-left: 0;
 }
 
-.discard-card-wrapper:hover {
-  z-index: 100;
-  transform: translateY(-10px);
+/* Spread cards when hovering over the pile - use transform to avoid layout shift */
+.DiscardPile:hover .discard-card-wrapper:nth-child(2) {
+  transform: translateX(60px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(3) {
+  transform: translateX(120px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(4) {
+  transform: translateX(180px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(5) {
+  transform: translateX(240px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(6) {
+  transform: translateX(300px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(7) {
+  transform: translateX(360px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(8) {
+  transform: translateX(420px);
+}
+
+.DiscardPile:hover .discard-card-wrapper:nth-child(9) {
+  transform: translateX(480px);
 }
