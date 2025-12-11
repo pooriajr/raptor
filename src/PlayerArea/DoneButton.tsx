@@ -1,6 +1,6 @@
 import { useGame } from "../state/GameContext";
 import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "../utils/pieceUtils";
-import { getEffectPlayer, getCurrentEffectType } from "../utils/effectUtils";
+import { getEffectPlayer } from "../utils/effectUtils";
 import "./DoneButton.css";
 
 interface DoneButtonProps {
@@ -44,34 +44,7 @@ function DoneButton({ player }: DoneButtonProps) {
   };
 
   const handleEffectConfirm = () => {
-    const effectType = getCurrentEffectType(state);
-
-    if (effectType === "fear") {
-      dispatch({ type: "FRIGHTEN_SCIENTISTS", pieceIds: interaction.selectedEffectTargets });
-      dispatch({ type: "SET_EFFECT_TARGETS", player, pieceIds: [] });
-    } else if (effectType === "sleeping_gas") {
-      dispatch({ type: "PUT_BABIES_TO_SLEEP", pieceIds: interaction.selectedEffectTargets });
-      dispatch({ type: "SET_EFFECT_TARGETS", player, pieceIds: [] });
-    } else if (effectType === "recovery") {
-      dispatch({ type: "WAKE_BABIES", pieceIds: interaction.selectedEffectTargets });
-      dispatch({ type: "SET_EFFECT_TARGETS", player, pieceIds: [] });
-    } else if (effectType === "mothers_call") {
-      dispatch({ type: "MOTHERS_CALL", moves: interaction.pendingMothersCallMoves });
-      dispatch({ type: "CLEAR_MOTHERS_CALL_MOVES", player });
-      dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: null });
-    } else if (effectType === "disappearance") {
-      dispatch({ type: "DISAPPEARANCE" });
-    } else if (effectType === "reinforcements") {
-      dispatch({ type: "REINFORCEMENTS", placements: interaction.pendingReinforcementPlacements });
-      dispatch({ type: "CLEAR_REINFORCEMENTS", player });
-    } else if (effectType === "fire") {
-      dispatch({ type: "PLACE_FIRE", placements: interaction.pendingFirePlacements });
-      dispatch({ type: "CLEAR_FIRE_PLACEMENTS", player });
-    } else if (effectType === "jeep") {
-      dispatch({ type: "JEEP_MOVES", moves: interaction.pendingJeepMoves });
-      dispatch({ type: "CLEAR_JEEP_MOVES", player });
-      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
-    }
+    dispatch({ type: "END_EFFECT_PHASE" });
   };
 
   const handleEndActionPhase = () => {

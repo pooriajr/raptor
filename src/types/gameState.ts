@@ -54,63 +54,13 @@ export interface Position {
   y: number;
 }
 
-// Pending move for mother's call effect
-export interface PendingMothersCallMove {
-  babyId: string;
-  destinationTileId: number;
-  destinationX: number;
-  destinationY: number;
-  path: Position[]; // Intermediate spaces for trail visualization
-}
-
-// Pending reinforcement placement
-export interface PendingReinforcement {
-  id: number; // Stable ID for animation
-  tileId: number;
-  x: number;
-  y: number;
-}
-
-// Pending jeep move
-export interface PendingJeepMove {
-  scientistId: string;
-  fromTileId: number;
-  fromX: number;
-  fromY: number;
-  toTileId: number;
-  toX: number;
-  toY: number;
-  path: Position[];
-}
-
-// UI/Interaction state - staging before commit
+// UI/Interaction state - transient UI selections (not game logic)
 export interface InteractionState {
-  // Card selection (each player has their own)
+  // Card selection
   selectedCard: number | null;
   isNewDraw: boolean;
-
-  // Effect phase selections
-  selectedEffectTargets: string[]; // Piece IDs for fear/sleeping gas/recovery
-  selectedBabyForCall: string | null; // Baby being positioned for mother's call
-  pendingMothersCallMoves: PendingMothersCallMove[];
-  pendingReinforcementPlacements: PendingReinforcement[];
-  reinforcementIdCounter: number;
-  pendingFirePlacements: Position[];
-  selectedScientistForJeep: string | null;
-  pendingJeepMoves: PendingJeepMove[];
-  pendingMotherTokenRemovals: number; // For recovery effect
-
-  // Action phase
+  // Action phase piece selection
   selectedActionPieceId: string | null;
-}
-
-// Saved state for action phase reset
-export interface ActionPhaseSavedState {
-  mother: PieceState;
-  babies: PieceState[];
-  scientists: PieceState[];
-  fireTokens: FireToken[];
-  actionPoints: number;
 }
 
 // Create initial interaction state
@@ -118,15 +68,6 @@ export function createInitialInteractionState(): InteractionState {
   return {
     selectedCard: null,
     isNewDraw: false,
-    selectedEffectTargets: [],
-    selectedBabyForCall: null,
-    pendingMothersCallMoves: [],
-    pendingReinforcementPlacements: [],
-    reinforcementIdCounter: 0,
-    pendingFirePlacements: [],
-    selectedScientistForJeep: null,
-    pendingJeepMoves: [],
-    pendingMotherTokenRemovals: 0,
     selectedActionPieceId: null,
   };
 }
@@ -159,8 +100,11 @@ export interface GameState {
   // UI/Interaction state - per player
   raptorInteraction: InteractionState;
   scientistInteraction: InteractionState;
+  // Effect phase - snapshot/revert pattern
+  effectActionsRemaining: number;
+  effectPhaseSavedState: GameState | null;
   // Action phase saved state for reset
-  actionPhaseSavedState: ActionPhaseSavedState | null;
+  actionPhaseSavedState: GameState | null;
   // Dev/debug options
   showCoordinates: boolean;
 }
@@ -244,6 +188,8 @@ export function createInitialGameState(): GameState {
     escapedBabies: 0,
     raptorInteraction: createInitialInteractionState(),
     scientistInteraction: createInitialInteractionState(),
+    effectActionsRemaining: 0,
+    effectPhaseSavedState: null,
     actionPhaseSavedState: null,
     showCoordinates: false,
   };

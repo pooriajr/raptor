@@ -76,52 +76,35 @@ export function getEffectLimit(state: GameState): number {
 }
 
 // Get instruction text for current effect
-export function getEffectInstruction(state: GameState, player: Player): string {
+export function getEffectInstruction(state: GameState): string {
   const effectType = getCurrentEffectType(state);
   const limit = getEffectLimit(state);
-  const interaction = player === "raptor" ? state.raptorInteraction : state.scientistInteraction;
-  const selectionCount = interaction.selectedEffectTargets.length;
-  const pendingMothersCallMoves = interaction.pendingMothersCallMoves;
-  const selectedBabyForCall = interaction.selectedBabyForCall;
-  const pendingReinforcementPlacements = interaction.pendingReinforcementPlacements;
-  const pendingFirePlacements = interaction.pendingFirePlacements;
-  const selectedScientistForJeep = interaction.selectedScientistForJeep;
-  const pendingJeepMoves = interaction.pendingJeepMoves;
+  const used = limit - state.effectActionsRemaining;
 
   if (effectType === "fear") {
-    return `Click scientists to frighten (${selectionCount}/${limit})`;
+    return `Click scientists to frighten (${used}/${limit})`;
   } else if (effectType === "sleeping_gas") {
-    return `Click baby raptors to put to sleep (${selectionCount}/${limit})`;
+    return `Click baby raptors to put to sleep (${used}/${limit})`;
   } else if (effectType === "mothers_call") {
-    if (selectedBabyForCall !== null) {
-      return `Click a destination on mother's tile (${pendingMothersCallMoves.length}/${limit})`;
-    } else {
-      return `Click a baby raptor to call (${pendingMothersCallMoves.length}/${limit})`;
-    }
+    return `Click a baby raptor, then a destination on mother's tile (${used}/${limit})`;
   } else if (effectType === "disappearance") {
-    return "Click Confirm to remove mother from the board";
+    return "Mother disappears from the board";
   } else if (effectType === "recovery") {
-    return `Click sleeping babies to wake up (${selectionCount}/${limit})`;
+    return `Click sleeping babies to wake up, or remove mother's sleep tokens (${used}/${limit})`;
   } else if (effectType === "reinforcements") {
-    return `Click spaces on edges to place scientists (${pendingReinforcementPlacements.length}/${limit})`;
+    return `Click spaces on edges to place scientists (${used}/${limit})`;
   } else if (effectType === "fire") {
-    return `Click spaces adjacent to scientists or fire (${pendingFirePlacements.length}/${limit})`;
+    return `Click spaces adjacent to scientists or fire (${used}/${limit})`;
   } else if (effectType === "jeep") {
-    if (selectedScientistForJeep !== null) {
-      return `Click a destination for the jeep (${pendingJeepMoves.length}/${limit})`;
-    } else {
-      return `Click a scientist to move by jeep (${pendingJeepMoves.length}/${limit})`;
-    }
+    return `Click a scientist, then a destination (${used}/${limit})`;
   }
   return "No effect";
 }
 
 // Check if undo button should be shown for effect phase
-export function shouldShowEffectUndo(state: GameState, player: Player): boolean {
-  const effectType = getCurrentEffectType(state);
-  const interaction = player === "raptor" ? state.raptorInteraction : state.scientistInteraction;
-
-  if (effectType === "fire") return interaction.pendingFirePlacements.length > 0;
-  if (effectType === "jeep") return interaction.pendingJeepMoves.length > 0;
-  return false;
+export function shouldShowEffectUndo(state: GameState): boolean {
+  if (state.phase !== "EFFECT_PHASE") return false;
+  if (!state.effectPhaseSavedState) return false;
+  const limit = getEffectLimit(state);
+  return state.effectActionsRemaining < limit;
 }

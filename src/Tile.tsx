@@ -1,31 +1,17 @@
 import "./Tile.css";
 import type { Tile as TileType } from "./types/board.ts";
-import type { SpaceHighlights, SpaceId } from "./types/highlights.ts";
+import type { SpaceHighlights } from "./types/highlights.ts";
 import Space from "./Space.tsx";
-
-// Pending preview data - what will appear at a space on confirm
-interface PendingPreview {
-  type: "baby" | "scientist" | "jeep";
-  id?: string | number;
-}
 
 interface TileProps {
   tile: TileType;
   highlights: SpaceHighlights;
   isValidSetupTile?: boolean;
-  pendingPreviews?: Map<SpaceId, PendingPreview>;
   showCoordinates?: boolean;
   onSpaceClick: (tileId: number, x: number, y: number, pieceId: string | null) => void;
 }
 
-function Tile({
-  tile,
-  highlights,
-  isValidSetupTile = false,
-  pendingPreviews = new Map(),
-  showCoordinates = false,
-  onSpaceClick,
-}: TileProps) {
+function Tile({ tile, highlights, isValidSetupTile = false, showCoordinates = false, onSpaceClick }: TileProps) {
   return (
     <div
       className="Tile"
@@ -43,7 +29,6 @@ function Tile({
             tileId={tile.id}
             space={space}
             highlight={highlights.get(space.id)}
-            pendingPreview={pendingPreviews.get(space.id)}
             showCoordinates={showCoordinates}
             onSpaceClick={onSpaceClick}
           />

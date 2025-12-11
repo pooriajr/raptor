@@ -6,22 +6,15 @@ import type { Space as SpaceType } from "./types/board.ts";
 import type { PieceState } from "./types/gameState.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
 
-// Pending preview data - what will appear at a space on confirm
-interface PendingPreview {
-  type: "baby" | "scientist" | "jeep";
-  id?: string | number;
-}
-
 interface SpaceProps {
   tileId: number;
   space: SpaceType;
   highlight?: { style: HighlightStyle; action?: unknown };
-  pendingPreview?: PendingPreview;
   showCoordinates?: boolean;
   onSpaceClick: (tileId: number, x: number, y: number, pieceId: string | null) => void;
 }
 
-function Space({ tileId, space, highlight, pendingPreview, showCoordinates = false, onSpaceClick }: SpaceProps) {
+function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick }: SpaceProps) {
   const { state } = useGame();
   const highlightStyle = highlight?.style;
 
@@ -29,9 +22,9 @@ function Space({ tileId, space, highlight, pendingPreview, showCoordinates = fal
   const pieceOnSpace = findPieceOnSpace(state, tileId, space.coordinate.x, space.coordinate.y);
 
   // Get interaction state for current player
-  const currentPlayer = getCurrentPlayer(state);
+  const currentPlayer = state.activePlayer;
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
-  const { selectedEffectTargets, selectedActionPieceId } = interaction;
+  const selectedActionPieceId = interaction.selectedActionPieceId;
 
   // Determine if this piece is an effect target
   const effectTargetIds = getEffectTargetIds(state);
@@ -57,9 +50,7 @@ function Space({ tileId, space, highlight, pendingPreview, showCoordinates = fal
         space={space}
         pieceOnSpace={pieceOnSpace}
         highlightStyle={highlightStyle}
-        pendingPreview={pendingPreview}
         effectTargetIds={effectTargetIds}
-        selectedEffectTargets={selectedEffectTargets}
         selectedActionPieceId={selectedActionPieceId}
       />
     </div>
@@ -71,9 +62,7 @@ interface SpaceContentProps {
   space: SpaceType;
   pieceOnSpace: PieceState | null;
   highlightStyle?: HighlightStyle;
-  pendingPreview?: PendingPreview;
   effectTargetIds: string[];
-  selectedEffectTargets: string[];
   selectedActionPieceId: string | null;
 }
 
@@ -81,9 +70,7 @@ function SpaceContent({
   space,
   pieceOnSpace,
   highlightStyle,
-  pendingPreview,
   effectTargetIds,
-  selectedEffectTargets,
   selectedActionPieceId,
 }: SpaceContentProps) {
   // Priority 1: Mountain
@@ -99,14 +86,13 @@ function SpaceContent({
   // Priority 3: Actual piece (not moving away)
   if (pieceOnSpace && highlightStyle !== "pathTrail") {
     const isEffectTarget = effectTargetIds.includes(pieceOnSpace.id);
-    const isEffectSelected = selectedEffectTargets.includes(pieceOnSpace.id);
     const isActionSelected = selectedActionPieceId === pieceOnSpace.id;
 
     return (
       <motion.span
         layout
         layoutId={`piece-${pieceOnSpace.id}`}
-        className={`piece piece-${pieceOnSpace.type} ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${isEffectTarget ? "effect-target" : ""} ${isEffectSelected ? "effect-selected" : ""} ${isActionSelected ? "action-selected" : ""}`}
+        className={`piece piece-${pieceOnSpace.type} ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${isEffectTarget ? "effect-target" : ""} ${isActionSelected ? "action-selected" : ""}`}
         transition={{
           layout: {
             type: "tween",
@@ -122,44 +108,14 @@ function SpaceContent({
     );
   }
 
-  // Priority 4: Pending piece previews
-  if (pendingPreview) {
-    if (pendingPreview.type === "baby") {
-      return <span className="piece pending-piece">🦎</span>;
-    }
-    if (pendingPreview.type === "scientist") {
-      return (
-        <motion.span
-          className="piece pending-piece"
-          layoutId={`reinforcement-${pendingPreview.id}`}
-          transition={{
-            type: "tween",
-            duration: 0.2,
-            ease: "linear",
-          }}
-        >
-          🧑‍🔬
-        </motion.span>
-      );
-    }
-    if (pendingPreview.type === "jeep") {
-      return <span className="piece pending-piece jeep-car">🚙</span>;
-    }
-  }
-
-  // Priority 5: Trail markers (pathTrail highlight)
+  // Priority 4: Trail markers (pathTrail highlight)
   if (highlightStyle === "pathTrail") {
     return <span className="path-trail">🐾</span>;
   }
 
-  // Priority 6: Fire token (actual)
+  // Priority 5: Fire token (actual)
   if (highlightStyle === "fire") {
     return <span className="fire-token">🔥</span>;
-  }
-
-  // Priority 7: Pending fire
-  if (highlightStyle === "pendingFire") {
-    return <span className="fire-token pending-fire">🔥</span>;
   }
 
   return null;
@@ -179,20 +135,6 @@ function findPieceOnSpace(
   if (baby) return baby;
   const scientist = state.scientists.find((s) => s.tileId === tileId && s.x === x && s.y === y);
   if (scientist) return scientist;
-  return null;
-}
-
-// Helper to get current player based on phase
-function getCurrentPlayer(state: ReturnType<typeof useGame>["state"]): "raptor" | "scientist" | null {
-  if (state.phase === "RAPTOR_CARD_SELECTION" || state.phase === "RAPTOR_SETUP") return "raptor";
-  if (state.phase === "SCIENTIST_CARD_SELECTION" || state.phase === "SCIENTIST_SETUP") return "scientist";
-  if (state.phase === "EFFECT_PHASE") {
-    const scientistCard = state.scientistCards.played;
-    const raptorCard = state.raptorCards.played;
-    if (scientistCard === null || raptorCard === null) return null;
-    return raptorCard < scientistCard ? "raptor" : "scientist";
-  }
-  if (state.phase === "ACTION_PHASE") return state.activePlayer;
   return null;
 }
 

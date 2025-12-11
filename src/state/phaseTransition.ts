@@ -1,5 +1,6 @@
 import type { GameState, GamePhase, Player } from "@/types/gameState";
 import { saveGame } from "@/utils/saveLoad";
+import { getEffectLimit } from "@/utils/effectUtils";
 
 function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | null {
   if (phase.startsWith("RAPTOR")) return "raptor";
@@ -19,16 +20,35 @@ function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | n
  * Helper for transitioning between game phases.
  * - Sets the new phase
  * - Calculates and sets the active player based on the phase
+ * - Saves snapshot for effect phase
  * - Auto-saves the game (except during setup)
  */
 export function transitionToPhase(state: GameState, phase: GamePhase): GameState {
   const activePlayer = getActivePlayerForPhase(state, phase);
 
-  const newState = {
+  let newState = {
     ...state,
     phase,
     activePlayer,
   };
+
+  // Save snapshot when entering effect phase
+  if (phase === "EFFECT_PHASE") {
+    newState = {
+      ...newState,
+      effectActionsRemaining: getEffectLimit(state),
+      effectPhaseSavedState: state,
+    };
+  }
+
+  // Clear effect phase state when leaving
+  if (state.phase === "EFFECT_PHASE" && phase !== "EFFECT_PHASE") {
+    newState = {
+      ...newState,
+      effectActionsRemaining: 0,
+      effectPhaseSavedState: null,
+    };
+  }
 
   // Auto-save on phase changes (skip setup phase)
   if (phase !== "RAPTOR_SETUP") {

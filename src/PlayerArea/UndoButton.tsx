@@ -1,5 +1,5 @@
 import { useGame } from "../state/GameContext";
-import { shouldShowEffectUndo, getCurrentEffectType, getEffectPlayer } from "../utils/effectUtils";
+import { shouldShowEffectUndo, getEffectPlayer } from "../utils/effectUtils";
 import "./UndoButton.css";
 
 interface UndoButtonProps {
@@ -18,13 +18,7 @@ function UndoButton({ player }: UndoButtonProps) {
     state.actionPhaseSavedState !== null && state.actionPoints < state.actionPhaseSavedState.actionPoints;
 
   const handleEffectUndo = () => {
-    const effectType = getCurrentEffectType(state);
-    if (effectType === "fire") {
-      dispatch({ type: "CLEAR_FIRE_PLACEMENTS", player });
-    } else if (effectType === "jeep") {
-      dispatch({ type: "CLEAR_JEEP_MOVES", player });
-      dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
-    }
+    dispatch({ type: "REVERT_EFFECT_PHASE" });
   };
 
   const handleActionReset = () => {
@@ -34,8 +28,7 @@ function UndoButton({ player }: UndoButtonProps) {
     }
   };
 
-  // Determine if button should show and what it should do
-  if (isThisPlayerEffect && shouldShowEffectUndo(state, player)) {
+  if (isThisPlayerEffect && shouldShowEffectUndo(state)) {
     return (
       <button className="undo-button" onClick={handleEffectUndo} title="Undo">
         ↩

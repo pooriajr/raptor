@@ -1,6 +1,6 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
@@ -17,42 +17,11 @@ import { MotherRaptor } from "./pieces/MotherRaptor.ts";
 import { BabyRaptor } from "./pieces/BabyRaptor.ts";
 import { Scientist } from "./pieces/Scientist.ts";
 
-import {
-  getReachableDestinationsOnMotherTileWithPaths,
-  getJeepDestinationsWithPaths,
-  type PathResult,
-} from "./utils/pathfinding.ts";
+import { getReachableDestinationsOnMotherTile, getJeepDestinationsWithPaths } from "./utils/pathfinding.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "./types/coordinates.ts";
-import { getCurrentEffectType, getEffectLimit } from "./utils/effectUtils.ts";
-
-// Type for pending jeep moves
-interface PendingJeepMove {
-  scientistId: string;
-  fromTileId: number;
-  fromX: number;
-  fromY: number;
-  toTileId: number;
-  toX: number;
-  toY: number;
-  path: Array<{ tileId: number; x: number; y: number }>;
-}
-
-// Get a scientist's effective position considering pending jeep moves
-function getScientistEffectivePosition(
-  scientist: PieceState,
-  pendingMoves: PendingJeepMove[],
-): { tileId: number; x: number; y: number } {
-  const movesForThis = pendingMoves.filter((m) => m.scientistId === scientist.id);
-  if (movesForThis.length > 0) {
-    const last = movesForThis[movesForThis.length - 1];
-    return { tileId: last.toTileId, x: last.toX, y: last.toY };
-  }
-  return { tileId: scientist.tileId, x: scientist.x, y: scientist.y };
-}
+import { getCurrentEffectType } from "./utils/effectUtils.ts";
 
 // Helper to check if a scientist has line of sight to the mother for shooting
-// LOS is blocked by: Rocks, Active (standing) scientists
-// Can shoot through: Frightened scientists, fire tokens, baby raptors
 function hasLineOfSight(
   tiles: import("./types/board.ts").Tile[],
   scientists: PieceState[],
@@ -62,15 +31,11 @@ function hasLineOfSight(
   const sciGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
   const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
 
-  // Must be in same row or column (orthogonal)
   const sameRow = sciGlobal.globalY === motherGlobal.globalY;
   const sameCol = sciGlobal.globalX === motherGlobal.globalX;
   if (!sameRow && !sameCol) return false;
-
-  // Can't shoot at same position
   if (sameRow && sameCol) return false;
 
-  // Check each space between scientist and mother
   if (sameRow) {
     const minX = Math.min(sciGlobal.globalX, motherGlobal.globalX);
     const maxX = Math.max(sciGlobal.globalX, motherGlobal.globalX);
@@ -79,22 +44,16 @@ function hasLineOfSight(
         for (const space of tile.spaces) {
           const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
           if (spaceGlobal.globalX === x && spaceGlobal.globalY === sciGlobal.globalY) {
-            // Check for mountain
             if (space.hasMountain) return false;
-
-            // Check for standing (non-frightened) scientist
             const pieceHere = scientists.find(
               (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
             );
-            if (pieceHere && !pieceHere.isFrightened) {
-              return false;
-            }
+            if (pieceHere && !pieceHere.isFrightened) return false;
           }
         }
       }
     }
   } else {
-    // sameCol
     const minY = Math.min(sciGlobal.globalY, motherGlobal.globalY);
     const maxY = Math.max(sciGlobal.globalY, motherGlobal.globalY);
     for (let y = minY + 1; y < maxY; y++) {
@@ -102,22 +61,16 @@ function hasLineOfSight(
         for (const space of tile.spaces) {
           const spaceGlobal = localToGlobal(tile.id, space.coordinate.x, space.coordinate.y);
           if (spaceGlobal.globalX === sciGlobal.globalX && spaceGlobal.globalY === y) {
-            // Check for mountain
             if (space.hasMountain) return false;
-
-            // Check for standing (non-frightened) scientist
             const pieceHere = scientists.find(
               (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
             );
-            if (pieceHere && !pieceHere.isFrightened) {
-              return false;
-            }
+            if (pieceHere && !pieceHere.isFrightened) return false;
           }
         }
       }
     }
   }
-
   return true;
 }
 
@@ -170,27 +123,6 @@ function Board() {
     }
   }, [state.phase, dispatch]);
 
-  // Read effect phase state from context
-  const selectedEffectTargets = interaction.selectedEffectTargets;
-  const selectedBabyForCall = interaction.selectedBabyForCall;
-  const pendingMothersCallMoves = interaction.pendingMothersCallMoves;
-  const pendingReinforcementPlacements = interaction.pendingReinforcementPlacements;
-  const pendingFirePlacements = interaction.pendingFirePlacements;
-  const selectedScientistForJeep = interaction.selectedScientistForJeep;
-  const pendingJeepMoves = interaction.pendingJeepMoves;
-
-  // Cache the path results for the currently selected baby (local state - computed, not persisted)
-  const [selectedBabyPathResults, setSelectedBabyPathResults] = useState<PathResult[]>([]);
-  // Cache jeep destinations for the currently selected scientist (local state - computed, not persisted)
-  const [selectedScientistJeepDestinations, setSelectedScientistJeepDestinations] = useState<
-    Array<{
-      tileId: number;
-      x: number;
-      y: number;
-      path: Array<{ tileId: number; x: number; y: number }>;
-    }>
-  >([]);
-
   // Read action phase state from context
   const selectedActionPieceId = interaction.selectedActionPieceId;
   const actionPhaseSavedState = state.actionPhaseSavedState;
@@ -198,9 +130,7 @@ function Board() {
   // Helper to get all pieces as a single array
   const getAllPieces = (): PieceState[] => {
     const pieces: PieceState[] = [];
-    if (state.mother) {
-      pieces.push(state.mother);
-    }
+    if (state.mother) pieces.push(state.mother);
     pieces.push(...state.babies);
     pieces.push(...state.scientists);
     return pieces;
@@ -214,34 +144,20 @@ function Board() {
     return state.scientists.find((s) => s.id === id);
   };
 
-  // Reset effect targets when leaving effect phase
+  // Reset interactions when leaving effect/action phases
   useEffect(() => {
-    if (state.phase !== "EFFECT_PHASE") {
-      // Reset both players' interaction state when leaving effect phase
+    if (state.phase !== "EFFECT_PHASE" && state.phase !== "ACTION_PHASE") {
       dispatch({ type: "RESET_ALL_INTERACTIONS" });
-      setSelectedBabyPathResults([]);
-      setSelectedScientistJeepDestinations([]);
     }
   }, [state.phase, dispatch]);
 
   // Save state when entering action phase, reset when leaving
   useEffect(() => {
     if (state.phase === "ACTION_PHASE") {
-      // Save state on first entry (when savedState is null)
       if (actionPhaseSavedState === null) {
-        dispatch({
-          type: "SAVE_ACTION_PHASE_STATE",
-          savedState: {
-            mother: { ...state.mother },
-            babies: state.babies.map((b) => ({ ...b })),
-            scientists: state.scientists.map((s) => ({ ...s })),
-            fireTokens: state.fireTokens.map((f) => ({ ...f })),
-            actionPoints: state.actionPoints,
-          },
-        });
+        dispatch({ type: "SAVE_ACTION_PHASE_STATE", savedState: state });
       }
     } else {
-      // Reset when leaving action phase
       if (currentPlayer) {
         dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId: null });
       }
@@ -256,7 +172,6 @@ function Board() {
       const raptorCard = state.raptorCards.played;
       if (scientistCard !== null && raptorCard !== null) {
         const raptorHasEffect = raptorCard < scientistCard;
-        // Disappearance: auto-dispatch since no choices needed
         if (raptorHasEffect && (raptorCard === 2 || raptorCard === 6)) {
           dispatch({ type: "DISAPPEARANCE" });
         }
@@ -264,204 +179,46 @@ function Board() {
     }
   }, [state.phase, state.scientistCards.played, state.raptorCards.played, dispatch]);
 
-  // Auto-dispatch round end - processes cards and transitions to next round
+  // Auto-dispatch round end
   useEffect(() => {
     if (state.phase === "ROUND_END") {
       dispatch({ type: "END_ROUND" });
     }
   }, [state.phase, dispatch]);
 
-  // Handle piece interactions - returns true if the interaction was handled
+  // Handle piece interactions - returns true if handled
   const handlePieceInteraction = (pieceId: string): boolean => {
-    // Handle effect phase targeting
-    if (state.phase === "EFFECT_PHASE") {
+    // Handle effect phase targeting (immediate execution)
+    if (state.phase === "EFFECT_PHASE" && state.effectActionsRemaining > 0) {
       const effectType = getCurrentEffectType(state);
       const piece = findPieceById(pieceId);
-      const player = currentPlayer;
-      if (!piece || !player) return false;
+      if (!piece) return false;
 
-      // Helper to toggle effect target with limit handling
-      const toggleEffectTarget = (targetId: string) => {
-        const current = selectedEffectTargets;
-        if (current.includes(targetId)) {
-          // Remove from selection
-          dispatch({
-            type: "SET_EFFECT_TARGETS",
-            player,
-            pieceIds: current.filter((id) => id !== targetId),
-          });
-        } else {
-          const limit = getEffectLimit(state);
-          if (current.length >= limit) {
-            // At limit - replace oldest with new
-            dispatch({
-              type: "SET_EFFECT_TARGETS",
-              player,
-              pieceIds: [...current.slice(1), targetId],
-            });
-          } else {
-            // Add to selection
-            dispatch({
-              type: "SET_EFFECT_TARGETS",
-              player,
-              pieceIds: [...current, targetId],
-            });
-          }
-        }
-      };
-
-      if (effectType === "fear") {
-        // Fear: select scientists to frighten
-        if (piece.type !== "scientist" || piece.isFrightened) return false;
-        toggleEffectTarget(pieceId);
+      if (effectType === "fear" && piece.type === "scientist" && !piece.isFrightened) {
+        dispatch({ type: "FRIGHTEN_SCIENTIST", pieceId });
         return true;
-      } else if (effectType === "sleeping_gas") {
-        // Sleeping Gas: select babies to put to sleep
-        if (piece.type !== "baby" || piece.isAsleep) return false;
-        toggleEffectTarget(pieceId);
-        return true;
-      } else if (effectType === "recovery") {
-        // Recovery: select sleeping babies to wake up
-        if (piece.type !== "baby" || !piece.isAsleep) return false;
-        toggleEffectTarget(pieceId);
-        return true;
-      } else if (effectType === "mothers_call") {
-        // Mother's Call: two-step selection per baby
-        // Step 1: Select a baby that can reach mother's tile
-        // Step 2: Select destination on mother's tile
-        // Repeat for additional babies (if limit allows)
-        const mother = state.mother;
-        if (!mother) return false;
-
-        if (piece.type === "baby") {
-          // Check if this baby already has a pending move
-          const hasPendingMove = pendingMothersCallMoves.some((m) => m.babyId === pieceId);
-
-          if (hasPendingMove) {
-            // Remove the pending move (undo) - need to filter and set new array
-            const newMoves = pendingMothersCallMoves.filter((m) => m.babyId !== pieceId);
-            dispatch({ type: "CLEAR_MOTHERS_CALL_MOVES", player });
-            newMoves.forEach((move) => dispatch({ type: "ADD_MOTHERS_CALL_MOVE", player, move }));
-            return true;
-          }
-
-          // If clicking the currently selected baby, deselect it
-          if (pieceId === selectedBabyForCall) {
-            dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: null });
-            setSelectedBabyPathResults([]);
-            return true;
-          }
-
-          // Check if we're at the limit
-          const limit = getEffectLimit(state);
-          if (pendingMothersCallMoves.length >= limit) return false;
-
-          // Check if baby can reach mother's tile and get paths
-          const pathResults = getReachableDestinationsOnMotherTileWithPaths(state.tiles, getAllPieces(), piece, mother);
-
-          // Filter out destinations that are already pending from other babies
-          const availablePathResults = pathResults.filter(
-            (pr) =>
-              !pendingMothersCallMoves.some(
-                (m) =>
-                  m.destinationTileId === pr.position.tileId &&
-                  m.destinationX === pr.position.x &&
-                  m.destinationY === pr.position.y,
-              ),
-          );
-
-          if (availablePathResults.length === 0) return false;
-
-          // Select this baby and cache its path results
-          dispatch({ type: "SELECT_BABY_FOR_CALL", player, babyId: pieceId });
-          setSelectedBabyPathResults(availablePathResults);
-          return true;
-        }
-        return false;
-      } else if (effectType === "jeep") {
-        // Jeep: two-step selection per move
-        // Step 1: Select a scientist
-        // Step 2: Select destination (straight line)
-        // Repeat for additional moves (if limit allows)
-        // Same scientist can move multiple times
-
-        if (piece.type === "scientist") {
-          // If clicking the currently selected scientist, deselect it
-          if (pieceId === selectedScientistForJeep) {
-            dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: null });
-            setSelectedScientistJeepDestinations([]);
-            return true;
-          }
-
-          // Check if we're at the limit - can't add more moves
-          const limit = getEffectLimit(state);
-          if (pendingJeepMoves.length >= limit) return false;
-
-          // Get the scientist's effective position (considering pending moves)
-          const currentPos = getScientistEffectivePosition(piece, pendingJeepMoves);
-
-          // Create a temporary piece state for pathfinding
-          const tempPiece = {
-            ...piece,
-            tileId: currentPos.tileId,
-            x: currentPos.x,
-            y: currentPos.y,
-          };
-
-          // Get jeep destinations with paths
-          const destinations = getJeepDestinationsWithPaths(
-            state.tiles,
-            getAllPieces(),
-            state.fireTokens,
-            tempPiece,
-            pendingJeepMoves,
-          );
-
-          // Filter out destinations that are already occupied by FINAL pending moves
-          // (intermediate stops are not occupied - the scientist moved on from there)
-          const availableDestinations = destinations.filter((d) => {
-            // Check if any scientist's FINAL position is at this destination
-            const isFinalDestination = pendingJeepMoves.some((m) => {
-              // Is this move's destination at d?
-              if (m.toTileId !== d.tileId || m.toX !== d.x || m.toY !== d.y) {
-                return false;
-              }
-              // Check if there's a subsequent move starting from this position
-              const hasSubsequentMove = pendingJeepMoves.some(
-                (m2) =>
-                  m2.scientistId === m.scientistId &&
-                  m2.fromTileId === m.toTileId &&
-                  m2.fromX === m.toX &&
-                  m2.fromY === m.toY,
-              );
-              // Only block if this is the final destination (no subsequent move)
-              return !hasSubsequentMove;
-            });
-            return !isFinalDestination;
-          });
-
-          if (availableDestinations.length === 0) return false;
-
-          // Select this scientist and cache its destinations
-          dispatch({ type: "SELECT_SCIENTIST_FOR_JEEP", player, scientistId: pieceId });
-          setSelectedScientistJeepDestinations(availableDestinations);
-          return true;
-        }
-        return false;
       }
+      if (effectType === "sleeping_gas" && piece.type === "baby" && !piece.isAsleep) {
+        dispatch({ type: "PUT_BABY_TO_SLEEP", pieceId });
+        return true;
+      }
+      if (effectType === "recovery" && piece.type === "baby" && piece.isAsleep) {
+        dispatch({ type: "WAKE_BABY", pieceId });
+        return true;
+      }
+      // Mother's Call and Jeep are handled via highlights (two-step: piece then destination)
       return false;
     }
 
-    // Handle action phase piece selection and target interactions
+    // Handle action phase
     if (state.phase === "ACTION_PHASE") {
       const piece = findPieceById(pieceId);
       if (!piece) return false;
 
-      // Check if clicking on an action target (adjacent piece that can be acted upon)
+      // Check if clicking on an action target
       if (selectedActionPieceId && state.actionPoints > 0) {
         const selectedPiece = findPieceById(selectedActionPieceId);
         if (selectedPiece) {
-          // Check if this is a valid target for the selected piece
           const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
           const targetGlobal = localToGlobal(piece.tileId, piece.x, piece.y);
           const adjacentCoords = getAdjacentGlobalCoordinates(selectedGlobal.globalX, selectedGlobal.globalY);
@@ -470,23 +227,16 @@ function Board() {
           );
 
           if (isAdjacent) {
-            // Mother actions
             if (selectedPiece.type === "mother" && state.activePlayer === "raptor") {
               if (piece.type === "scientist") {
-                dispatch({
-                  type: "ACTION_MOTHER_KILL_SCIENTIST",
-                  targetId: pieceId,
-                });
+                dispatch({ type: "ACTION_MOTHER_KILL_SCIENTIST", targetId: pieceId });
                 return true;
-              } else if (piece.type === "baby" && piece.isAsleep) {
-                dispatch({
-                  type: "ACTION_MOTHER_WAKE_BABY",
-                  targetId: pieceId,
-                });
+              }
+              if (piece.type === "baby" && piece.isAsleep) {
+                dispatch({ type: "ACTION_MOTHER_WAKE_BABY", targetId: pieceId });
                 return true;
               }
             }
-            // Scientist actions (adjacent)
             if (
               selectedPiece.type === "scientist" &&
               state.activePlayer === "scientist" &&
@@ -511,7 +261,7 @@ function Board() {
             }
           }
 
-          // Scientist shooting mother (not adjacent, but has line of sight)
+          // Shooting mother (line of sight, not adjacent)
           if (
             selectedPiece.type === "scientist" &&
             state.activePlayer === "scientist" &&
@@ -520,35 +270,25 @@ function Board() {
             piece.type === "mother"
           ) {
             if (hasLineOfSight(state.tiles, state.scientists, selectedPiece, piece)) {
-              dispatch({
-                type: "ACTION_SCIENTIST_SHOOT_MOTHER",
-                scientistId: selectedActionPieceId,
-              });
+              dispatch({ type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActionPieceId });
               return true;
             }
           }
         }
       }
 
-      // Check if this piece can be controlled by the active player
+      // Check if piece can be controlled
       const canControl =
         (state.activePlayer === "raptor" && (piece.type === "baby" || piece.type === "mother")) ||
         (state.activePlayer === "scientist" && piece.type === "scientist");
 
       if (!canControl) return false;
-
-      // Check if piece can move (not asleep/frightened)
       if (piece.type === "baby" && piece.isAsleep) return false;
 
-      // Frightened scientist clicking themselves to stand up
-      // (can't stand up if frightened this round)
+      // Frightened scientist standing up
       if (piece.type === "scientist" && piece.isFrightened) {
         if (state.actionPoints > 0 && !state.frightenedThisRound.includes(pieceId)) {
-          // Stand up and select
-          dispatch({
-            type: "ACTION_SCIENTIST_STAND_UP",
-            scientistId: pieceId,
-          });
+          dispatch({ type: "ACTION_SCIENTIST_STAND_UP", scientistId: pieceId });
           if (currentPlayer) {
             dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId });
           }
@@ -556,7 +296,7 @@ function Board() {
         return true;
       }
 
-      // Toggle selection or switch to new piece
+      // Toggle selection
       if (currentPlayer) {
         if (selectedActionPieceId === pieceId) {
           dispatch({ type: "SELECT_ACTION_PIECE", player: currentPlayer, pieceId: null });
@@ -570,7 +310,7 @@ function Board() {
     return false;
   };
 
-  // Unified space click handler - handles all interactions on a tile space
+  // Unified space click handler
   const handleSpaceClick = (tileId: number, x: number, y: number, pieceId: string | null) => {
     const spaceId = createSpaceId(tileId, x, y);
 
@@ -579,7 +319,6 @@ function Board() {
       if (pieceId) {
         const isRaptorPiece = pieceId === "mother" || pieceId.startsWith("baby-");
         const isScientistPiece = pieceId.startsWith("scientist-");
-
         if (
           (state.phase === "RAPTOR_SETUP" && isRaptorPiece) ||
           (state.phase === "SCIENTIST_SETUP" && isScientistPiece)
@@ -591,62 +330,41 @@ function Board() {
       }
     }
 
-    // Check if this space has a highlight with an action
+    // Check if space has a highlight with action
     const highlight = highlights.get(spaceId);
     if (highlight?.action) {
       dispatch(highlight.action);
-      // Clear local state caches after effect destinations are clicked
-      if (highlight.style === "effectDestination") {
-        setSelectedBabyPathResults([]);
-        setSelectedScientistJeepDestinations([]);
-      }
       return;
     }
 
-    // If there's a piece on this space, handle piece-related interactions
+    // Handle piece interactions
     if (pieceId) {
       handlePieceInteraction(pieceId);
     }
   };
 
-  // Get the valid moves for the currently selected piece on the board
-  const activePieceId = state.phase === "ACTION_PHASE" ? selectedActionPieceId : null;
-  const activePiece = activePieceId ? findPieceById(activePieceId) : null;
-
-  // Calculate valid placement spaces for pieces from holding pen
-  // Helper to check if a space is occupied by any piece
+  // Helper to check if a space is occupied
   const isSpaceOccupied = (tileId: number, x: number, y: number): boolean => {
-    if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) {
-      return true;
-    }
-    if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) {
-      return true;
-    }
-    if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y)) {
-      return true;
-    }
+    if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
+    if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
+    if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y)) return true;
     return false;
   };
 
-  // Helper to check if a tile has any raptors
+  // Helper to check if tile has raptors
   const tileHasRaptor = (tileId: number): boolean => {
     if (state.mother?.tileId === tileId) return true;
     return state.babies.some((b) => b.tileId === tileId);
   };
 
-  // Get valid tiles for setup placement (returns tile IDs that should be highlighted)
+  // Get valid setup tiles
   const getValidSetupTiles = (): number[] => {
     if (state.phase === "RAPTOR_SETUP") {
-      if (!isMotherPlaced(state)) {
-        // Mother not placed - only center tiles (2, 7) are valid
-        return [2, 7];
-      } else {
-        // Mother placed - all square tiles without a raptor are valid for babies
-        const squareTiles = state.tiles.filter((t) => t.shape === "square");
-        return squareTiles.filter((t) => !tileHasRaptor(t.id)).map((t) => t.id);
-      }
-    } else if (state.phase === "SCIENTIST_SETUP") {
-      // L-tiles without a scientist are valid
+      if (!isMotherPlaced(state)) return [2, 7];
+      const squareTiles = state.tiles.filter((t) => t.shape === "square");
+      return squareTiles.filter((t) => !tileHasRaptor(t.id)).map((t) => t.id);
+    }
+    if (state.phase === "SCIENTIST_SETUP") {
       const lTiles = state.tiles.filter((t) => t.shape === "L");
       const tilesWithScientist = new Set(state.scientists.map((s) => s.tileId));
       return lTiles.filter((t) => !tilesWithScientist.has(t.id)).map((t) => t.id);
@@ -654,96 +372,66 @@ function Board() {
     return [];
   };
 
-  // Get valid spaces for setup placement on a specific tile
+  // Get valid setup spaces on a tile
   const getValidSetupSpaces = (tileId: number): Array<{ x: number; y: number }> => {
     const tile = state.tiles.find((t) => t.id === tileId);
     if (!tile) return [];
-
     const validSpaces: Array<{ x: number; y: number }> = [];
-
     for (const space of tile.spaces) {
       if (space.isUnusable || space.hasMountain) continue;
       if (state.phase === "SCIENTIST_SETUP" && space.isExit) continue;
       if (isSpaceOccupied(tileId, space.coordinate.x, space.coordinate.y)) continue;
-
       validSpaces.push({ x: space.coordinate.x, y: space.coordinate.y });
     }
-
     return validSpaces;
   };
 
-  // Calculate all valid placement spaces during setup
+  // Calculate setup placement spaces
   const setupPlacementSpaces: Array<{ tileId: number; x: number; y: number }> = (() => {
-    if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") {
-      return [];
-    }
-
+    if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return [];
     const validTiles = getValidSetupTiles();
     const spaces: Array<{ tileId: number; x: number; y: number }> = [];
-
     for (const tileId of validTiles) {
-      const tileSpaces = getValidSetupSpaces(tileId);
-      for (const { x, y } of tileSpaces) {
+      for (const { x, y } of getValidSetupSpaces(tileId)) {
         spaces.push({ tileId, x, y });
       }
     }
-
     return spaces;
   })();
 
-  // Get the set of valid tile IDs for setup (for tile highlighting)
   const validSetupTileIds = new Set(getValidSetupTiles());
+
+  // Get selected action piece for movement
+  const activePieceId = state.phase === "ACTION_PHASE" ? selectedActionPieceId : null;
+  const activePiece = activePieceId ? findPieceById(activePieceId) : null;
 
   // Calculate valid moves for action phase
   const validMoves = activePiece
     ? (() => {
-        // No valid moves if no action points during action phase
-        if (state.phase === "ACTION_PHASE" && state.actionPoints <= 0) {
-          return [];
-        }
-
-        // Mother must pay wound cost (= sleep tokens) before first movement
+        if (state.phase === "ACTION_PHASE" && state.actionPoints <= 0) return [];
         if (state.phase === "ACTION_PHASE" && activePiece.type === "mother") {
           const woundCost = state.motherPaidWoundCost ? 0 : state.motherSleepTokens;
-          const totalCost = woundCost + 1; // wound cost + 1 for the move
-          if (state.actionPoints < totalCost) {
-            return [];
-          }
+          if (state.actionPoints < woundCost + 1) return [];
         }
-
         const allPieces = getAllPieces();
         const pieceInstance = createPieceFromState(activePiece);
         return pieceInstance.getValidMoves(state.tiles, allPieces, state.fireTokens).filter((move) => {
           const targetTile = state.tiles.find((t) => t.id === move.tileId);
           if (!targetTile) return false;
-
           const targetSpace = targetTile.spaces.find((s) => s.coordinate.x === move.x && s.coordinate.y === move.y);
-          if (!targetSpace) return false;
-
-          if (targetSpace.hasMountain) return false;
-
+          if (!targetSpace || targetSpace.hasMountain) return false;
           const isOccupied = allPieces.some(
             (p) => p.id !== activePieceId && p.tileId === move.tileId && p.x === move.x && p.y === move.y,
           );
           if (isOccupied) return false;
-
-          // Check for fire at destination
           const hasFire = state.fireTokens.some((f) => f.tileId === move.tileId && f.x === move.x && f.y === move.y);
-          if (hasFire) {
-            // Raptors cannot move onto fire at all
-            // Scientists can pass through fire but cannot end on it
-            // (for now, both block since this is the final destination)
-            return false;
-          }
-
+          if (hasFire) return false;
           return true;
         });
       })()
     : [];
 
-  // Calculate adjacent action targets during action phase
-  // Returns { hostileTargets: string[], friendlyTargets: string[], friendlyFirePositions: {tileId, x, y}[] }
-  // Action targets with their associated actions
+  // Calculate action targets
   interface ActionTarget {
     pieceId: string;
     tileId: number;
@@ -765,18 +453,13 @@ function Board() {
       friendlyFirePositions: [] as FireTarget[],
     };
 
-    if (state.phase !== "ACTION_PHASE" || !selectedActionPieceId || state.actionPoints <= 0) {
-      return result;
-    }
+    if (state.phase !== "ACTION_PHASE" || !selectedActionPieceId || state.actionPoints <= 0) return result;
 
     const selectedPiece = findPieceById(selectedActionPieceId);
     if (!selectedPiece) return result;
 
-    // Get global coordinates for selected piece
     const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
     const adjacentCoords = getAdjacentGlobalCoordinates(selectedGlobal.globalX, selectedGlobal.globalY);
-
-    // Find adjacent pieces
     const allPieces = getAllPieces();
     const adjacentPieces = allPieces.filter((p) => {
       if (p.id === selectedActionPieceId) return false;
@@ -785,7 +468,6 @@ function Board() {
     });
 
     if (selectedPiece.type === "mother" && state.activePlayer === "raptor") {
-      // Mother can kill adjacent scientists (hostile) or wake adjacent sleeping babies (friendly)
       for (const adj of adjacentPieces) {
         if (adj.type === "scientist") {
           result.hostileTargets.push({
@@ -805,14 +487,9 @@ function Board() {
           });
         }
       }
-
-      // Mother can also extinguish adjacent fires (friendly action)
       for (const fire of state.fireTokens) {
         const fireGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
-        const isAdjacent = adjacentCoords.some(
-          (adj) => adj.globalX === fireGlobal.globalX && adj.globalY === fireGlobal.globalY,
-        );
-        if (isAdjacent) {
+        if (adjacentCoords.some((adj) => adj.globalX === fireGlobal.globalX && adj.globalY === fireGlobal.globalY)) {
           result.friendlyFirePositions.push({
             tileId: fire.tileId,
             x: fire.x,
@@ -827,24 +504,14 @@ function Board() {
       !selectedPiece.isFrightened &&
       !state.aggressiveActionsUsed.includes(selectedPiece.id)
     ) {
-      // Scientist can put adjacent awake babies to sleep or capture adjacent sleeping babies (both hostile)
-      // But only if they haven't used their aggressive action this round
       for (const adj of adjacentPieces) {
         if (adj.type === "baby") {
           const action: GameAction = adj.isAsleep
             ? { type: "ACTION_SCIENTIST_CAPTURE_BABY", scientistId: selectedActionPieceId, targetId: adj.id }
             : { type: "ACTION_SCIENTIST_SLEEP_BABY", scientistId: selectedActionPieceId, targetId: adj.id };
-          result.hostileTargets.push({
-            pieceId: adj.id,
-            tileId: adj.tileId,
-            x: adj.x,
-            y: adj.y,
-            action,
-          });
+          result.hostileTargets.push({ pieceId: adj.id, tileId: adj.tileId, x: adj.x, y: adj.y, action });
         }
       }
-
-      // Scientist can also shoot the mother if they have line of sight
       const mother = state.mother;
       if (mother && hasLineOfSight(state.tiles, state.scientists, selectedPiece, mother)) {
         result.hostileTargets.push({
@@ -860,192 +527,23 @@ function Board() {
     return result;
   })();
 
-  // Calculate valid destination spaces for Reinforcements (long edges of square tiles)
-  const reinforcementDestinations: Array<{
-    tileId: number;
-    x: number;
-    y: number;
-  }> = (() => {
-    if (state.phase !== "EFFECT_PHASE") return [];
-    if (getCurrentEffectType(state) !== "reinforcements") return [];
-    if (state.scientistReserve <= 0) return [];
-
-    const destinations: Array<{ tileId: number; x: number; y: number }> = [];
-
-    // Top row squares (1, 2, 3) have long edge at y=0
-    // Bottom row squares (6, 7, 8) have long edge at y=2
-    const topRowTiles = [1, 2, 3];
-    const bottomRowTiles = [6, 7, 8];
-
-    for (const tile of state.tiles) {
-      if (tile.shape !== "square") continue;
-
-      const isTopRow = topRowTiles.includes(tile.id);
-      const isBottomRow = bottomRowTiles.includes(tile.id);
-      if (!isTopRow && !isBottomRow) continue;
-
-      const edgeY = isTopRow ? 0 : 2;
-
-      // Check all 3 spaces on the long edge (x = 0, 1, 2)
-      for (let x = 0; x < 3; x++) {
-        const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === edgeY);
-        if (!space || space.hasMountain) continue;
-
-        // Check not occupied by a piece
-        if (isSpaceOccupied(tile.id, x, edgeY)) continue;
-
-        // Check not already in pending placements
-        const isPending = pendingReinforcementPlacements.some(
-          (p) => p.tileId === tile.id && p.x === x && p.y === edgeY,
-        );
-        if (isPending) continue;
-
-        destinations.push({ tileId: tile.id, x, y: edgeY });
-      }
-    }
-
-    return destinations;
-  })();
-
-  // Calculate valid fire placement destinations (adjacent to scientist or existing fire)
-  const fireDestinations: Array<{
-    tileId: number;
-    x: number;
-    y: number;
-  }> = (() => {
-    if (state.phase !== "EFFECT_PHASE") return [];
-    if (getCurrentEffectType(state) !== "fire") return [];
-
-    // Don't show destinations if already at limit
-    const limit = getEffectLimit(state);
-    if (pendingFirePlacements.length >= limit) return [];
-
-    const destinations: Array<{ tileId: number; x: number; y: number }> = [];
-
-    // Collect all global positions adjacent to scientists
-    const scientistAdjacents = new Set<string>();
-    for (const scientist of state.scientists) {
-      const pGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
-      for (const adj of getAdjacentGlobalCoordinates(pGlobal.globalX, pGlobal.globalY)) {
-        scientistAdjacents.add(`${adj.globalX},${adj.globalY}`);
-      }
-    }
-
-    // Collect all global positions adjacent to existing fire (including pending)
-    const allFire = [...state.fireTokens, ...pendingFirePlacements];
-    const fireAdjacents = new Set<string>();
-    for (const fire of allFire) {
-      const fGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
-      for (const adj of getAdjacentGlobalCoordinates(fGlobal.globalX, fGlobal.globalY)) {
-        fireAdjacents.add(`${adj.globalX},${adj.globalY}`);
-      }
-    }
-
-    // Combine adjacent positions
-    const allAdjacents = new Set([...scientistAdjacents, ...fireAdjacents]);
-
-    // Convert to local coordinates and filter valid spaces
-    for (const key of allAdjacents) {
-      const [gx, gy] = key.split(",").map(Number);
-      const local = globalToLocal(state.tiles, gx, gy);
-      if (!local) continue;
-
-      const tile = state.tiles.find((t) => t.id === local.tileId);
-      if (!tile) continue;
-
-      const space = tile.spaces.find((s) => s.coordinate.x === local.localX && s.coordinate.y === local.localY);
-      if (!space || space.hasMountain || space.isUnusable || space.isExit) continue;
-
-      // Check no piece at this location
-      if (isSpaceOccupied(local.tileId, local.localX, local.localY)) continue;
-
-      // Check no fire already at this location (including pending)
-      const hasFire = allFire.some((f) => f.tileId === local.tileId && f.x === local.localX && f.y === local.localY);
-      if (hasFire) continue;
-
-      destinations.push({
-        tileId: local.tileId,
-        x: local.localX,
-        y: local.localY,
-      });
-    }
-
-    return destinations;
-  })();
-
-  // Build highlights map - each space has at most one highlight with style and action
+  // Build highlights map
   const highlights: SpaceHighlights<GameAction> = (() => {
     const h = new Map<SpaceId, SpaceHighlight<GameAction>>();
 
-    // Helper to set highlight (won't overwrite existing)
     const set = (spaceId: SpaceId, style: HighlightStyle, action?: GameAction) => {
-      if (!h.has(spaceId)) {
-        h.set(spaceId, { style, action });
-      }
+      if (!h.has(spaceId)) h.set(spaceId, { style, action });
     };
 
-    // Fire tokens (existing)
+    // Fire tokens
     for (const fire of state.fireTokens) {
       set(createSpaceId(fire.tileId, fire.x, fire.y), "fire");
     }
 
-    // Pending fire
-    for (const fire of pendingFirePlacements) {
-      set(createSpaceId(fire.tileId, fire.x, fire.y), "pendingFire");
-    }
-
-    // Path trails (origins and intermediate positions)
-    for (const move of pendingMothersCallMoves) {
-      const baby = state.babies.find((b) => b.id === move.babyId);
-      if (baby) {
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "pathTrail");
-      }
-      for (const pos of move.path) {
-        set(createSpaceId(pos.tileId, pos.x, pos.y), "pathTrail");
-      }
-    }
-
-    // Jeep origins and paths
-    for (const move of pendingJeepMoves) {
-      const isFirstMove = !pendingJeepMoves.some(
-        (m) =>
-          m.scientistId === move.scientistId &&
-          m.toTileId === move.fromTileId &&
-          m.toX === move.fromX &&
-          m.toY === move.fromY,
-      );
-      if (isFirstMove) {
-        set(createSpaceId(move.fromTileId, move.fromX, move.fromY), "pathTrail");
-      }
-      for (const pos of move.path) {
-        set(createSpaceId(pos.tileId, pos.x, pos.y), "pathTrail");
-      }
-      const hasSubsequentMove = pendingJeepMoves.some(
-        (m2) =>
-          m2.scientistId === move.scientistId &&
-          m2.fromTileId === move.toTileId &&
-          m2.fromX === move.toX &&
-          m2.fromY === move.toY,
-      );
-      if (hasSubsequentMove) {
-        set(createSpaceId(move.toTileId, move.toX, move.toY), "pathTrail");
-      }
-    }
-
-    // Pending destinations
-    for (const move of pendingMothersCallMoves) {
-      set(createSpaceId(move.destinationTileId, move.destinationX, move.destinationY), "pendingDestination");
-    }
-    for (const placement of pendingReinforcementPlacements) {
-      set(createSpaceId(placement.tileId, placement.x, placement.y), "pendingDestination");
-    }
-
-    // Hostile targets (action phase)
+    // Action phase targets
     for (const target of actionTargets.hostileTargets) {
       set(createSpaceId(target.tileId, target.x, target.y), "hostileTarget", target.action);
     }
-
-    // Friendly targets (action phase)
     for (const target of actionTargets.friendlyTargets) {
       set(createSpaceId(target.tileId, target.x, target.y), "friendlyTarget", target.action);
     }
@@ -1053,66 +551,112 @@ function Board() {
       set(createSpaceId(fire.tileId, fire.x, fire.y), "friendlyTarget", fire.action);
     }
 
-    // Effect destinations
-    // Mother's call destinations - include baby ID and path in action
-    if (currentPlayer && selectedBabyForCall) {
-      for (const pathResult of selectedBabyPathResults) {
-        const dest = pathResult.position;
-        const action: GameAction = {
-          type: "ADD_MOTHERS_CALL_MOVE",
-          player: currentPlayer,
-          move: {
-            babyId: selectedBabyForCall,
-            destinationTileId: dest.tileId,
-            destinationX: dest.x,
-            destinationY: dest.y,
-            path: pathResult.path,
-          },
-        };
-        set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+    // Effect phase destinations (immediate execution)
+    if (state.phase === "EFFECT_PHASE" && state.effectActionsRemaining > 0) {
+      const effectType = getCurrentEffectType(state);
+
+      // Mother's Call: highlight destinations for babies that can reach mother
+      if (effectType === "mothers_call" && state.mother) {
+        const allPieces = getAllPieces();
+        for (const baby of state.babies) {
+          if (baby.tileId === -1) continue;
+          const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
+          for (const dest of destinations) {
+            const action: GameAction = {
+              type: "CALL_BABY",
+              babyId: baby.id,
+              tileId: dest.tileId,
+              x: dest.x,
+              y: dest.y,
+            };
+            set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+          }
+        }
       }
-    }
-    // Reinforcement destinations - simple single action
-    if (currentPlayer) {
-      for (const dest of reinforcementDestinations) {
-        const action: GameAction = {
-          type: "ADD_REINFORCEMENT",
-          player: currentPlayer,
-          placement: { tileId: dest.tileId, x: dest.x, y: dest.y },
-        };
-        set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+
+      // Reinforcements: highlight valid edge spaces
+      if (effectType === "reinforcements" && state.scientistReserve > 0) {
+        const topRowTiles = [1, 2, 3];
+        const bottomRowTiles = [6, 7, 8];
+        for (const tile of state.tiles) {
+          if (tile.shape !== "square") continue;
+          const isTopRow = topRowTiles.includes(tile.id);
+          const isBottomRow = bottomRowTiles.includes(tile.id);
+          if (!isTopRow && !isBottomRow) continue;
+          const edgeY = isTopRow ? 0 : 2;
+          for (let x = 0; x < 3; x++) {
+            const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === edgeY);
+            if (!space || space.hasMountain) continue;
+            if (isSpaceOccupied(tile.id, x, edgeY)) continue;
+            const action: GameAction = { type: "PLACE_REINFORCEMENT", tileId: tile.id, x, y: edgeY };
+            set(createSpaceId(tile.id, x, edgeY), "effectDestination", action);
+          }
+        }
       }
-      // Fire destinations - simple single action
-      for (const dest of fireDestinations) {
-        const action: GameAction = {
-          type: "ADD_FIRE_PLACEMENT",
-          player: currentPlayer,
-          position: { tileId: dest.tileId, x: dest.x, y: dest.y },
-        };
-        set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
-      }
-    }
-    // Jeep destinations - include scientist ID, from position, and path in action
-    if (currentPlayer && selectedScientistForJeep) {
-      const scientist = findPieceById(selectedScientistForJeep);
-      if (scientist) {
-        const fromPos = getScientistEffectivePosition(scientist, pendingJeepMoves);
-        for (const dest of selectedScientistJeepDestinations) {
+
+      // Fire: highlight valid fire placement spaces
+      if (effectType === "fire") {
+        const scientistAdjacents = new Set<string>();
+        for (const scientist of state.scientists) {
+          if (scientist.tileId === -1) continue;
+          const pGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
+          for (const adj of getAdjacentGlobalCoordinates(pGlobal.globalX, pGlobal.globalY)) {
+            scientistAdjacents.add(`${adj.globalX},${adj.globalY}`);
+          }
+        }
+        const fireAdjacents = new Set<string>();
+        for (const fire of state.fireTokens) {
+          const fGlobal = localToGlobal(fire.tileId, fire.x, fire.y);
+          for (const adj of getAdjacentGlobalCoordinates(fGlobal.globalX, fGlobal.globalY)) {
+            fireAdjacents.add(`${adj.globalX},${adj.globalY}`);
+          }
+        }
+        const allAdjacents = new Set([...scientistAdjacents, ...fireAdjacents]);
+        for (const key of allAdjacents) {
+          const [gx, gy] = key.split(",").map(Number);
+          const local = globalToLocal(state.tiles, gx, gy);
+          if (!local) continue;
+          const tile = state.tiles.find((t) => t.id === local.tileId);
+          if (!tile) continue;
+          const space = tile.spaces.find((s) => s.coordinate.x === local.localX && s.coordinate.y === local.localY);
+          if (!space || space.hasMountain || space.isUnusable || space.isExit) continue;
+          if (isSpaceOccupied(local.tileId, local.localX, local.localY)) continue;
+          const hasFire = state.fireTokens.some(
+            (f) => f.tileId === local.tileId && f.x === local.localX && f.y === local.localY,
+          );
+          if (hasFire) continue;
           const action: GameAction = {
-            type: "ADD_JEEP_MOVE",
-            player: currentPlayer,
-            move: {
-              scientistId: selectedScientistForJeep,
-              fromTileId: fromPos.tileId,
-              fromX: fromPos.x,
-              fromY: fromPos.y,
-              toTileId: dest.tileId,
-              toX: dest.x,
-              toY: dest.y,
-              path: dest.path,
-            },
+            type: "PLACE_FIRE_TOKEN",
+            tileId: local.tileId,
+            x: local.localX,
+            y: local.localY,
           };
-          set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+          set(createSpaceId(local.tileId, local.localX, local.localY), "effectDestination", action);
+        }
+      }
+
+      // Jeep: highlight destinations for scientists
+      if (effectType === "jeep") {
+        for (const scientist of state.scientists) {
+          if (scientist.tileId === -1 || scientist.isFrightened) continue;
+          const destinations = getJeepDestinationsWithPaths(
+            state.tiles,
+            getAllPieces(),
+            state.fireTokens,
+            scientist,
+            [],
+          );
+          for (const dest of destinations) {
+            const action: GameAction = {
+              type: "MOVE_JEEP",
+              scientistId: scientist.id,
+              tileId: dest.tileId,
+              x: dest.x,
+              y: dest.y,
+              path: dest.path,
+            };
+            set(createSpaceId(dest.tileId, dest.x, dest.y), "effectDestination", action);
+          }
         }
       }
     }
@@ -1166,7 +710,6 @@ function Board() {
     // Setup move targets
     if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
       for (const tile of state.tiles) {
-        // Find piece on this tile to determine move action
         const pieceOnTile =
           state.phase === "RAPTOR_SETUP"
             ? state.mother?.tileId === tile.id
@@ -1192,7 +735,7 @@ function Board() {
       }
     }
 
-    // Mother return destinations (after disappearance effect)
+    // Mother return destinations
     if (state.phase === "MOTHER_RETURN") {
       for (const tile of state.tiles) {
         for (const space of tile.spaces) {
@@ -1212,40 +755,6 @@ function Board() {
     return h;
   })();
 
-  // Build pending previews map
-  const pendingPreviews: Map<SpaceId, { type: "baby" | "scientist" | "jeep"; id?: string | number }> = (() => {
-    const previews = new Map<SpaceId, { type: "baby" | "scientist" | "jeep"; id?: string | number }>();
-
-    // Baby previews (Mother's Call)
-    for (const move of pendingMothersCallMoves) {
-      previews.set(createSpaceId(move.destinationTileId, move.destinationX, move.destinationY), { type: "baby" });
-    }
-
-    // Scientist previews (Reinforcements)
-    for (const placement of pendingReinforcementPlacements) {
-      previews.set(createSpaceId(placement.tileId, placement.x, placement.y), {
-        type: "scientist",
-        id: placement.id,
-      });
-    }
-
-    // Jeep previews (final destinations only)
-    for (const move of pendingJeepMoves) {
-      const hasSubsequentMove = pendingJeepMoves.some(
-        (m2) =>
-          m2.scientistId === move.scientistId &&
-          m2.fromTileId === move.toTileId &&
-          m2.fromX === move.toX &&
-          m2.fromY === move.toY,
-      );
-      if (!hasSubsequentMove) {
-        previews.set(createSpaceId(move.toTileId, move.toX, move.toY), { type: "jeep" });
-      }
-    }
-
-    return previews;
-  })();
-
   return (
     <div className="board-container">
       <LayoutGroup>
@@ -1256,7 +765,6 @@ function Board() {
               tile={tile}
               highlights={highlights}
               isValidSetupTile={validSetupTileIds.has(tile.id)}
-              pendingPreviews={pendingPreviews}
               showCoordinates={state.showCoordinates}
               onSpaceClick={handleSpaceClick}
             />
