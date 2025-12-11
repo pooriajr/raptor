@@ -1,5 +1,7 @@
 import type { Tile } from "./board.ts";
 import { createBoard } from "./board.ts";
+import type { CardId, CardInfo } from "@/data/cards.ts";
+import { raptorCards, scientistCards, shuffleCards } from "@/utils/cardUtils.ts";
 
 // Game phases - raptor sets up first, then scientist, then card selection begins
 export type GamePhase =
@@ -31,10 +33,10 @@ export interface PieceState {
 
 // Card state for each player
 export interface CardState {
-  deck: number[]; // Card values 1-9 remaining in deck
-  hand: number[]; // Card values currently in hand (up to 3)
-  played: number | null; // Card played this round
-  discard: number[]; // Cards that have been played (visible to opponent)
+  deck: CardInfo[]; // Cards remaining in deck
+  hand: CardInfo[]; // Cards currently in hand (up to 3)
+  played: CardInfo | null; // Card played this round
+  discard: CardInfo[]; // Cards that have been played (visible to opponent)
 }
 
 // Fire token - blocks raptor movement, scientists can pass through but not end on
@@ -58,7 +60,7 @@ export interface Position {
 // UI/Interaction state - transient UI selections (not game logic)
 export interface InteractionState {
   // Card selection
-  selectedCard: number | null;
+  selectedCard: CardId | null;
   isNewDraw: boolean;
   // Actor selection (used for both action phase and effect phase)
   selectedActorId: string | null;
@@ -108,21 +110,10 @@ export interface GameState {
   actionPhaseSavedState: GameState | null;
 }
 
-// Create a shuffled deck of cards 1-9
-export function createShuffledDeck(): number[] {
-  const deck = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  // Fisher-Yates shuffle
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-}
-
 // Create initial card state with full shuffled deck
-export function createInitialCardState(): CardState {
+export function createInitialCardState(cards: CardInfo[]): CardState {
   return {
-    deck: createShuffledDeck(),
+    deck: shuffleCards(cards),
     hand: [],
     played: null,
     discard: [],
@@ -172,8 +163,8 @@ export function createInitialGameState(): GameState {
     scientists: createInitialScientists(),
     scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     fireTokens: [],
-    raptorCards: createInitialCardState(),
-    scientistCards: createInitialCardState(),
+    raptorCards: createInitialCardState(raptorCards),
+    scientistCards: createInitialCardState(scientistCards),
     actionPoints: 0,
     activePlayer: "raptor",
     aggressiveActionsUsed: [],

@@ -1,5 +1,6 @@
 import Card from "../Card";
 import { useGame } from "../state/GameContext";
+import type { CardId } from "@/data/cards.ts";
 import "./Hand.css";
 
 interface HandProps {
@@ -26,43 +27,42 @@ function Hand({ player }: HandProps) {
 
   const faceDown = isOpponentSelecting;
   const faceDownUnselected = !isThisPlayerSelecting;
-  const selectedCard = isThisPlayerSelecting ? interaction.selectedCard : null;
+  const selectedCardId = isThisPlayerSelecting ? interaction.selectedCard : null;
   const playedCard = isThisPlayerSelecting ? null : cards.played;
   const floatingCard =
     player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null;
 
   // Card selection handler
-  const handleCardSelect = (value: number) => {
+  const handleCardSelect = (cardId: CardId) => {
     if (!isThisPlayerSelecting) return;
-    const newCard = interaction.selectedCard === value ? null : value;
+    const newCard = interaction.selectedCard === cardId ? null : cardId;
     dispatch({ type: "SELECT_CARD", player, card: newCard });
   };
 
   const canSelect = !faceDown;
-  const hasSelection = selectedCard != null;
+  const hasSelection = selectedCardId != null;
   const hasFloating = floatingCard != null;
 
   return (
     <div className={`Hand ${player}`}>
       <div className="hand-cards">
-        {handCards.map((value, index) => {
-          const isSelected = value === selectedCard;
-          const isPlayed = value === playedCard;
-          const isFloating = value === floatingCard;
+        {handCards.map((card, index) => {
+          const isSelected = card.id === selectedCardId;
+          const isPlayed = playedCard !== null && card.id === playedCard.id;
+          const isFloating = floatingCard !== null && card.id === floatingCard.id;
           const isDimmed = (hasSelection && !isSelected && !isPlayed) || (hasFloating && !isFloating);
           const cardFaceDown = faceDown || (faceDownUnselected && !isSelected && !isPlayed);
 
           return (
-            <div key={value} className="card-wrapper">
+            <div key={card.id} className="card-wrapper">
               <Card
-                value={value}
-                player={player}
+                card={card}
                 faceUp={!cardFaceDown}
-                onClick={!cardFaceDown && canSelect ? () => handleCardSelect(value) : undefined}
+                onClick={!cardFaceDown && canSelect ? () => handleCardSelect(card.id) : undefined}
                 selected={isSelected || isPlayed}
                 dimmed={isDimmed}
                 floating={isFloating}
-                layoutId={`card-${player}-${value}`}
+                layoutId={`card-${card.id}`}
                 layoutDelay={index * 0.1 + 0.1}
               />
             </div>

@@ -1,9 +1,10 @@
 import type { GameState, Player, InteractionState } from "@/types/gameState.ts";
+import type { CardId } from "@/data/cards.ts";
 
 // Action types for UI/interaction state
 export type InteractionAction =
   // Card selection
-  | { type: "SELECT_CARD"; player: Player; card: number | null }
+  | { type: "SELECT_CARD"; player: Player; card: CardId | null }
   | { type: "SET_NEW_DRAW"; player: Player; isNewDraw: boolean }
   // Actor selection (action phase and effect phase)
   | { type: "SELECT_ACTOR"; player: Player; pieceId: string | null }
@@ -35,7 +36,7 @@ const initialInteractionState: InteractionState = {
   selectedActorId: null,
 };
 
-export function handleSelectCard(state: GameState, action: { player: Player; card: number | null }): GameState {
+export function handleSelectCard(state: GameState, action: { player: Player; card: CardId | null }): GameState {
   return updateInteraction(state, action.player, { selectedCard: action.card });
 }
 
