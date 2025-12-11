@@ -34,10 +34,11 @@ export function transitionToPhase(state: GameState, phase: GamePhase): GameState
 
   // Save snapshot when entering effect phase
   if (phase === "EFFECT_PHASE") {
+    const effectActionsRemaining = getEffectLimit(state);
     newState = {
       ...newState,
-      effectActionsRemaining: getEffectLimit(state),
-      effectPhaseSavedState: state,
+      effectActionsRemaining,
+      effectPhaseSavedState: { ...newState, effectActionsRemaining },
     };
   }
 
