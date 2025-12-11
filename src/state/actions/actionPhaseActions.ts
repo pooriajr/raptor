@@ -6,6 +6,33 @@ import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates
 import { BabyRaptor } from "@/pieces/BabyRaptor.ts";
 import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
+import { checkWinConditions } from "@/utils/winConditions.ts";
+import { deleteSave } from "@/utils/saveLoad.ts";
+
+/**
+ * Wraps an action handler to check for win conditions after execution.
+ * If a win condition is met, transitions to GAME_OVER phase and clears save.
+ */
+function withWinCheck<T>(
+  handler: (state: GameState, action: T) => GameState,
+): (state: GameState, action: T) => GameState {
+  return (state: GameState, action: T): GameState => {
+    const newState = handler(state, action);
+    if (newState === state) return state; // No change occurred
+
+    const result = checkWinConditions(newState);
+    if (result.winner) {
+      deleteSave();
+      return {
+        ...newState,
+        phase: "GAME_OVER",
+        winner: result.winner,
+        winCondition: result.condition,
+      };
+    }
+    return newState;
+  };
+}
 
 // Action types for action phase
 export type ActionPhaseAction =
@@ -52,7 +79,7 @@ export type ActionPhaseAction =
   | { type: "ACTION_SCIENTIST_STAND_UP"; scientistId: string }
   | { type: "RESET_ACTION_PHASE" };
 
-export function handleActionMoveBaby(
+function _handleActionMoveBaby(
   state: GameState,
   action: { pieceId: string; tileId: number; x: number; y: number },
 ): GameState {
@@ -204,7 +231,7 @@ export function handleActionMoveMother(
   };
 }
 
-export function handleMotherKillScientist(state: GameState, action: { targetId: string }): GameState {
+function _handleMotherKillScientist(state: GameState, action: { targetId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "raptor") return state;
   if (state.actionPoints <= 0) return state;
@@ -316,10 +343,7 @@ export function handleScientistSleepBaby(
   };
 }
 
-export function handleScientistCaptureBaby(
-  state: GameState,
-  action: { scientistId: string; targetId: string },
-): GameState {
+function _handleScientistCaptureBaby(state: GameState, action: { scientistId: string; targetId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
@@ -350,7 +374,7 @@ export function handleScientistCaptureBaby(
   };
 }
 
-export function handleScientistShootMother(state: GameState, action: { scientistId: string }): GameState {
+function _handleScientistShootMother(state: GameState, action: { scientistId: string }): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
@@ -409,17 +433,8 @@ export function handleResetActionPhase(state: GameState): GameState {
   };
 }
 
-// Handler map for action phase actions
-export const actionPhaseHandlers = {
-  ACTION_MOVE_BABY: handleActionMoveBaby,
-  ACTION_MOVE_SCIENTIST: handleActionMoveScientist,
-  ACTION_MOVE_MOTHER: handleActionMoveMother,
-  ACTION_MOTHER_KILL_SCIENTIST: handleMotherKillScientist,
-  ACTION_MOTHER_WAKE_BABY: handleMotherWakeBaby,
-  ACTION_MOTHER_EXTINGUISH_FIRE: handleMotherExtinguishFire,
-  ACTION_SCIENTIST_SLEEP_BABY: handleScientistSleepBaby,
-  ACTION_SCIENTIST_CAPTURE_BABY: handleScientistCaptureBaby,
-  ACTION_SCIENTIST_SHOOT_MOTHER: handleScientistShootMother,
-  ACTION_SCIENTIST_STAND_UP: handleScientistStandUp,
-  RESET_ACTION_PHASE: handleResetActionPhase,
-};
+// Export wrapped versions of handlers that can trigger win conditions
+export const handleActionMoveBaby = withWinCheck(_handleActionMoveBaby);
+export const handleMotherKillScientist = withWinCheck(_handleMotherKillScientist);
+export const handleScientistCaptureBaby = withWinCheck(_handleScientistCaptureBaby);
+export const handleScientistShootMother = withWinCheck(_handleScientistShootMother);

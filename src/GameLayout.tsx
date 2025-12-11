@@ -3,6 +3,7 @@ import { RaptorPlayerArea, ScientistPlayerArea, UndoButton } from "./PlayerArea"
 import CardResolution from "./CardResolution.tsx";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import MainMenu from "./MainMenu.tsx";
+import GameOverScreen from "./GameOverScreen.tsx";
 import Trackers from "./Trackers.tsx";
 import { useGame } from "./state/GameContext.tsx";
 import "./GameLayout.css";
@@ -31,6 +32,7 @@ function GameLayout() {
       <ScientistPlayerArea />
       {state.phase === "MAIN_MENU" && <MainMenu />}
       {state.phase === "CARD_REVEAL" && <CardRevealOverlay />}
+      {state.phase === "GAME_OVER" && <GameOverScreen />}
     </div>
   );
 }

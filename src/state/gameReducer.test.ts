@@ -2169,3 +2169,187 @@ describe("Game Reducer - Action Phase", () => {
     });
   });
 });
+
+describe("Win Conditions", () => {
+  // Helper to create action phase state with proper setup
+  function createActionPhaseState(activePlayer: "raptor" | "scientist"): GameState {
+    let state = createInitialGameState();
+    // Set up basic pieces
+    state = {
+      ...state,
+      phase: "ACTION_PHASE",
+      activePlayer,
+      actionPoints: 8,
+      // Place mother on tile 2
+      mother: { ...state.mother, tileId: 2, x: 1, y: 1 },
+      // Place babies on square tiles
+      babies: state.babies.map((b, i) => ({
+        ...b,
+        tileId: i < 5 ? [1, 3, 6, 7, 8][i] : -1,
+        x: 1,
+        y: 1,
+      })),
+      // Place scientists on L-tiles
+      scientists: state.scientists.map((s, i) => ({
+        ...s,
+        tileId: i < 4 ? [0, 4, 5, 9][i] : -1,
+        x: 1,
+        y: 0,
+      })),
+    };
+    return state;
+  }
+
+  describe("Raptor wins by escaping 3 babies", () => {
+    it("should transition to GAME_OVER when third baby escapes", () => {
+      let state = createActionPhaseState("raptor");
+
+      // Mark 2 babies as already escaped
+      state = {
+        ...state,
+        babies: state.babies.map((b, i) => (i < 2 ? { ...b, tileId: -1, x: -1, y: -1, isEscaped: true } : b)),
+      };
+
+      // Find a baby on the board
+      const babyOnBoard = state.babies.find((b) => b.tileId !== -1 && !b.isAsleep);
+      expect(babyOnBoard).toBeDefined();
+
+      // Find an L-tile with exit space
+      const lTiles = state.tiles.filter((t) => t.shape === "L");
+      const lTile = lTiles[0];
+      const exitSpace = lTile.spaces.find((s) => s.isExit)!;
+      const adjacentSpace = lTile.spaces.find((s) => !s.isExit && !s.isUnusable && !s.hasMountain)!;
+
+      // Place baby adjacent to exit
+      state = {
+        ...state,
+        babies: state.babies.map((b) =>
+          b.id === babyOnBoard!.id
+            ? { ...b, tileId: lTile.id, x: adjacentSpace.coordinate.x, y: adjacentSpace.coordinate.y }
+            : b,
+        ),
+      };
+
+      // Move baby to exit
+      state = gameReducer(state, {
+        type: "ACTION_MOVE_BABY",
+        pieceId: babyOnBoard!.id,
+        tileId: lTile.id,
+        x: exitSpace.coordinate.x,
+        y: exitSpace.coordinate.y,
+      });
+
+      expect(state.phase).toBe("GAME_OVER");
+      expect(state.winner).toBe("raptor");
+      expect(state.winCondition).toBe("babies_escaped");
+    });
+  });
+
+  describe("Raptor wins by eliminating all scientists", () => {
+    it("should transition to GAME_OVER when last scientist is killed", () => {
+      let state = createActionPhaseState("raptor");
+
+      // Keep only one scientist, place adjacent to mother
+      const lastScientist = { ...state.scientists[0], tileId: 2, x: 1, y: 2 };
+      state = {
+        ...state,
+        scientists: [lastScientist],
+        mother: { ...state.mother, tileId: 2, x: 1, y: 1 },
+      };
+
+      state = gameReducer(state, {
+        type: "ACTION_MOTHER_KILL_SCIENTIST",
+        targetId: lastScientist.id,
+      });
+
+      expect(state.phase).toBe("GAME_OVER");
+      expect(state.winner).toBe("raptor");
+      expect(state.winCondition).toBe("scientists_eliminated");
+    });
+  });
+
+  describe("Scientist wins by neutralizing mother", () => {
+    it("should transition to GAME_OVER when mother gets 5th sleep token", () => {
+      let state = createActionPhaseState("scientist");
+
+      // Give mother 4 sleep tokens
+      state = { ...state, motherSleepTokens: 4 };
+
+      // Place scientist and mother on same tile in line of sight
+      // Scientist at (1,0), mother at (1,2) - same column, clear line
+      const scientist = { ...state.scientists[0], tileId: 2, x: 1, y: 0 };
+      state = {
+        ...state,
+        scientists: state.scientists.map((s) => (s.id === scientist.id ? scientist : s)),
+        mother: { ...state.mother, tileId: 2, x: 1, y: 2 },
+      };
+
+      state = gameReducer(state, {
+        type: "ACTION_SCIENTIST_SHOOT_MOTHER",
+        scientistId: scientist.id,
+      });
+
+      expect(state.phase).toBe("GAME_OVER");
+      expect(state.winner).toBe("scientist");
+      expect(state.winCondition).toBe("mother_neutralized");
+    });
+  });
+
+  describe("Scientist wins by capturing 3 babies", () => {
+    it("should transition to GAME_OVER when third baby is captured", () => {
+      let state = createActionPhaseState("scientist");
+
+      // Mark 2 babies as already captured
+      state = {
+        ...state,
+        babies: state.babies.map((b, i) => (i < 2 ? { ...b, tileId: -1, x: -1, y: -1, isCaptured: true } : b)),
+      };
+
+      // Find a baby on the board and make it asleep
+      const babyOnBoard = state.babies.find((b) => b.tileId !== -1);
+      expect(babyOnBoard).toBeDefined();
+
+      // Place baby and scientist adjacent on same tile
+      const scientist = { ...state.scientists[0], tileId: 2, x: 1, y: 1 };
+      state = {
+        ...state,
+        babies: state.babies.map((b) =>
+          b.id === babyOnBoard!.id ? { ...b, tileId: 2, x: 1, y: 2, isAsleep: true } : b,
+        ),
+        scientists: state.scientists.map((s) => (s.id === scientist.id ? scientist : s)),
+      };
+
+      state = gameReducer(state, {
+        type: "ACTION_SCIENTIST_CAPTURE_BABY",
+        scientistId: scientist.id,
+        targetId: babyOnBoard!.id,
+      });
+
+      expect(state.phase).toBe("GAME_OVER");
+      expect(state.winner).toBe("scientist");
+      expect(state.winCondition).toBe("babies_captured");
+    });
+  });
+
+  describe("RESET_GAME action", () => {
+    it("should reset to initial game state", () => {
+      let state = createActionPhaseState("raptor");
+
+      // Simulate game over
+      state = {
+        ...state,
+        phase: "GAME_OVER",
+        winner: "raptor",
+        winCondition: "babies_escaped",
+      };
+
+      state = gameReducer(state, { type: "RESET_GAME" });
+
+      expect(state.phase).toBe("MAIN_MENU");
+      expect(state.winner).toBeNull();
+      expect(state.winCondition).toBeNull();
+      expect(state.motherSleepTokens).toBe(0);
+      expect(state.babies.every((b) => b.tileId === -1)).toBe(true);
+    });
+  });
+});

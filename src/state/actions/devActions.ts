@@ -1,4 +1,5 @@
 import type { GameState } from "@/types/gameState.ts";
+import { createInitialGameState } from "@/types/gameState.ts";
 import { transitionToPhase } from "@/state/phaseTransition.ts";
 import { CARDS, type CardId } from "@/data/cards.ts";
 
@@ -7,7 +8,8 @@ export type DevAction =
   | { type: "DEV_SKIP_TO_EFFECT"; raptorCard: CardId; scientistCard: CardId }
   | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" }
   | { type: "DEV_SKIP_TO_CARD_SELECTION"; player: "scientist" | "raptor" }
-  | { type: "LOAD_GAME"; savedState: GameState };
+  | { type: "LOAD_GAME"; savedState: GameState }
+  | { type: "RESET_GAME" };
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
@@ -145,10 +147,16 @@ export function handleLoadGame(_state: GameState, action: { savedState: GameStat
   return action.savedState;
 }
 
+export function handleResetGame(): GameState {
+  // Reset to initial game state (main menu)
+  return createInitialGameState();
+}
+
 // Handler map for dev actions
 export const devHandlers = {
   DEV_SKIP_TO_EFFECT: handleDevSkipToEffect,
   DEV_SKIP_TO_ACTION: handleDevSkipToAction,
   DEV_SKIP_TO_CARD_SELECTION: handleDevSkipToCardSelection,
   LOAD_GAME: handleLoadGame,
+  RESET_GAME: handleResetGame,
 };

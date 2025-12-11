@@ -14,7 +14,15 @@ export type GamePhase =
   | "EFFECT_PHASE" // Lower card player uses special effect
   | "ACTION_PHASE" // Higher card player spends action points
   | "MOTHER_RETURN" // After disappearance, raptor places mother back on board
-  | "ROUND_END";
+  | "ROUND_END"
+  | "GAME_OVER";
+
+// Win conditions - describes how a player won
+export type WinCondition =
+  | "babies_escaped" // Raptor: 3 babies escaped
+  | "scientists_eliminated" // Raptor: No scientists on board
+  | "mother_neutralized" // Scientist: Mother has 5 sleep tokens
+  | "babies_captured"; // Scientist: 3 babies captured
 
 // Piece types as plain data (not class instances)
 export type PieceType = "mother" | "baby" | "scientist";
@@ -98,6 +106,8 @@ export interface GameState {
   observationActive: boolean; // Whether raptor can see scientist's card next selection (from disappearance)
   // Win condition tracking
   motherSleepTokens: number; // Sleep tokens on mother (scientist wins at 5)
+  winner: Player | null; // Winner of the game (null if game ongoing)
+  winCondition: WinCondition | null; // How the winner won
   // UI/Interaction state - per player
   raptorInteraction: InteractionState;
   scientistInteraction: InteractionState;
@@ -171,6 +181,8 @@ export function createInitialGameState(): GameState {
     motherDisappeared: false,
     observationActive: false,
     motherSleepTokens: 0,
+    winner: null,
+    winCondition: null,
 
     raptorInteraction: createInitialInteractionState(),
     scientistInteraction: createInitialInteractionState(),
