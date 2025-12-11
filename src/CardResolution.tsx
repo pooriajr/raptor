@@ -62,23 +62,16 @@ function CardResolution() {
       if (activeEffectCard.player === "raptor") {
         raptorContent = effectContent;
         scientistContent = apContent;
-        // Raptor has effect, scientist has action points
-        // MOTHER_RETURN is part of raptor's turn (after effect phase)
-        raptorActive = state.phase === "EFFECT_PHASE" || state.phase === "MOTHER_RETURN";
-        scientistActive = state.phase === "ACTION_PHASE";
-        // Effect phase is done when we're in action phase or later
-        raptorDone = state.phase === "ACTION_PHASE" || isRoundEnd;
+        raptorDone = state.activePlayer === "scientist" || isRoundEnd;
         scientistDone = isRoundEnd;
       } else {
         scientistContent = effectContent;
         raptorContent = apContent;
-        // Scientist has effect, raptor has action points
-        scientistActive = state.phase === "EFFECT_PHASE";
-        raptorActive = state.phase === "ACTION_PHASE" || state.phase === "MOTHER_RETURN";
-        // Effect phase is done when we're in action phase or later
-        scientistDone = state.phase === "ACTION_PHASE" || state.phase === "MOTHER_RETURN" || isRoundEnd;
+        scientistDone = state.activePlayer === "raptor" || isRoundEnd;
         raptorDone = isRoundEnd;
       }
+      raptorActive = state.activePlayer === "raptor";
+      scientistActive = state.activePlayer === "scientist";
     } else {
       // Tied - no effect card, no action points displayed
       raptorContent = <span className="tied">Tied</span>;
