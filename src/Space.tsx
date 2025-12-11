@@ -1,13 +1,12 @@
 import "./Space.css";
-import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
 import type { PieceState, GameState } from "./types/gameState.ts";
 import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
 import { parseSpaceId } from "./types/spaceActions.ts";
-import { getPieceEmoji } from "./utils/pieceUtils.ts";
 import { buildSpaceActions } from "./utils/buildSpaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
+import Piece from "./Piece.tsx";
 
 interface SpaceProps {
   space: SpaceType;
@@ -72,25 +71,7 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceCont
   // Priority 3: Actual piece
   if (pieceOnSpace) {
     const isSelected = selectedActorId === pieceOnSpace.id;
-
-    return (
-      <motion.span
-        layout
-        layoutId={`piece-${pieceOnSpace.id}`}
-        className={`piece piece-${pieceOnSpace.type} ${pieceOnSpace.isAsleep ? "asleep" : ""} ${pieceOnSpace.isFrightened ? "frightened" : ""} ${isSelected ? "action-selected" : ""}`}
-        transition={{
-          layout: {
-            type: "tween",
-            duration: 0.2,
-            ease: "easeOut",
-          },
-        }}
-      >
-        {getPieceEmoji(pieceOnSpace.type)}
-        {pieceOnSpace.isAsleep && <span className="status-icon">💤</span>}
-        {pieceOnSpace.isFrightened && <span className="status-icon">😨</span>}
-      </motion.span>
-    );
+    return <Piece piece={pieceOnSpace} isSelected={isSelected} />;
   }
 
   // Priority 4: Fire token
