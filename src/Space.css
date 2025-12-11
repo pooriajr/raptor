@@ -1,0 +1,255 @@
+/* Individual space styling */
+.space {
+  background-color: #fffdf2;
+  border-radius: 3px;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 18px;
+}
+
+/* Exit spaces (half-spaces) */
+.space[data-exit="true"] {
+  background-color: #8b7355;
+  border-color: #6b5335;
+  opacity: 0.8;
+}
+
+/* Spaces with mountains */
+.space[data-mountain="true"] {
+  background-color: #928472;
+}
+
+/* Unusable spaces (empty grid cells in L-tiles) */
+.space[data-unusable="true"] {
+  background-color: transparent;
+  border-color: transparent;
+  visibility: hidden;
+}
+
+/* ===========================================
+   SPACE STYLES - using data-style attr
+   =========================================== */
+
+/* Valid move - action phase movement destination (green) */
+.space[data-style="validMove"] {
+  cursor: pointer;
+  background-color: #a8d590 !important;
+  border-color: #6f9d4a !important;
+  box-shadow: inset 0 0 8px rgba(111, 157, 74, 0.4);
+}
+
+/* Setup placement - setup phase placement (light green) */
+.space[data-style="setupPlacement"] {
+  cursor: pointer;
+  background-color: #b8e0a8 !important;
+  border-color: #6aad5a !important;
+  box-shadow: inset 0 0 8px rgba(106, 173, 90, 0.4);
+}
+
+.space[data-style="setupPlacement"]:hover {
+  background-color: #90d5a8 !important;
+  border-color: #4a9d6f !important;
+  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
+}
+
+/* Setup move target - moving piece within tile during setup (hover only) */
+.space[data-style="setupMoveTarget"] {
+  cursor: pointer;
+}
+
+.space[data-style="setupMoveTarget"]:hover {
+  background-color: #90d5a8 !important;
+  border-color: #4a9d6f !important;
+  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.6);
+}
+
+/* Effect target - selectable pieces for two-step effects (gold) */
+.space[data-style="effectTarget"] {
+  cursor: pointer;
+  background-color: #e8d590 !important;
+  border-color: #c9a84a !important;
+  animation: pulse-target 1s ease-in-out infinite;
+}
+
+/* Effect destination - Mother's Call, reinforcements, fire, jeep (teal) */
+.space[data-style="effectDestination"] {
+  cursor: pointer;
+  background-color: #90d5c8 !important;
+  border-color: #4a9d8f !important;
+  animation: pulse-destination 1s ease-in-out infinite;
+}
+
+/* Pending destination - where pieces will move to on confirm (solid green) */
+.space[data-style="pendingDestination"] {
+  background-color: #7dd5a0 !important;
+  border-color: #4a9d6f !important;
+  box-shadow: inset 0 0 12px rgba(74, 157, 111, 0.8);
+}
+
+/* Path trail - intermediate path positions / origins (footprints) */
+.space[data-style="pathTrail"] {
+  background-color: #b8d4a8 !important;
+  border-color: #8ab87a !important;
+}
+
+/* Hostile target - enemy pieces that can be attacked (red) */
+.space[data-style="hostileTarget"] {
+  cursor: pointer;
+  background-color: #e89090 !important;
+  border-color: #c45050 !important;
+  box-shadow: inset 0 0 8px rgba(196, 80, 80, 0.4);
+}
+
+/* Friendly target - friendly pieces/fire that can be interacted with (purple) */
+.space[data-style="friendlyTarget"] {
+  cursor: pointer;
+  background-color: #c8a0e8 !important;
+  border-color: #9060c0 !important;
+  box-shadow: inset 0 0 8px rgba(144, 96, 192, 0.4);
+}
+
+/* Fire - existing fire token (orange) */
+.space[data-style="fire"] {
+  background-color: #e8a060 !important;
+  border-color: #c07030 !important;
+}
+
+/* Pending fire - fire to be placed (orange pulsing) */
+.space[data-style="pendingFire"] {
+  background-color: #e8a060 !important;
+  border-color: #c07030 !important;
+}
+
+/* ===========================================
+   PIECE STYLING
+   =========================================== */
+
+/* Style the emoji icons */
+.mountain,
+.exit,
+.piece {
+  font-size: 48px;
+  display: inline-block;
+  position: relative;
+  z-index: 10;
+}
+
+/* Piece styling */
+.piece {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+/* Mother raptor - bigger and scarier, overflows the tile */
+.piece.piece-mother {
+  font-size: 72px;
+  margin: -12px;
+  z-index: 20;
+}
+
+/* Piece status indicators */
+.piece.asleep {
+  opacity: 0.6;
+  filter: grayscale(50%);
+}
+
+.piece.frightened {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.status-icon {
+  position: absolute;
+  font-size: 16px;
+  top: -8px;
+  right: -8px;
+}
+
+/* Action phase selected piece */
+.piece.action-selected {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+/* Pending piece - baby shown at its destination before confirming */
+.piece.pending-piece {
+  opacity: 0.7;
+}
+
+/* ===========================================
+   FIRE TOKEN STYLING
+   =========================================== */
+
+.fire-token {
+  font-size: 42px;
+  position: absolute;
+  z-index: 5;
+}
+
+/* Pending fire placement - pulsing effect */
+.fire-token.pending-fire {
+  filter: drop-shadow(0 0 8px rgba(255, 150, 0, 0.8));
+  animation: pulse-fire 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-fire {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* ===========================================
+   PATH & EFFECT ANIMATIONS
+   =========================================== */
+
+.path-trail {
+  font-size: 36px;
+  opacity: 0.7;
+}
+
+@keyframes pulse-target {
+  0%,
+  100% {
+    box-shadow: inset 0 0 8px rgba(201, 168, 74, 0.6);
+  }
+  50% {
+    box-shadow: inset 0 0 16px rgba(201, 168, 74, 1);
+  }
+}
+
+@keyframes pulse-destination {
+  0%,
+  100% {
+    box-shadow: inset 0 0 8px rgba(74, 157, 143, 0.6);
+  }
+  50% {
+    box-shadow: inset 0 0 16px rgba(74, 157, 143, 1);
+  }
+}
+
+/* Jeep car at destination */
+.jeep-car {
+}

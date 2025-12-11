@@ -1,4 +1,4 @@
-import "./Tile.css";
+import "./Space.css";
 import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
