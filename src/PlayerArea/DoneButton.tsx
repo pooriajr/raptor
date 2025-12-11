@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useGame } from "../state/GameContext";
 import { countPlacedScientists } from "../utils/pieceUtils";
 import { getEffectPlayer } from "../utils/effectUtils";
@@ -36,6 +37,10 @@ function DoneButton({ player }: DoneButtonProps) {
     dispatch({ type: "ADVANCE_PHASE" });
   };
 
+  // Determine if this is the active player's done button
+  const isActivePlayer =
+    isThisPlayerSetup || isThisPlayerSelecting || isThisPlayerEffect || isThisPlayerAction || isMotherReturn;
+
   // === Compute button disabled state ===
 
   const disabled = (() => {
@@ -57,12 +62,30 @@ function DoneButton({ player }: DoneButtonProps) {
     return true;
   })();
 
+  // Keyboard shortcut: Space triggers Done for active player
+  useEffect(() => {
+    if (!isActivePlayer) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !disabled) {
+        e.preventDefault();
+        handleClick();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isActivePlayer, disabled]);
+
   const className = `done-button ${disabled ? "done-button--disabled" : "done-button--ready"}`;
 
   return (
     <button className={className} disabled={disabled} onClick={handleClick}>
       <span className="done-button__edge" />
-      <span className="done-button__front">Done</span>
+      <span className="done-button__front">
+        Done
+        <span className="done-button__hint">[space]</span>
+      </span>
     </button>
   );
 }
