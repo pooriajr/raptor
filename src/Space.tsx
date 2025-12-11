@@ -152,8 +152,12 @@ function getEffectTargetIds(state: ReturnType<typeof useGame>["state"]): string[
       return state.scientists.filter((s) => !s.isFrightened).map((s) => s.id);
     }
     if (effectCard === 5 || effectCard === 7) {
-      // Recovery - sleeping babies
-      return state.babies.filter((b) => b.isAsleep).map((b) => b.id);
+      // Recovery - sleeping babies and/or mother with sleep tokens
+      const targets = state.babies.filter((b) => b.isAsleep).map((b) => b.id);
+      if (state.mother && state.motherSleepTokens > 0) {
+        targets.push(state.mother.id);
+      }
+      return targets;
     }
   } else {
     // Scientist effects
