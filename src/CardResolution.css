@@ -1,0 +1,77 @@
+.CardResolution {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 3px solid #444;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.CardResolution .half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.CardResolution .half.raptor {
+  background: linear-gradient(180deg, #2d5a27 0%, #1a3518 100%);
+  color: #8bc34a;
+}
+
+.CardResolution .half.scientist {
+  background: linear-gradient(0deg, #2d2a5a 0%, #181a35 100%);
+  color: #7986cb;
+}
+
+.CardResolution .divider {
+  height: 2px;
+  background: #555;
+}
+
+.CardResolution .effect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.CardResolution .effect .icon {
+  font-size: 1.5rem;
+}
+
+.CardResolution .effect .label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.CardResolution .action-points {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.CardResolution .action-points .number {
+  font-size: 1.8rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.CardResolution .action-points .label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.CardResolution .tied {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  font-style: italic;
+}

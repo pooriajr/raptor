@@ -1,5 +1,6 @@
 import Board from "./Board.tsx";
 import { RaptorPlayerArea, ScientistPlayerArea } from "./PlayerArea";
+import CardResolution from "./CardResolution.tsx";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
 import MainMenu from "./MainMenu.tsx";
@@ -14,7 +15,10 @@ function GameLayout() {
   return (
     <div className={layoutClassName}>
       <RaptorPlayerArea />
-      <Board />
+      <div className="board-area">
+        <Board />
+        <CardResolution />
+      </div>
       <ScientistPlayerArea />
       {state.phase === "MAIN_MENU" && <MainMenu />}
       {state.phase === "CARD_REVEAL" && <CardRevealOverlay />}

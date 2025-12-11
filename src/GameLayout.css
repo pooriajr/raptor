@@ -16,3 +16,10 @@
 .game-layout.active-scientist {
   background-color: #181a35;
 }
+
+.board-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
