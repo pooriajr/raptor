@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Card from "./Card";
-import { getCardEffect } from "./utils/cardEffects";
 import { useGame } from "./state/GameContext";
+import type { CardInfo } from "@/data/cards.ts";
 import "./CardRevealOverlay.css";
 
 function CardRevealOverlay() {
@@ -16,18 +16,16 @@ function CardRevealOverlay() {
     return () => clearTimeout(timeout);
   }, []);
 
-  const sameCards = scientistCard === raptorCard;
-  const difference = Math.abs(scientistCard - raptorCard);
-  const scientistWins = scientistCard < raptorCard;
+  const sameCards = scientistCard.value === raptorCard.value;
+  const difference = Math.abs(scientistCard.value - raptorCard.value);
+  const scientistWins = scientistCard.value < raptorCard.value;
   const winner = scientistWins ? "Scientist" : "Raptor";
   const actionPoints = `${difference} action point${difference > 1 ? "s" : ""}`;
 
-  const renderEffectBox = (player: "scientist" | "raptor", card: number, isWinner: boolean) => (
+  const renderEffectBox = (card: CardInfo, isWinner: boolean) => (
     <div className={`effect-box ${isWinner ? "winner" : "loser"}`}>
-      <div className="effect-player">{player === "scientist" ? "Scientist" : "Raptor"}</div>
-      <div className="effect-text">
-        {isWinner ? `Uses card effect: ${getCardEffect(player, card)}` : `Gets ${actionPoints}`}
-      </div>
+      <div className="effect-player">{card.player === "scientist" ? "Scientist" : "Raptor"}</div>
+      <div className="effect-text">{isWinner ? `Uses card effect: ${card.name}` : `Gets ${actionPoints}`}</div>
     </div>
   );
 
@@ -40,7 +38,7 @@ function CardRevealOverlay() {
           <div className="reveal-card-section">
             <div className="player-label scientist">Scientist</div>
             <div className="reveal-card-wrapper">
-              <Card value={scientistCard} player="scientist" faceUp={revealed} />
+              <Card card={scientistCard} faceUp={revealed} />
             </div>
           </div>
 
@@ -49,7 +47,7 @@ function CardRevealOverlay() {
           <div className="reveal-card-section">
             <div className="player-label raptor">Raptor</div>
             <div className="reveal-card-wrapper">
-              <Card value={raptorCard} player="raptor" faceUp={revealed} />
+              <Card card={raptorCard} faceUp={revealed} />
             </div>
           </div>
         </div>
@@ -64,8 +62,8 @@ function CardRevealOverlay() {
             ) : (
               <div className="result-section">
                 <div className="effect-row">
-                  {renderEffectBox("scientist", scientistCard, scientistWins)}
-                  {renderEffectBox("raptor", raptorCard, !scientistWins)}
+                  {renderEffectBox(scientistCard, scientistWins)}
+                  {renderEffectBox(raptorCard, !scientistWins)}
                 </div>
                 <div className="turn-order">{winner} acts first</div>
               </div>

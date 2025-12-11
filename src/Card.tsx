@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import "./Card.css";
-import { getCardEffect, getCardIcon, getCardDescription } from "./utils/cardEffects";
+import type { CardInfo } from "@/data/cards.ts";
 
 interface CardProps {
-  value: number;
-  player: "raptor" | "scientist";
+  card: CardInfo;
   faceUp?: boolean;
   onClick?: () => void;
   selected?: boolean;
@@ -17,8 +16,7 @@ interface CardProps {
 }
 
 function Card({
-  value,
-  player,
+  card,
   faceUp = false,
   onClick,
   selected = false,
@@ -28,6 +26,7 @@ function Card({
   animationDelay = 0,
   layoutId,
 }: CardProps) {
+  const { value, player, name, icon, description } = card;
   const isInteractive = onClick && !selected;
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -91,8 +90,8 @@ function Card({
       {/* Front face - shows the card value */}
       <div className="card-face card-front">
         <div className="card-value">{value}</div>
-        <div className="card-icon">{getCardIcon(player, value)}</div>
-        <div className="card-effect">{getCardEffect(player, value)}</div>
+        <div className="card-icon">{icon}</div>
+        <div className="card-effect">{name}</div>
       </div>
 
       {/* Back face - shows the card back pattern */}
@@ -103,8 +102,8 @@ function Card({
       {/* Tooltip */}
       {showTooltip && (
         <div className={`card-tooltip ${player === "raptor" ? "tooltip-below" : "tooltip-above"}`}>
-          <div className="tooltip-title">{getCardEffect(player, value)}</div>
-          <div className="tooltip-description">{getCardDescription(player, value)}</div>
+          <div className="tooltip-title">{name}</div>
+          <div className="tooltip-description">{description}</div>
         </div>
       )}
     </motion.div>

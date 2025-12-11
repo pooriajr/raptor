@@ -1,9 +1,11 @@
 import type { GameState, CardState, Player } from "@/types/gameState.ts";
+import type { CardId } from "@/data/cards.ts";
+import { CARDS } from "@/data/cards.ts";
 
 // Action types for card phase
 export type CardAction =
   | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
-  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: number };
+  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: CardId };
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -95,18 +97,18 @@ export function calculateActionPhaseState(state: GameState): {
     return { actionPoints: 0, activePlayer: null };
   }
 
-  if (scientistCard === raptorCard) {
+  if (scientistCard.value === raptorCard.value) {
     return { actionPoints: 0, activePlayer: null };
   }
 
-  if (scientistCard > raptorCard) {
+  if (scientistCard.value > raptorCard.value) {
     return {
-      actionPoints: scientistCard - raptorCard,
+      actionPoints: scientistCard.value - raptorCard.value,
       activePlayer: "scientist",
     };
   } else {
     return {
-      actionPoints: raptorCard - scientistCard,
+      actionPoints: raptorCard.value - scientistCard.value,
       activePlayer: "raptor",
     };
   }
@@ -135,11 +137,11 @@ export function shuffleDiscardIntoDeck(cardState: CardState): CardState {
 }
 
 // Helper to transition to action phase with calculated AP
-// Also handles card 1 shuffle effect for the player who used the effect
+// Also handles shuffle effect for the player who used the effect (cards with shufflesDeck: true)
 export function getActionPhaseState(state: GameState): Partial<GameState> {
   const { actionPoints, activePlayer } = calculateActionPhaseState(state);
 
-  // Check if card 1 was played and got the effect (lower card gets effect)
+  // Check if a card with shuffle effect was played and got the effect (lower card gets effect)
   const scientistCard = state.scientistCards.played;
   const raptorCard = state.raptorCards.played;
 
@@ -147,12 +149,12 @@ export function getActionPhaseState(state: GameState): Partial<GameState> {
   let raptorCards = state.raptorCards;
 
   if (scientistCard !== null && raptorCard !== null) {
-    // Scientist played card 1 and got the effect (scientist card lower)
-    if (scientistCard === 1 && scientistCard < raptorCard) {
+    // Scientist played a shuffle card and got the effect (scientist card lower)
+    if (scientistCard.shufflesDeck && scientistCard.value < raptorCard.value) {
       scientistCards = shuffleDiscardIntoDeck(scientistCards);
     }
-    // Raptor played card 1 and got the effect (raptor card lower)
-    if (raptorCard === 1 && raptorCard < scientistCard) {
+    // Raptor played a shuffle card and got the effect (raptor card lower)
+    if (raptorCard.shufflesDeck && raptorCard.value < scientistCard.value) {
       raptorCards = shuffleDiscardIntoDeck(raptorCards);
     }
   }
@@ -181,14 +183,17 @@ export function handleDrawCards(state: GameState, action: { player: "raptor" | "
   }
 }
 
-export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: number }): GameState {
+export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: CardId }): GameState {
+  // Look up the card from the CARDS object
+  const card = CARDS[action.card];
+
   // Just set the played card - phase transition is handled by ADVANCE_PHASE
   if (action.player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") {
     return {
       ...state,
       scientistCards: {
         ...state.scientistCards,
-        played: action.card,
+        played: card,
       },
     };
   }
@@ -197,7 +202,7 @@ export function handlePlayCard(state: GameState, action: { player: "raptor" | "s
       ...state,
       raptorCards: {
         ...state.raptorCards,
-        played: action.card,
+        played: card,
       },
       observationActive: false,
     };

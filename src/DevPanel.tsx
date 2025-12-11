@@ -142,43 +142,77 @@ function DevPanel() {
         <div className="skip-buttons">
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 1, scientistCard: 5 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_1_mothers_call",
+                scientistCard: "scientist_5_fire",
+              })
+            }
           >
             Mother's Call (1)
           </button>
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 4, scientistCard: 5 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_4_mothers_call",
+                scientistCard: "scientist_5_fire",
+              })
+            }
           >
             Mother's Call (2)
           </button>
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 2, scientistCard: 5 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_2_disappearance",
+                scientistCard: "scientist_5_fire",
+              })
+            }
           >
             Disappearance
           </button>
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 3, scientistCard: 5 })}
+            onClick={() =>
+              dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_3_fear", scientistCard: "scientist_5_fire" })
+            }
           >
             Fear (1)
           </button>
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 8, scientistCard: 9 })}
+            onClick={() =>
+              dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_8_fear", scientistCard: "scientist_9_none" })
+            }
           >
             Fear (2)
           </button>
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 9 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_5_recovery",
+                scientistCard: "scientist_9_none",
+              })
+            }
           >
             Recovery (2)
           </button>
           <button
             className="skip-btn raptor-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 7, scientistCard: 9 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_7_recovery",
+                scientistCard: "scientist_9_none",
+              })
+            }
           >
             Recovery (3)
           </button>
@@ -190,43 +224,69 @@ function DevPanel() {
         <div className="skip-buttons">
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 1 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_5_recovery",
+                scientistCard: "scientist_1_sleeping_gas",
+              })
+            }
           >
             Sleep Gas (1)
           </button>
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 4 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_9_none",
+                scientistCard: "scientist_4_sleeping_gas",
+              })
+            }
           >
             Sleep Gas (2)
           </button>
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 5, scientistCard: 2 })}
+            onClick={() =>
+              dispatch({
+                type: "DEV_SKIP_TO_EFFECT",
+                raptorCard: "raptor_5_recovery",
+                scientistCard: "scientist_2_reinforcements",
+              })
+            }
           >
             Reinforcements
           </button>
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 5 })}
+            onClick={() =>
+              dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_5_fire" })
+            }
           >
             Fire (2)
           </button>
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 7 })}
+            onClick={() =>
+              dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_7_fire" })
+            }
           >
             Fire (3)
           </button>
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 3 })}
+            onClick={() =>
+              dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_3_jeep" })
+            }
           >
             Jeep (2)
           </button>
           <button
             className="skip-btn scientist-effect"
-            onClick={() => dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: 9, scientistCard: 8 })}
+            onClick={() =>
+              dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_8_jeep" })
+            }
           >
             Jeep (4)
           </button>

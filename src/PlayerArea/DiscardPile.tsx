@@ -1,25 +1,21 @@
 import Card from "../Card";
-import { useGame } from "../state/GameContext";
+import type { CardInfo } from "@/data/cards.ts";
 import "./DiscardPile.css";
 
 interface DiscardPileProps {
-  player: "raptor" | "scientist";
+  discardPile: CardInfo[];
 }
 
-function DiscardPile({ player }: DiscardPileProps) {
-  const { state } = useGame();
-  const cards = player === "raptor" ? state.raptorCards : state.scientistCards;
-  const discardPile = cards.discard;
-
+function DiscardPile({ discardPile }: DiscardPileProps) {
   return (
     <div className="DiscardPile">
       {discardPile.length === 0 ? (
         <div className="discard-placeholder">Discard</div>
       ) : (
         <div className="discard-cards">
-          {discardPile.map((cardValue, index) => (
-            <div key={`${cardValue}-${index}`} className="discard-card-wrapper">
-              <Card value={cardValue} player={player} faceUp layoutId={`card-${player}-${cardValue}`} />
+          {discardPile.map((card) => (
+            <div key={card.id} className="discard-card-wrapper">
+              <Card card={card} faceUp layoutId={`card-${card.id}`} />
             </div>
           ))}
         </div>

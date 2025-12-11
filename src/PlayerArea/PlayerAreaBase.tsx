@@ -7,6 +7,7 @@ import UndoButton from "./UndoButton";
 import { useGame } from "../state/GameContext";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
 import { hasSavedGame, loadGame } from "../utils/saveLoad";
+import { CARDS } from "@/data/cards.ts";
 import type { CardState, InteractionState } from "../types/gameState";
 import "./PlayerArea.css";
 
@@ -55,12 +56,11 @@ function PlayerAreaBase({
       return setupInfo;
     }
     if (isSelectingCard) {
+      const selectedCardInfo = interaction.selectedCard ? CARDS[interaction.selectedCard] : null;
       return {
         phaseLabel: "Pick a Card",
         progress: null,
-        instruction: interaction.selectedCard
-          ? `Card ${interaction.selectedCard} selected`
-          : "Select a card from your hand",
+        instruction: selectedCardInfo ? `Card ${selectedCardInfo.value} selected` : "Select a card from your hand",
       };
     }
     if (isThisPlayerEffect) {
@@ -87,8 +87,8 @@ function PlayerAreaBase({
     <LayoutGroup id={`${player}-cards`}>
       <div className={`player-area ${player}-area`}>
         <div className="player-area-left">
-          <CardDeck player={player} deck={cards.deck} />
-          <DiscardPile player={player} />
+          <CardDeck deck={cards.deck} />
+          <DiscardPile discardPile={cards.discard} />
           {trackers}
         </div>
 

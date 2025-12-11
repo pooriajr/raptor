@@ -61,7 +61,7 @@ function getNextPhase(state: GameState): GamePhase | null {
 
     case "CARD_REVEAL":
       // Cards match = skip to round end, otherwise effect phase
-      if (state.scientistCards.played === state.raptorCards.played) {
+      if (state.scientistCards.played?.value === state.raptorCards.played?.value) {
         return "ROUND_END";
       }
       return "EFFECT_PHASE";
@@ -95,11 +95,11 @@ function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | n
   if (phase.startsWith("SCIENTIST")) return "scientist";
   if (phase === "EFFECT_PHASE") {
     // Lower card gets the effect
-    return state.raptorCards.played! < state.scientistCards.played! ? "raptor" : "scientist";
+    return state.raptorCards.played!.value < state.scientistCards.played!.value ? "raptor" : "scientist";
   }
   if (phase === "ACTION_PHASE") {
     // Higher card gets action points
-    return state.raptorCards.played! > state.scientistCards.played! ? "raptor" : "scientist";
+    return state.raptorCards.played!.value > state.scientistCards.played!.value ? "raptor" : "scientist";
   }
   if (phase === "MOTHER_RETURN") {
     return "raptor";
@@ -180,12 +180,12 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
         effectActionsRemaining,
         effectPhaseSavedState: { ...newState, effectActionsRemaining },
       };
-      // Auto-disappearance for raptor cards 2 or 6
+      // Auto-disappearance for raptor disappearance effect
       const raptorCard = newState.raptorCards.played;
       const scientistCard = newState.scientistCards.played;
       if (raptorCard !== null && scientistCard !== null) {
-        const raptorHasEffect = raptorCard < scientistCard;
-        if (raptorHasEffect && (raptorCard === 2 || raptorCard === 6)) {
+        const raptorHasEffect = raptorCard.value < scientistCard.value;
+        if (raptorHasEffect && raptorCard.effectType === "disappearance") {
           newState = {
             ...newState,
             mother: { ...newState.mother, tileId: -1, x: 0, y: 0 },

@@ -1,9 +1,10 @@
 import type { GameState } from "@/types/gameState.ts";
 import { transitionToPhase } from "@/state/phaseTransition.ts";
+import { CARDS, type CardId } from "@/data/cards.ts";
 
 // Dev action types
 export type DevAction =
-  | { type: "DEV_SKIP_TO_EFFECT"; raptorCard: number; scientistCard: number }
+  | { type: "DEV_SKIP_TO_EFFECT"; raptorCard: CardId; scientistCard: CardId }
   | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" }
   | { type: "DEV_SKIP_TO_CARD_SELECTION"; player: "scientist" | "raptor" }
   | { type: "LOAD_GAME"; savedState: GameState };
@@ -74,20 +75,22 @@ function devAutoSetup(state: GameState): GameState {
 
 export function handleDevSkipToEffect(
   state: GameState,
-  action: { raptorCard: number; scientistCard: number },
+  action: { raptorCard: CardId; scientistCard: CardId },
 ): GameState {
   const setupState = devAutoSetup(state);
+  const raptorCardInfo = CARDS[action.raptorCard];
+  const scientistCardInfo = CARDS[action.scientistCard];
   const newState = {
     ...setupState,
     scientistCards: {
       ...setupState.scientistCards,
-      played: action.scientistCard,
-      hand: setupState.scientistCards.hand.filter((c) => c !== action.scientistCard),
+      played: scientistCardInfo,
+      hand: setupState.scientistCards.hand.filter((c) => c.id !== action.scientistCard),
     },
     raptorCards: {
       ...setupState.raptorCards,
-      played: action.raptorCard,
-      hand: setupState.raptorCards.hand.filter((c) => c !== action.raptorCard),
+      played: raptorCardInfo,
+      hand: setupState.raptorCards.hand.filter((c) => c.id !== action.raptorCard),
     },
   };
   return transitionToPhase(newState, "EFFECT_PHASE");
@@ -95,20 +98,22 @@ export function handleDevSkipToEffect(
 
 export function handleDevSkipToAction(state: GameState, action: { player: "scientist" | "raptor" }): GameState {
   const setupState = devAutoSetup(state);
-  const raptorCard = action.player === "raptor" ? 9 : 1;
-  const scientistCard = action.player === "scientist" ? 9 : 1;
+  // For action phase: high card (9) gets action points, low card (1) gets effect
+  // So to give a player action points, they need the higher card
+  const raptorCardId: CardId = action.player === "raptor" ? "raptor_9_none" : "raptor_1_mothers_call";
+  const scientistCardId: CardId = action.player === "scientist" ? "scientist_9_none" : "scientist_1_sleeping_gas";
 
   const newState = {
     ...setupState,
     scientistCards: {
       ...setupState.scientistCards,
-      played: scientistCard,
-      hand: setupState.scientistCards.hand.filter((c) => c !== scientistCard),
+      played: CARDS[scientistCardId],
+      hand: setupState.scientistCards.hand.filter((c) => c.id !== scientistCardId),
     },
     raptorCards: {
       ...setupState.raptorCards,
-      played: raptorCard,
-      hand: setupState.raptorCards.hand.filter((c) => c !== raptorCard),
+      played: CARDS[raptorCardId],
+      hand: setupState.raptorCards.hand.filter((c) => c.id !== raptorCardId),
     },
     actionPoints: 8,
   };
@@ -122,9 +127,10 @@ export function handleDevSkipToCardSelection(state: GameState, action: { player:
   const newState = {
     ...setupState,
     // Reset played cards for a fresh selection
+    // If skipping to raptor selection, scientist has already played their first card
     scientistCards: {
       ...setupState.scientistCards,
-      played: action.player === "raptor" ? setupState.scientistCards.hand[0] : null,
+      played: action.player === "raptor" ? (setupState.scientistCards.hand[0] ?? null) : null,
     },
     raptorCards: {
       ...setupState.raptorCards,
