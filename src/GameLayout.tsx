@@ -4,6 +4,7 @@ import CardResolution from "./CardResolution.tsx";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
 import MainMenu from "./MainMenu.tsx";
+import Trackers from "./Trackers.tsx";
 import { useGame } from "./state/GameContext.tsx";
 import "./GameLayout.css";
 
@@ -15,9 +16,16 @@ function GameLayout() {
   return (
     <div className={layoutClassName}>
       <RaptorPlayerArea />
-      <div className="board-area">
-        <Board />
-        <CardResolution />
+      <div className="middle-row">
+        <div className="side-column left">
+          <Trackers />
+        </div>
+        <div className="board-column">
+          <Board />
+        </div>
+        <div className="side-column right">
+          <CardResolution />
+        </div>
       </div>
       <ScientistPlayerArea />
       {state.phase === "MAIN_MENU" && <MainMenu />}

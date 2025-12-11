@@ -111,8 +111,19 @@
 
 .raptor-area {
   border-bottom: 2px solid #3d6a37;
+  transition: opacity 0.3s ease;
 }
 
 .scientist-area {
   border-top: 2px solid #2a4a6c;
+  transition: opacity 0.3s ease;
+}
+
+/* Dim inactive player area */
+.game-layout.active-scientist .raptor-area {
+  opacity: 0.6;
+}
+
+.game-layout.active-raptor .scientist-area {
+  opacity: 0.6;
 }

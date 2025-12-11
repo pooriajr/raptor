@@ -1,63 +1,60 @@
 import { useGame } from "./state/GameContext.tsx";
-import { CARDS } from "@/data/cards.ts";
 import "./CardResolution.css";
 
 function CardResolution() {
   const { state } = useGame();
 
-  const scientistCardId = state.scientistInteraction.selectedCard;
-  const raptorCardId = state.raptorInteraction.selectedCard;
-  const scientistCard = scientistCardId ? CARDS[scientistCardId] : null;
-  const raptorCard = raptorCardId ? CARDS[raptorCardId] : null;
+  const { activeEffectCard, actionPoints } = state;
 
-  // Determine who gets effect vs action points
-  const showResolution = state.phase === "CARD_REVEAL" && scientistCard && raptorCard;
+  // Show resolution when we have an active effect card or action points
+  const showResolution = activeEffectCard !== null || actionPoints > 0;
 
   let raptorContent = null;
   let scientistContent = null;
+  let raptorActive = false;
+  let scientistActive = false;
 
   if (showResolution) {
-    const tied = scientistCard.value === raptorCard.value;
-    const raptorLower = raptorCard.value < scientistCard.value;
-    const difference = Math.abs(raptorCard.value - scientistCard.value);
+    if (activeEffectCard) {
+      // Someone gets the effect, other gets action points
+      const effectContent = (
+        <div className="effect">
+          <span className="icon">{activeEffectCard.icon}</span>
+          <span className="label">{activeEffectCard.name}</span>
+        </div>
+      );
+      const apContent = (
+        <div className="action-points">
+          <span className="number">{actionPoints}</span>
+          <span className="label">AP</span>
+        </div>
+      );
 
-    if (tied) {
+      if (activeEffectCard.player === "raptor") {
+        raptorContent = effectContent;
+        scientistContent = apContent;
+        // Raptor has effect, scientist has action points
+        raptorActive = state.phase === "EFFECT_PHASE";
+        scientistActive = state.phase === "ACTION_PHASE";
+      } else {
+        scientistContent = effectContent;
+        raptorContent = apContent;
+        // Scientist has effect, raptor has action points
+        scientistActive = state.phase === "EFFECT_PHASE";
+        raptorActive = state.phase === "ACTION_PHASE";
+      }
+    } else {
+      // Tied - no effect card, no action points displayed
       raptorContent = <span className="tied">Tied</span>;
       scientistContent = <span className="tied">Tied</span>;
-    } else if (raptorLower) {
-      raptorContent = (
-        <div className="effect">
-          <span className="icon">{raptorCard.icon}</span>
-          <span className="label">{raptorCard.name}</span>
-        </div>
-      );
-      scientistContent = (
-        <div className="action-points">
-          <span className="number">{difference}</span>
-          <span className="label">AP</span>
-        </div>
-      );
-    } else {
-      scientistContent = (
-        <div className="effect">
-          <span className="icon">{scientistCard.icon}</span>
-          <span className="label">{scientistCard.name}</span>
-        </div>
-      );
-      raptorContent = (
-        <div className="action-points">
-          <span className="number">{difference}</span>
-          <span className="label">AP</span>
-        </div>
-      );
     }
   }
 
   return (
     <div className="CardResolution">
-      <div className="half raptor">{raptorContent}</div>
+      <div className={`half raptor${raptorActive ? " active" : ""}`}>{raptorContent}</div>
       <div className="divider" />
-      <div className="half scientist">{scientistContent}</div>
+      <div className={`half scientist${scientistActive ? " active" : ""}`}>{scientistContent}</div>
     </div>
   );
 }

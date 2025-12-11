@@ -1,13 +1,13 @@
 .CardResolution {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
+  width: 240px;
+  height: 240px;
+  border-radius: 20%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: #1a1a1a;
-  border: 3px solid #444;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 6px solid #444;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .CardResolution .half {
@@ -23,13 +23,41 @@
   color: #8bc34a;
 }
 
+.CardResolution .half.raptor.active {
+  animation: pulse-raptor 1.5s ease-in-out infinite;
+}
+
 .CardResolution .half.scientist {
   background: linear-gradient(0deg, #2d2a5a 0%, #181a35 100%);
   color: #7986cb;
 }
 
+.CardResolution .half.scientist.active {
+  animation: pulse-scientist 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-raptor {
+  0%,
+  100% {
+    box-shadow: inset 0 0 20px rgba(139, 195, 74, 0.3);
+  }
+  50% {
+    box-shadow: inset 0 0 40px rgba(139, 195, 74, 0.6);
+  }
+}
+
+@keyframes pulse-scientist {
+  0%,
+  100% {
+    box-shadow: inset 0 0 20px rgba(121, 134, 203, 0.3);
+  }
+  50% {
+    box-shadow: inset 0 0 40px rgba(121, 134, 203, 0.6);
+  }
+}
+
 .CardResolution .divider {
-  height: 2px;
+  height: 4px;
   background: #555;
 }
 
@@ -37,17 +65,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .CardResolution .effect .icon {
-  font-size: 1.5rem;
+  font-size: 3rem;
 }
 
 .CardResolution .effect .label {
-  font-size: 0.6rem;
+  font-size: 1.2rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   opacity: 0.9;
 }
 
@@ -58,20 +86,20 @@
 }
 
 .CardResolution .action-points .number {
-  font-size: 1.8rem;
+  font-size: 3.6rem;
   font-weight: bold;
   line-height: 1;
 }
 
 .CardResolution .action-points .label {
-  font-size: 0.6rem;
+  font-size: 1.2rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   opacity: 0.8;
 }
 
 .CardResolution .tied {
-  font-size: 0.8rem;
+  font-size: 1.6rem;
   opacity: 0.6;
   font-style: italic;
 }

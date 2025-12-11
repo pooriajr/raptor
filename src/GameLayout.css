@@ -17,9 +17,21 @@
   background-color: #181a35;
 }
 
-.board-area {
+.middle-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+}
+
+.side-column {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+}
+
+.board-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

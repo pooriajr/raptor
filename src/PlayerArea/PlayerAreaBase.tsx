@@ -20,7 +20,6 @@ interface PlayerAreaBaseProps {
   player: "raptor" | "scientist";
   cards: CardState;
   interaction: InteractionState;
-  trackers: React.ReactNode;
   setupInfo: SetupInfo | null;
   isSelectingCard: boolean;
   actionInstruction: string;
@@ -30,7 +29,6 @@ function PlayerAreaBase({
   player,
   cards,
   interaction,
-  trackers,
   setupInfo,
   isSelectingCard,
   actionInstruction,
@@ -79,7 +77,6 @@ function PlayerAreaBase({
         <div className="player-area-left">
           <CardDeck deck={cards.deck} />
           <DiscardPile discardPile={cards.discard} />
-          {trackers}
         </div>
 
         <div className="player-area-center">
