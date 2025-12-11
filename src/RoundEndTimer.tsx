@@ -4,7 +4,7 @@ import { useGame } from "./state/GameContext.tsx";
 import "./RoundEndTimer.css";
 
 const COUNTDOWN_SECONDS = 3;
-const TICK_MS = 600;
+const TICK_MS = 800;
 
 function RoundEndTimer() {
   const { dispatch } = useGame();

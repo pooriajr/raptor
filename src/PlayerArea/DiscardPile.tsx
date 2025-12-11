@@ -15,7 +15,7 @@ function DiscardPile({ discardPile }: DiscardPileProps) {
         <div className="discard-cards">
           {discardPile.map((card) => (
             <div key={card.id} className="discard-card-wrapper">
-              <Card card={card} faceUp layoutId={`card-${card.id}`} />
+              <Card card={card} faceUp layoutId={`card-${card.id}`} hideTooltip />
             </div>
           ))}
         </div>

@@ -14,6 +14,7 @@ interface CardProps {
   animationDelay?: number;
   layoutDelay?: number; // Delay for layoutId animations (staggering cards)
   layoutId?: string; // For cross-container animations
+  hideTooltip?: boolean; // Disable tooltip on hover
 }
 
 function Card({
@@ -27,6 +28,7 @@ function Card({
   animationDelay = 0,
   layoutDelay = 0,
   layoutId,
+  hideTooltip = false,
 }: CardProps) {
   const { value, player, name, icon, description, effectCount } = card;
   const isInteractive = onClick && !selected;
@@ -44,7 +46,7 @@ function Card({
       className={`Card ${player} ${selected ? "selected" : ""} ${dimmed ? "dimmed" : ""}`}
       layoutId={layoutId}
       onClick={onClick}
-      onMouseEnter={() => faceUp && setShowTooltip(true)}
+      onMouseEnter={() => faceUp && !hideTooltip && setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
       initial={
         initialPosition
