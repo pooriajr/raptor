@@ -4,6 +4,7 @@ import { useGame } from "./state/GameContext.tsx";
 import "./RoundEndTimer.css";
 
 const COUNTDOWN_SECONDS = 3;
+const TICK_MS = 600;
 
 function RoundEndTimer() {
   const { dispatch } = useGame();
@@ -12,7 +13,7 @@ function RoundEndTimer() {
   useEffect(() => {
     const action = secondsLeft > 1 ? () => setSecondsLeft(secondsLeft - 1) : () => dispatch({ type: "ADVANCE_PHASE" });
 
-    const timer = setTimeout(action, 1000);
+    const timer = setTimeout(action, TICK_MS);
     return () => clearTimeout(timer);
   }, [secondsLeft, dispatch]);
 

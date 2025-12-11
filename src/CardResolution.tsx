@@ -63,7 +63,7 @@ function CardResolution() {
         raptorContent = effectContent;
         scientistContent = apContent;
         raptorDone = state.activePlayer === "scientist" || isRoundEnd;
-        scientistDone = isRoundEnd;
+        scientistDone = isRoundEnd || state.phase === "MOTHER_RETURN";
       } else {
         scientistContent = effectContent;
         raptorContent = apContent;
