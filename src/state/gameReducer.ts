@@ -61,7 +61,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "DEV_SKIP_TO_ACTION": return h.handleDevSkipToAction(state, action);
     case "DEV_SKIP_TO_CARD_SELECTION": return h.handleDevSkipToCardSelection(state, action);
     case "LOAD_GAME": return h.handleLoadGame(state, action);
-    case "TOGGLE_SHOW_COORDINATES": return h.handleToggleShowCoordinates(state);
     // Interaction actions
     case "SELECT_CARD": return h.interactionHandlers.SELECT_CARD(state, action);
     case "SET_NEW_DRAW": return h.interactionHandlers.SET_NEW_DRAW(state, action);

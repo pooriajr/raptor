@@ -93,17 +93,6 @@ function DevPanel() {
         <span className="value">{state.phase}</span>
       </div>
 
-      <div className="section">
-        <label>
-          <input
-            type="checkbox"
-            checked={state.showCoordinates}
-            onChange={() => dispatch({ type: "TOGGLE_SHOW_COORDINATES" })}
-          />
-          Show coordinates
-        </label>
-      </div>
-
       {isSetupPhase && (
         <div className="section">
           <button className="auto-setup-btn" onClick={handleAutoSetup}>

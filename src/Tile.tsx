@@ -4,10 +4,9 @@ import Space from "./Space.tsx";
 
 interface TileProps {
   tile: TileType;
-  showCoordinates?: boolean;
 }
 
-function Tile({ tile, showCoordinates = false }: TileProps) {
+function Tile({ tile }: TileProps) {
   return (
     <div
       className="Tile"
@@ -15,11 +14,9 @@ function Tile({ tile, showCoordinates = false }: TileProps) {
       data-side={tile.shape === "L" ? tile.side : undefined}
       data-exit-position={tile.shape === "L" ? tile.exitPosition : undefined}
     >
-      {showCoordinates && <div className="tile-label">Tile {tile.id}</div>}
-
       <div className="spaces-grid">
         {tile.spaces.map((space) => (
-          <Space key={space.id} space={space} showCoordinates={showCoordinates} />
+          <Space key={space.id} space={space} />
         ))}
       </div>
     </div>

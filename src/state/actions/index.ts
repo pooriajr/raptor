@@ -11,5 +11,5 @@ export { handlePlayerReady, handleDrawCards, handlePlayCard, handleConfirmReveal
 export { handleFrightenScientist, handlePutBabyToSleep, handleCallBaby, handleDisappearance, handleMotherReturn, handleWakeBaby, handleRemoveMotherSleepToken, handlePlaceReinforcement, handlePlaceFireToken, handleMoveJeep, handleEndEffectPhase, handleRevertEffectPhase } from "./effectActions.ts";
 export { handleActionMoveBaby, handleActionMoveScientist, handleActionMoveMother, handleMotherKillScientist, handleMotherWakeBaby, handleMotherExtinguishFire, handleScientistSleepBaby, handleScientistCaptureBaby, handleScientistShootMother, handleScientistStandUp, handleEndActionPhase, handleResetActionPhase } from "./actionPhaseActions.ts";
 export { handleEndRound } from "./roundActions.ts";
-export { handleDevSkipToEffect, handleDevSkipToAction, handleDevSkipToCardSelection, handleLoadGame, handleToggleShowCoordinates } from "./devActions.ts";
+export { handleDevSkipToEffect, handleDevSkipToAction, handleDevSkipToCardSelection, handleLoadGame } from "./devActions.ts";
 export { interactionHandlers } from "./interactionActions.ts";

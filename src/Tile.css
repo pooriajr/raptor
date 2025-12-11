@@ -6,20 +6,6 @@
   transition: box-shadow 0.2s ease;
 }
 
-/* Label showing tile number */
-.tile-label {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  font-size: 16px;
-  font-weight: bold;
-  color: white;
-  background-color: rgba(0, 0, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 4px;
-  z-index: 10;
-}
-
 /* Grid of spaces within each tile */
 .spaces-grid {
   display: grid;
@@ -52,15 +38,6 @@
   justify-content: center;
   position: relative;
   font-size: 18px;
-}
-
-/* Coordinate labels */
-.coord {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.4);
-  position: absolute;
-  top: 2px;
-  left: 2px;
 }
 
 /* Exit spaces (half-spaces) */

@@ -63,7 +63,7 @@ function Board() {
       <LayoutGroup>
         <div className="Board">
           {state.tiles.map((tile) => (
-            <Tile key={tile.id} tile={tile} showCoordinates={state.showCoordinates} />
+            <Tile key={tile.id} tile={tile} />
           ))}
         </div>
       </LayoutGroup>

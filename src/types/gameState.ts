@@ -105,8 +105,6 @@ export interface GameState {
   effectPhaseSavedState: GameState | null;
   // Action phase saved state for reset
   actionPhaseSavedState: GameState | null;
-  // Dev/debug options
-  showCoordinates: boolean;
 }
 
 // Create a shuffled deck of cards 1-9
@@ -191,6 +189,5 @@ export function createInitialGameState(): GameState {
     effectActionsRemaining: 0,
     effectPhaseSavedState: null,
     actionPhaseSavedState: null,
-    showCoordinates: false,
   };
 }

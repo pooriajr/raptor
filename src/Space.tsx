@@ -11,10 +11,9 @@ import type { GameAction } from "./state/gameReducer.ts";
 
 interface SpaceProps {
   space: SpaceType;
-  showCoordinates?: boolean;
 }
 
-function Space({ space, showCoordinates = false }: SpaceProps) {
+function Space({ space }: SpaceProps) {
   const { state, dispatch } = useGame();
   const highlights: SpaceHighlights<GameAction> = buildHighlights(state);
   const highlight = highlights.get(space.id);
@@ -46,11 +45,6 @@ function Space({ space, showCoordinates = false }: SpaceProps) {
       data-highlight={highlightStyle}
       onClick={handleClick}
     >
-      {showCoordinates && (
-        <span className="coord">
-          {space.coordinate.x},{space.coordinate.y}
-        </span>
-      )}
       <SpaceContent
         space={space}
         pieceOnSpace={pieceOnSpace}

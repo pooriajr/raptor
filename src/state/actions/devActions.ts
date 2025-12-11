@@ -6,8 +6,7 @@ export type DevAction =
   | { type: "DEV_SKIP_TO_EFFECT"; raptorCard: number; scientistCard: number }
   | { type: "DEV_SKIP_TO_ACTION"; player: "scientist" | "raptor" }
   | { type: "DEV_SKIP_TO_CARD_SELECTION"; player: "scientist" | "raptor" }
-  | { type: "LOAD_GAME"; savedState: GameState }
-  | { type: "TOGGLE_SHOW_COORDINATES" };
+  | { type: "LOAD_GAME"; savedState: GameState };
 
 // Dev helper: auto-setup pieces if none placed
 function devAutoSetup(state: GameState): GameState {
@@ -140,15 +139,10 @@ export function handleLoadGame(_state: GameState, action: { savedState: GameStat
   return action.savedState;
 }
 
-export function handleToggleShowCoordinates(state: GameState): GameState {
-  return { ...state, showCoordinates: !state.showCoordinates };
-}
-
 // Handler map for dev actions
 export const devHandlers = {
   DEV_SKIP_TO_EFFECT: handleDevSkipToEffect,
   DEV_SKIP_TO_ACTION: handleDevSkipToAction,
   DEV_SKIP_TO_CARD_SELECTION: handleDevSkipToCardSelection,
   LOAD_GAME: handleLoadGame,
-  TOGGLE_SHOW_COORDINATES: handleToggleShowCoordinates,
 };
