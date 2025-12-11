@@ -2,6 +2,7 @@ import "./Board.css";
 import Tile from "./Tile.tsx";
 import { LayoutGroup } from "framer-motion";
 import DevPanel from "./DevPanel.tsx";
+import RoundEndTimer from "./RoundEndTimer.tsx";
 import { useGame } from "./state/GameContext.tsx";
 
 function Board() {
@@ -12,11 +13,12 @@ function Board() {
   // - Interaction reset: handled in runExitEffects
   // - Action phase state save/clear: handled in runEntryEffects/runExitEffects
   // - Auto-disappearance: handled in runEntryEffects for EFFECT_PHASE
-  // - Round end: ROUND_END is transient, immediately advances to SCIENTIST_READY
+  // - Round end auto-advance: handled by RoundEndTimer component
 
   return (
     <div className="board-container">
       <DevPanel />
+      {state.phase === "ROUND_END" && <RoundEndTimer />}
       <LayoutGroup>
         <div className="Board">
           {state.tiles.map((tile) => (
