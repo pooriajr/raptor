@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Card from "../Card";
 import { useGame } from "../state/GameContext";
 import "./Hand.css";
@@ -6,8 +5,6 @@ import "./Hand.css";
 interface HandProps {
   player: "raptor" | "scientist";
 }
-
-const HAND_SIZE = 3;
 
 function Hand({ player }: HandProps) {
   const { state, dispatch } = useGame();
@@ -17,12 +14,8 @@ function Hand({ player }: HandProps) {
   const interaction = isRaptor ? state.raptorInteraction : state.scientistInteraction;
   const cards = isRaptor ? state.raptorCards : state.scientistCards;
   const handCards = cards.hand;
-  const isNewDraw = interaction.isNewDraw;
 
   // Compute display modes based on phase
-  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
-  const isReadyPhase = state.phase === "SCIENTIST_READY" || state.phase === "RAPTOR_READY";
-
   const isThisPlayerSelecting =
     (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
     (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
@@ -31,8 +24,6 @@ function Hand({ player }: HandProps) {
     (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
     (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
 
-  // Derive props from state
-  const showPlaceholders = isSetupPhase || isReadyPhase;
   const faceDown = isOpponentSelecting;
   const faceDownUnselected = !isThisPlayerSelecting;
   const selectedCard = isThisPlayerSelecting ? interaction.selectedCard : null;
@@ -47,67 +38,32 @@ function Hand({ player }: HandProps) {
     dispatch({ type: "SELECT_CARD", player, card: newCard });
   };
 
-  const canSelect = !showPlaceholders && !faceDown;
-
-  // Animation state
-  const [animatedCards, setAnimatedCards] = useState<number[]>([]);
-
-  useEffect(() => {
-    if (!isNewDraw) {
-      setAnimatedCards(handCards);
-      return;
-    }
-
-    setAnimatedCards([]);
-    const timeouts = handCards.map((card, i) => setTimeout(() => setAnimatedCards((prev) => [...prev, card]), i * 100));
-    return () => timeouts.forEach(clearTimeout);
-  }, [handCards, isNewDraw]);
-
+  const canSelect = !faceDown;
   const hasSelection = selectedCard != null;
-
-  if (showPlaceholders) {
-    return (
-      <div className={`Hand ${player} placeholder-mode`}>
-        <div className="hand-cards">
-          {Array.from({ length: HAND_SIZE }).map((_, index) => (
-            <div key={index} className="card-wrapper">
-              <div className="card-placeholder" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const hasFloating = floatingCard != null;
 
   return (
     <div className={`Hand ${player}`}>
       <div className="hand-cards">
-        {Array.from({ length: HAND_SIZE }).map((_, index) => {
-          const value = animatedCards[index];
-          const hasCard = value !== undefined;
-          const isSelected = hasCard && value === selectedCard;
-          const isPlayed = hasCard && value === playedCard;
-          const isFloating = hasCard && value === floatingCard;
-          const hasFloating = floatingCard != null;
-          const isDimmed = hasCard && ((hasSelection && !isSelected && !isPlayed) || (hasFloating && !isFloating));
+        {handCards.map((value) => {
+          const isSelected = value === selectedCard;
+          const isPlayed = value === playedCard;
+          const isFloating = value === floatingCard;
+          const isDimmed = (hasSelection && !isSelected && !isPlayed) || (hasFloating && !isFloating);
           const cardFaceDown = faceDown || (faceDownUnselected && !isSelected && !isPlayed);
 
           return (
-            <div key={index} className="card-wrapper">
-              {isNewDraw && <div className="card-placeholder card-placeholder-under" />}
-              {hasCard && (
-                <Card
-                  value={value}
-                  player={player}
-                  faceUp={!cardFaceDown}
-                  onClick={!cardFaceDown && canSelect ? () => handleCardSelect(value) : undefined}
-                  selected={isSelected || isPlayed}
-                  dimmed={isDimmed}
-                  floating={isFloating}
-                  layoutId={`card-${player}-${value}`}
-                />
-              )}
-              {!hasCard && !isNewDraw && <div className="card-placeholder" />}
+            <div key={value} className="card-wrapper">
+              <Card
+                value={value}
+                player={player}
+                faceUp={!cardFaceDown}
+                onClick={!cardFaceDown && canSelect ? () => handleCardSelect(value) : undefined}
+                selected={isSelected || isPlayed}
+                dimmed={isDimmed}
+                floating={isFloating}
+                layoutId={`card-${player}-${value}`}
+              />
             </div>
           );
         })}
