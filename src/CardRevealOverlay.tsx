@@ -1,20 +1,27 @@
 import { useState, useEffect } from "react";
 import Card from "./Card";
 import { useGame } from "./state/GameContext";
-import type { CardInfo } from "@/data/cards.ts";
+import { CARDS, type CardInfo } from "@/data/cards.ts";
 import "./CardRevealOverlay.css";
 
 function CardRevealOverlay() {
   const { state, dispatch } = useGame();
   const [revealed, setRevealed] = useState(false);
 
-  const scientistCard = state.scientistCards.played!;
-  const raptorCard = state.raptorCards.played!;
+  const scientistCardId = state.scientistInteraction.selectedCard;
+  const raptorCardId = state.raptorInteraction.selectedCard;
+  const scientistCard = scientistCardId ? CARDS[scientistCardId] : null;
+  const raptorCard = raptorCardId ? CARDS[raptorCardId] : null;
 
   useEffect(() => {
     const timeout = setTimeout(() => setRevealed(true), 300);
     return () => clearTimeout(timeout);
   }, []);
+
+  // Both cards must be selected to show the reveal
+  if (!scientistCard || !raptorCard) {
+    return null;
+  }
 
   const sameCards = scientistCard.value === raptorCard.value;
   const difference = Math.abs(scientistCard.value - raptorCard.value);

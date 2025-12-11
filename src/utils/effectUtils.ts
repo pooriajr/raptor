@@ -6,38 +6,17 @@ export type { EffectType };
 
 // Determine which player has the effect (lower card)
 export function getEffectPlayer(state: GameState): Player | null {
-  const scientistCard = state.scientistCards.played;
-  const raptorCard = state.raptorCards.played;
-  if (scientistCard === null || raptorCard === null) return null;
-  return raptorCard.value < scientistCard.value ? "raptor" : "scientist";
+  return state.activeEffectCard?.player ?? null;
 }
 
 // Determine the current effect type based on played cards
 export function getCurrentEffectType(state: GameState): EffectType {
-  const scientistCard = state.scientistCards.played;
-  const raptorCard = state.raptorCards.played;
-  if (scientistCard === null || raptorCard === null) return "none";
-
-  const effectPlayer = getEffectPlayer(state);
-  if (effectPlayer === "raptor") {
-    return raptorCard.effectType;
-  } else {
-    return scientistCard.effectType;
-  }
+  return state.activeEffectCard?.effectType ?? "none";
 }
 
 // Get effect limit for current card
 export function getEffectLimit(state: GameState): number {
-  const scientistCard = state.scientistCards.played;
-  const raptorCard = state.raptorCards.played;
-  if (scientistCard === null || raptorCard === null) return 0;
-
-  const effectPlayer = getEffectPlayer(state);
-  if (effectPlayer === "raptor") {
-    return raptorCard.effectCount;
-  } else {
-    return scientistCard.effectCount;
-  }
+  return state.activeEffectCard?.effectCount ?? 0;
 }
 
 // Get instruction text for current effect

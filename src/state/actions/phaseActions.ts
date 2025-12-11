@@ -2,9 +2,10 @@ import type { GameState, GamePhase, Player } from "@/types/gameState.ts";
 import { createInitialInteractionState } from "@/types/gameState.ts";
 import { saveGame } from "@/utils/saveLoad.ts";
 import { getEffectLimit } from "@/utils/effectUtils.ts";
-import { drawToHand, discardPlayedCard, getActionPhaseState } from "./cardActions.ts";
+import { drawToHand, discardPlayedCard, calculateRoundResolution, shuffleDiscardIntoDeck } from "./cardActions.ts";
 import { isRaptorSetupComplete } from "@/utils/boardUtils.ts";
 import { countPlacedScientists } from "@/utils/pieceUtils.ts";
+import { CARDS } from "@/data/cards.ts";
 
 export type PhaseAction = { type: "ADVANCE_PHASE" };
 
@@ -52,22 +53,29 @@ function getNextPhase(state: GameState): GamePhase | null {
       return "SCIENTIST_CARD_SELECTION";
 
     case "SCIENTIST_CARD_SELECTION":
-      if (state.scientistCards.played === null) return null;
+      if (state.scientistInteraction.selectedCard === null) return null;
       return "RAPTOR_READY";
 
     case "RAPTOR_READY":
       return "RAPTOR_CARD_SELECTION";
 
     case "RAPTOR_CARD_SELECTION":
-      if (state.raptorCards.played === null) return null;
+      if (state.raptorInteraction.selectedCard === null) return null;
       return "CARD_REVEAL";
 
-    case "CARD_REVEAL":
+    case "CARD_REVEAL": {
       // Cards match = skip to round end, otherwise effect phase
-      if (state.scientistCards.played?.value === state.raptorCards.played?.value) {
-        return "ROUND_END";
+      const scientistCardId = state.scientistInteraction.selectedCard;
+      const raptorCardId = state.raptorInteraction.selectedCard;
+      if (scientistCardId && raptorCardId) {
+        const scientistValue = CARDS[scientistCardId].value;
+        const raptorValue = CARDS[raptorCardId].value;
+        if (scientistValue === raptorValue) {
+          return "ROUND_END";
+        }
       }
       return "EFFECT_PHASE";
+    }
 
     case "EFFECT_PHASE":
       return "ACTION_PHASE";
@@ -98,11 +106,12 @@ function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | n
   if (phase.startsWith("SCIENTIST")) return "scientist";
   if (phase === "EFFECT_PHASE") {
     // Lower card gets the effect
-    return state.raptorCards.played!.value < state.scientistCards.played!.value ? "raptor" : "scientist";
+    return state.activeEffectCard?.player ?? null;
   }
   if (phase === "ACTION_PHASE") {
-    // Higher card gets action points
-    return state.raptorCards.played!.value > state.scientistCards.played!.value ? "raptor" : "scientist";
+    // Higher card gets action points (opposite of effect player)
+    const effectPlayer = state.activeEffectCard?.player;
+    return effectPlayer === "raptor" ? "scientist" : effectPlayer === "scientist" ? "raptor" : null;
   }
   if (phase === "MOTHER_RETURN") {
     return "raptor";
@@ -127,8 +136,34 @@ function transitionTo(state: GameState, phase: GamePhase): GameState {
 function runExitEffects(state: GameState, exitingPhase: GamePhase): GameState {
   let newState = state;
 
-  // Clear effect phase state when leaving
+  // Discard selected cards when leaving card reveal
+  if (exitingPhase === "CARD_REVEAL") {
+    const scientistCardId = newState.scientistInteraction.selectedCard;
+    const raptorCardId = newState.raptorInteraction.selectedCard;
+    const scientistCard = scientistCardId ? CARDS[scientistCardId] : null;
+    const raptorCard = raptorCardId ? CARDS[raptorCardId] : null;
+    const scientistAfterDiscard = discardPlayedCard(newState.scientistCards, scientistCard);
+    const raptorAfterDiscard = discardPlayedCard(newState.raptorCards, raptorCard);
+    newState = {
+      ...newState,
+      scientistCards: scientistAfterDiscard,
+      raptorCards: raptorAfterDiscard,
+      scientistInteraction: { ...newState.scientistInteraction, selectedCard: null },
+      raptorInteraction: { ...newState.raptorInteraction, selectedCard: null },
+    };
+  }
+
+  // Clear effect phase state when leaving, and handle shuffle effect for card 1
   if (exitingPhase === "EFFECT_PHASE") {
+    // Handle shuffle effect for card 1 (shuffles deck at end of effect phase)
+    if (newState.activeEffectCard?.shufflesDeck) {
+      const effectPlayer = newState.activeEffectCard.player;
+      if (effectPlayer === "scientist") {
+        newState = { ...newState, scientistCards: shuffleDiscardIntoDeck(newState.scientistCards) };
+      } else if (effectPlayer === "raptor") {
+        newState = { ...newState, raptorCards: shuffleDiscardIntoDeck(newState.raptorCards) };
+      }
+    }
     newState = {
       ...newState,
       effectActionsRemaining: 0,
@@ -155,15 +190,8 @@ function runExitEffects(state: GameState, exitingPhase: GamePhase): GameState {
 function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState {
   let newState = state;
 
-  // Reset selected card on any phase change
-  const player = newState.activePlayer;
-  if (player) {
-    if (player === "raptor") {
-      newState = { ...newState, raptorInteraction: { ...newState.raptorInteraction, selectedCard: null } };
-    } else {
-      newState = { ...newState, scientistInteraction: { ...newState.scientistInteraction, selectedCard: null } };
-    }
-  }
+  // Note: selectedCard is preserved through card selection phases until CARD_REVEAL exit
+  // clears it after discarding the cards
 
   switch (enteringPhase) {
     case "RAPTOR_SETUP":
@@ -182,6 +210,17 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
       };
       break;
 
+    case "CARD_REVEAL": {
+      // Calculate round resolution: activeEffectCard (lower card) and actionPoints (difference)
+      const resolution = calculateRoundResolution(newState);
+      newState = {
+        ...newState,
+        activeEffectCard: resolution.activeEffectCard,
+        actionPoints: resolution.actionPoints,
+      };
+      break;
+    }
+
     case "EFFECT_PHASE": {
       // Save snapshot and set effect limit
       const effectActionsRemaining = getEffectLimit(newState);
@@ -191,38 +230,31 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
         effectPhaseSavedState: { ...newState, effectActionsRemaining },
       };
       // Auto-disappearance for raptor disappearance effect
-      const raptorCard = newState.raptorCards.played;
-      const scientistCard = newState.scientistCards.played;
-      if (raptorCard !== null && scientistCard !== null) {
-        const raptorHasEffect = raptorCard.value < scientistCard.value;
-        if (raptorHasEffect && raptorCard.effectType === "disappearance") {
-          newState = {
-            ...newState,
-            mother: { ...newState.mother, tileId: -1, x: 0, y: 0 },
-            motherDisappeared: true,
-          };
-        }
+      if (newState.activeEffectCard?.player === "raptor" && newState.activeEffectCard?.effectType === "disappearance") {
+        newState = {
+          ...newState,
+          mother: { ...newState.mother, tileId: -1, x: 0, y: 0 },
+          motherDisappeared: true,
+        };
       }
       break;
     }
 
     case "ACTION_PHASE":
-      // Save snapshot and compute action points
+      // Save snapshot for undo functionality
       newState = {
         ...newState,
-        ...getActionPhaseState(newState),
         actionPhaseSavedState: newState,
       };
       break;
 
     case "ROUND_END": {
-      // Discard played cards, draw new ones, reset round state
-      const scientistAfterDiscard = discardPlayedCard(newState.scientistCards);
-      const raptorAfterDiscard = discardPlayedCard(newState.raptorCards);
+      // Draw new cards, reset round state (cards already discarded after CARD_REVEAL)
       newState = {
         ...newState,
-        scientistCards: drawToHand(scientistAfterDiscard),
-        raptorCards: drawToHand(raptorAfterDiscard),
+        scientistCards: drawToHand(newState.scientistCards),
+        raptorCards: drawToHand(newState.raptorCards),
+        activeEffectCard: null,
         actionPoints: 0,
         aggressiveActionsUsed: [],
         frightenedThisRound: [],

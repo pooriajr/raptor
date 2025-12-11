@@ -24,7 +24,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "MOVE_PIECE_ON_TILE": return h.handleMovePieceOnTile(state, action);
     // Card actions
     case "DRAW_CARDS": return h.handleDrawCards(state, action);
-    case "PLAY_CARD": return h.handlePlayCard(state, action);
     // Effect actions (immediate, single-target)
     case "FRIGHTEN_SCIENTIST": return h.handleFrightenScientist(state, action);
     case "PUT_BABY_TO_SLEEP": return h.handlePutBabyToSleep(state, action);

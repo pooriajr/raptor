@@ -27,10 +27,7 @@ function Hand({ player }: HandProps) {
 
   const faceDown = isOpponentSelecting;
   const faceDownUnselected = !isThisPlayerSelecting;
-  const selectedCardId = isThisPlayerSelecting ? interaction.selectedCard : null;
-  const playedCard = isThisPlayerSelecting ? null : cards.played;
-  const floatingCard =
-    player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" ? state.scientistCards.played : null;
+  const selectedCardId = interaction.selectedCard;
 
   // Card selection handler
   const handleCardSelect = (cardId: CardId) => {
@@ -41,17 +38,14 @@ function Hand({ player }: HandProps) {
 
   const canSelect = !faceDown;
   const hasSelection = selectedCardId != null;
-  const hasFloating = floatingCard != null;
 
   return (
     <div className={`Hand ${player}`}>
       <div className="hand-cards">
         {handCards.map((card, index) => {
           const isSelected = card.id === selectedCardId;
-          const isPlayed = playedCard !== null && card.id === playedCard.id;
-          const isFloating = floatingCard !== null && card.id === floatingCard.id;
-          const isDimmed = (hasSelection && !isSelected && !isPlayed) || (hasFloating && !isFloating);
-          const cardFaceDown = faceDown || (faceDownUnselected && !isSelected && !isPlayed);
+          const isDimmed = hasSelection && !isSelected;
+          const cardFaceDown = faceDown || (faceDownUnselected && !isSelected);
 
           return (
             <div key={card.id} className="card-wrapper">
@@ -59,9 +53,8 @@ function Hand({ player }: HandProps) {
                 card={card}
                 faceUp={!cardFaceDown}
                 onClick={!cardFaceDown && canSelect ? () => handleCardSelect(card.id) : undefined}
-                selected={isSelected || isPlayed}
+                selected={isSelected}
                 dimmed={isDimmed}
-                floating={isFloating}
                 layoutId={`card-${card.id}`}
                 layoutDelay={index * 0.1 + 0.1}
               />

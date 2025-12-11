@@ -1,11 +1,9 @@
 import type { GameState, CardState, Player } from "@/types/gameState.ts";
-import type { CardId } from "@/data/cards.ts";
+import type { CardInfo } from "@/data/cards.ts";
 import { CARDS } from "@/data/cards.ts";
 
 // Action types for card phase
-export type CardAction =
-  | { type: "DRAW_CARDS"; player: "raptor" | "scientist" }
-  | { type: "PLAY_CARD"; player: "raptor" | "scientist"; card: CardId };
+export type CardAction = { type: "DRAW_CARDS"; player: "raptor" | "scientist" };
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -26,7 +24,8 @@ function shuffleArray<T>(array: T[]): T[] {
  * - If deck is empty, keep hand cards, shuffle all played cards to create new deck
  */
 export function drawToHand(cardState: CardState): CardState {
-  let { deck, hand, discard, played } = cardState;
+  let { deck, discard } = cardState;
+  const { hand } = cardState;
 
   const cardsNeeded = 3 - hand.length;
   if (cardsNeeded <= 0) {
@@ -53,7 +52,6 @@ export function drawToHand(cardState: CardState): CardState {
   let result: CardState = {
     deck: newDeck,
     hand: newHand,
-    played,
     discard,
   };
 
@@ -69,46 +67,53 @@ export function drawToHand(cardState: CardState): CardState {
  * Move played card from hand to discard pile.
  * Called at end of round before drawing new cards.
  */
-export function discardPlayedCard(cardState: CardState): CardState {
-  const { hand, played, discard, deck } = cardState;
+export function discardPlayedCard(cardState: CardState, playedCard: CardInfo | null): CardState {
+  const { hand, discard, deck } = cardState;
 
-  if (played === null) {
+  if (playedCard === null) {
     return cardState;
   }
 
   return {
     deck,
-    hand: hand.filter((c) => c !== played),
-    played: null,
-    discard: [...discard, played],
+    hand: hand.filter((c) => c.id !== playedCard.id),
+    discard: [...discard, playedCard],
   };
 }
 
-// Calculate action points and active player from played cards
-// Higher card gets action points = difference between cards
-export function calculateActionPhaseState(state: GameState): {
+// Calculate round resolution from selected cards
+// Lower card gets effect, higher card gets action points = difference
+export function calculateRoundResolution(state: GameState): {
+  activeEffectCard: CardInfo | null;
   actionPoints: number;
   activePlayer: Player | null;
 } {
-  const scientistCard = state.scientistCards.played;
-  const raptorCard = state.raptorCards.played;
+  const scientistCardId = state.scientistInteraction.selectedCard;
+  const raptorCardId = state.raptorInteraction.selectedCard;
 
-  if (scientistCard === null || raptorCard === null) {
-    return { actionPoints: 0, activePlayer: null };
+  if (scientistCardId === null || raptorCardId === null) {
+    return { activeEffectCard: null, actionPoints: 0, activePlayer: null };
   }
+
+  const scientistCard = CARDS[scientistCardId];
+  const raptorCard = CARDS[raptorCardId];
 
   if (scientistCard.value === raptorCard.value) {
-    return { actionPoints: 0, activePlayer: null };
+    return { activeEffectCard: null, actionPoints: 0, activePlayer: null };
   }
 
-  if (scientistCard.value > raptorCard.value) {
+  if (scientistCard.value < raptorCard.value) {
+    // Scientist has lower card - gets effect
     return {
-      actionPoints: scientistCard.value - raptorCard.value,
+      activeEffectCard: scientistCard,
+      actionPoints: raptorCard.value - scientistCard.value,
       activePlayer: "scientist",
     };
   } else {
+    // Raptor has lower card - gets effect
     return {
-      actionPoints: raptorCard.value - scientistCard.value,
+      activeEffectCard: raptorCard,
+      actionPoints: scientistCard.value - raptorCard.value,
       activePlayer: "raptor",
     };
   }
@@ -119,7 +124,7 @@ export function calculateActionPhaseState(state: GameState): {
  * Used when card 1 is played (both raptor and scientist card 1 have shuffle effect).
  */
 export function shuffleDiscardIntoDeck(cardState: CardState): CardState {
-  const { deck, hand, discard, played } = cardState;
+  const { deck, hand, discard } = cardState;
 
   if (discard.length === 0) {
     return cardState;
@@ -131,39 +136,7 @@ export function shuffleDiscardIntoDeck(cardState: CardState): CardState {
   return {
     deck: newDeck,
     hand,
-    played,
     discard: [],
-  };
-}
-
-// Helper to transition to action phase with calculated AP
-// Also handles shuffle effect for the player who used the effect (cards with shufflesDeck: true)
-export function getActionPhaseState(state: GameState): Partial<GameState> {
-  const { actionPoints, activePlayer } = calculateActionPhaseState(state);
-
-  // Check if a card with shuffle effect was played and got the effect (lower card gets effect)
-  const scientistCard = state.scientistCards.played;
-  const raptorCard = state.raptorCards.played;
-
-  let scientistCards = state.scientistCards;
-  let raptorCards = state.raptorCards;
-
-  if (scientistCard !== null && raptorCard !== null) {
-    // Scientist played a shuffle card and got the effect (scientist card lower)
-    if (scientistCard.shufflesDeck && scientistCard.value < raptorCard.value) {
-      scientistCards = shuffleDiscardIntoDeck(scientistCards);
-    }
-    // Raptor played a shuffle card and got the effect (raptor card lower)
-    if (raptorCard.shufflesDeck && raptorCard.value < scientistCard.value) {
-      raptorCards = shuffleDiscardIntoDeck(raptorCards);
-    }
-  }
-
-  return {
-    actionPoints,
-    activePlayer,
-    scientistCards,
-    raptorCards,
   };
 }
 
@@ -183,37 +156,7 @@ export function handleDrawCards(state: GameState, action: { player: "raptor" | "
   }
 }
 
-export function handlePlayCard(state: GameState, action: { player: "raptor" | "scientist"; card: CardId }): GameState {
-  // Look up the card from the CARDS object
-  const card = CARDS[action.card];
-
-  // Just set the played card - phase transition is handled by ADVANCE_PHASE
-  if (action.player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") {
-    return {
-      ...state,
-      scientistCards: {
-        ...state.scientistCards,
-        played: card,
-      },
-    };
-  }
-  if (action.player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION") {
-    return {
-      ...state,
-      raptorCards: {
-        ...state.raptorCards,
-        played: card,
-      },
-      observationActive: false,
-    };
-  }
-  return state;
-}
-
-// CONFIRM_REVEAL is now handled by ADVANCE_PHASE
-
 // Handler map for card actions
 export const cardHandlers = {
   DRAW_CARDS: handleDrawCards,
-  PLAY_CARD: handlePlayCard,
 };

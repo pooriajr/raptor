@@ -7,12 +7,13 @@ function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | n
   if (phase.startsWith("RAPTOR")) return "raptor";
   if (phase.startsWith("SCIENTIST")) return "scientist";
   if (phase === "EFFECT_PHASE") {
-    // Lower card gets the effect
-    return state.raptorCards.played! < state.scientistCards.played! ? "raptor" : "scientist";
+    // Lower card gets the effect - read from activeEffectCard
+    return state.activeEffectCard?.player ?? null;
   }
   if (phase === "ACTION_PHASE") {
-    // Higher card gets action points
-    return state.raptorCards.played! > state.scientistCards.played! ? "raptor" : "scientist";
+    // Higher card gets action points - opposite of effect player
+    const effectPlayer = state.activeEffectCard?.player;
+    return effectPlayer === "raptor" ? "scientist" : effectPlayer === "scientist" ? "raptor" : null;
   }
   return state.activePlayer;
 }

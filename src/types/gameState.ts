@@ -35,7 +35,6 @@ export interface PieceState {
 export interface CardState {
   deck: CardInfo[]; // Cards remaining in deck
   hand: CardInfo[]; // Cards currently in hand (up to 3)
-  played: CardInfo | null; // Card played this round
   discard: CardInfo[]; // Cards that have been played (visible to opponent)
 }
 
@@ -86,9 +85,10 @@ export interface GameState {
   fireTokens: FireToken[];
   raptorCards: CardState;
   scientistCards: CardState;
-  // Action phase state
-  actionPoints: number; // Remaining action points for current player
-  activePlayer: Player | null; // Who has action points this round (higher card player)
+  // Round resolution state
+  activeEffectCard: CardInfo | null; // The lower card (determines effect), null if tied
+  actionPoints: number; // Card difference (for higher card player)
+  activePlayer: Player | null; // Current active player (effect player, then action player)
   aggressiveActionsUsed: string[]; // Scientist IDs that used aggressive action this round (shoot/capture)
   frightenedThisRound: string[]; // Scientist IDs frightened this round (can't stand up same round)
   asleepThisRound: string[]; // Baby IDs put to sleep this round (can't wake same round)
@@ -115,7 +115,6 @@ export function createInitialCardState(cards: CardInfo[]): CardState {
   return {
     deck: shuffleCards(cards),
     hand: [],
-    played: null,
     discard: [],
   };
 }
@@ -165,6 +164,7 @@ export function createInitialGameState(): GameState {
     fireTokens: [],
     raptorCards: createInitialCardState(raptorCards),
     scientistCards: createInitialCardState(scientistCards),
+    activeEffectCard: null,
     actionPoints: 0,
     activePlayer: "raptor",
     aggressiveActionsUsed: [],

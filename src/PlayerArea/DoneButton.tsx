@@ -31,12 +31,7 @@ function DoneButton({ player }: DoneButtonProps) {
   // === Handler ===
 
   const handleClick = () => {
-    // For card selection, first set the played card
-    if (isThisPlayerSelecting && selectedCard !== null) {
-      dispatch({ type: "PLAY_CARD", player, card: selectedCard });
-      dispatch({ type: "SELECT_CARD", player, card: null });
-    }
-    // Then advance the phase
+    // Advance the phase - selectedCard stays in interaction state until card reveal
     dispatch({ type: "ADVANCE_PHASE" });
   };
 
