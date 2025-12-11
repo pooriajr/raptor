@@ -69,8 +69,8 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceCont
     return <span className="exit">🚪</span>;
   }
 
-  // Priority 3: Actual piece (not moving away)
-  if (pieceOnSpace && style !== "pathTrail") {
+  // Priority 3: Actual piece
+  if (pieceOnSpace) {
     const isSelected = selectedActorId === pieceOnSpace.id;
 
     return (
@@ -93,12 +93,7 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceCont
     );
   }
 
-  // Priority 4: Trail markers (pathTrail style)
-  if (style === "pathTrail") {
-    return <span className="path-trail">🐾</span>;
-  }
-
-  // Priority 5: Fire token (actual)
+  // Priority 4: Fire token
   if (style === "fire") {
     return <span className="fire-token">🔥</span>;
   }

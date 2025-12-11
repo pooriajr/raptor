@@ -5,12 +5,9 @@ export type SpaceStyle =
   | "setupMoveTarget" // Moving piece within tile during setup
   | "effectTarget" // Selectable pieces for effect phase (gold) - step 1 of two-step effects
   | "effectDestination" // Effect destinations like Mother's Call, reinforcements, fire, jeep (teal)
-  | "pendingDestination" // Where pieces will move to on confirm (solid green)
-  | "pathTrail" // Intermediate path positions / origins (footprints)
   | "hostileTarget" // Enemy pieces that can be attacked (red)
   | "friendlyTarget" // Friendly pieces/fire that can be interacted with (purple)
-  | "fire" // Existing fire token (orange)
-  | "pendingFire"; // Fire to be placed (orange pulsing)
+  | "fire"; // Existing fire token (orange)
 
 // SpaceId is a unique identifier for a space: "tileId-x-y"
 export type SpaceId = string;
@@ -26,7 +23,7 @@ export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: 
 
 // SpaceAction represents what happens when a space is clicked
 // Style is the visual affordance, action is what gets dispatched
-// Some spaces (fire, pathTrail) are display-only and don't have click actions
+// Some spaces (fire) are display-only and don't have click actions
 export interface SpaceAction<TAction = unknown> {
   style: SpaceStyle;
   action?: TAction;
