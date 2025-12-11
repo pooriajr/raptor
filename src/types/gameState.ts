@@ -8,9 +8,7 @@ export type GamePhase =
   | "MAIN_MENU"
   | "RAPTOR_SETUP"
   | "SCIENTIST_SETUP"
-  | "SCIENTIST_READY"
   | "SCIENTIST_CARD_SELECTION"
-  | "RAPTOR_READY"
   | "RAPTOR_CARD_SELECTION"
   | "CARD_REVEAL"
   | "EFFECT_PHASE" // Lower card player uses special effect

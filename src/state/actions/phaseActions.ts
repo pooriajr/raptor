@@ -47,16 +47,10 @@ function getNextPhase(state: GameState): GamePhase | null {
 
     case "SCIENTIST_SETUP":
       if (countPlacedScientists(state) < 4) return null;
-      return "SCIENTIST_READY";
-
-    case "SCIENTIST_READY":
       return "SCIENTIST_CARD_SELECTION";
 
     case "SCIENTIST_CARD_SELECTION":
       if (state.scientistInteraction.selectedCard === null) return null;
-      return "RAPTOR_READY";
-
-    case "RAPTOR_READY":
       return "RAPTOR_CARD_SELECTION";
 
     case "RAPTOR_CARD_SELECTION":
@@ -91,7 +85,7 @@ function getNextPhase(state: GameState): GamePhase | null {
       return "ROUND_END";
 
     case "ROUND_END":
-      return "SCIENTIST_READY";
+      return "SCIENTIST_CARD_SELECTION";
 
     default:
       return null;

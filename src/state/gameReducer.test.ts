@@ -69,7 +69,7 @@ function completeFullSetup(initialState: GameState): GameState {
     });
   }
 
-  // Start the game (advance from SCIENTIST_SETUP to SCIENTIST_READY)
+  // Start the game (advance from SCIENTIST_SETUP to SCIENTIST_CARD_SELECTION)
   state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
   return state;
@@ -79,8 +79,8 @@ function completeFullSetup(initialState: GameState): GameState {
 function getToCardSelectionPhase(initialState: GameState, player: "scientist" | "raptor"): GameState {
   let state = completeFullSetup(initialState);
 
-  // Should be in SCIENTIST_READY after setup
-  expect(state.phase).toBe("SCIENTIST_READY");
+  // Should be in SCIENTIST_CARD_SELECTION after setup
+  expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
 
   // Scientist ready -> Scientist card selection
   state = gameReducer(state, { type: "ADVANCE_PHASE" });
@@ -99,8 +99,8 @@ function getToCardSelectionPhase(initialState: GameState, player: "scientist" | 
   });
   state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
-  // Should be in RAPTOR_READY
-  expect(state.phase).toBe("RAPTOR_READY");
+  // Should be in RAPTOR_CARD_SELECTION
+  expect(state.phase).toBe("RAPTOR_CARD_SELECTION");
 
   // Raptor ready -> Raptor card selection
   state = gameReducer(state, { type: "ADVANCE_PHASE" });
@@ -705,7 +705,7 @@ describe("Game Reducer - Setup Rules", () => {
       // Start game
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
-      expect(state.phase).toBe("SCIENTIST_READY");
+      expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
 
       // Try to remove a piece - should be ignored
       const babyId = state.babies[0].id;
@@ -851,9 +851,9 @@ describe("Game Reducer - Card System", () => {
   });
 
   describe("Game Start and Ready Phases", () => {
-    it("START_GAME transitions to SCIENTIST_READY when setup is complete", () => {
+    it("START_GAME transitions to SCIENTIST_CARD_SELECTION when setup is complete", () => {
       const state = completeFullSetup(createInitialGameState());
-      expect(state.phase).toBe("SCIENTIST_READY");
+      expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
     });
 
     it("START_GAME is rejected if not all scientists are placed", () => {
@@ -877,26 +877,19 @@ describe("Game Reducer - Card System", () => {
       expect(newState.phase).toBe("SCIENTIST_SETUP"); // Should not transition
     });
 
-    it("PLAYER_READY transitions scientist from SCIENTIST_READY to SCIENTIST_CARD_SELECTION", () => {
+    it("ADVANCE_PHASE does not transition from SCIENTIST_CARD_SELECTION without card selected", () => {
       let state = completeFullSetup(createInitialGameState());
-      expect(state.phase).toBe("SCIENTIST_READY");
+      expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
 
+      // Without selecting a card, should stay in same phase
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
       expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
     });
 
-    it("ADVANCE_PHASE transitions from SCIENTIST_READY to SCIENTIST_CARD_SELECTION", () => {
-      let state = completeFullSetup(createInitialGameState());
-      expect(state.phase).toBe("SCIENTIST_READY");
-
-      state = gameReducer(state, { type: "ADVANCE_PHASE" });
-      expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
-    });
-
-    it("ADVANCE_PHASE transitions raptor from RAPTOR_READY to RAPTOR_CARD_SELECTION", () => {
+    it("ADVANCE_PHASE does not transition from RAPTOR_CARD_SELECTION without card selected", () => {
       let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
 
-      // Select a card and advance to get to RAPTOR_READY
+      // Select a card and advance to get to RAPTOR_CARD_SELECTION
       const card = state.scientistCards.hand[0];
       state = gameReducer(state, {
         type: "SELECT_CARD",
@@ -904,8 +897,9 @@ describe("Game Reducer - Card System", () => {
         card: card.id,
       });
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
-      expect(state.phase).toBe("RAPTOR_READY");
+      expect(state.phase).toBe("RAPTOR_CARD_SELECTION");
 
+      // Without selecting a raptor card, should stay in same phase
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
       expect(state.phase).toBe("RAPTOR_CARD_SELECTION");
     });
@@ -977,7 +971,7 @@ describe("Game Reducer - Card System", () => {
       expect(state.scientistCards.hand).toEqual(handBefore);
     });
 
-    it("SELECT_CARD sets card, ADVANCE_PHASE transitions scientist to RAPTOR_READY", () => {
+    it("SELECT_CARD sets card, ADVANCE_PHASE transitions scientist to RAPTOR_CARD_SELECTION", () => {
       let state = getToCardSelectionPhase(createInitialGameState(), "scientist");
       const card = state.scientistCards.hand[0];
 
@@ -992,7 +986,7 @@ describe("Game Reducer - Card System", () => {
 
       // ADVANCE_PHASE does the transition
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
-      expect(state.phase).toBe("RAPTOR_READY");
+      expect(state.phase).toBe("RAPTOR_CARD_SELECTION");
     });
 
     it("marks raptor card as selected but keeps it in hand until card reveal exit", () => {
@@ -1102,7 +1096,7 @@ describe("Game Reducer - Card System", () => {
           y: space.coordinate.y,
         });
       }
-      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_READY
+      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION
       state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION (auto-draws)
 
       state = gameReducer(state, {
@@ -1110,7 +1104,7 @@ describe("Game Reducer - Card System", () => {
         player: "scientist",
         card: desiredScientistCard.id,
       });
-      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
       state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION (auto-draws)
       state = gameReducer(state, {
         type: "SELECT_CARD",
@@ -1170,7 +1164,7 @@ describe("Game Reducer - Card System", () => {
       // Scientist's selected card should persist through raptor's turn
       expect(state.scientistInteraction.selectedCard).toEqual(scientistCard.id);
 
-      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
       expect(state.scientistInteraction.selectedCard).toEqual(scientistCard.id);
 
       state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
@@ -1204,7 +1198,7 @@ describe("Game Reducer - Card System", () => {
       });
 
       // All cards should stay in hand through raptor's turn (selected card stays until card reveal exit)
-      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
       expect(state.scientistCards.hand).toEqual(originalHand);
 
       state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
@@ -1251,14 +1245,14 @@ describe("Game Reducer - Card System", () => {
           y: space.coordinate.y,
         });
       }
-      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_READY
+      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION
       state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION (auto-draws)
       state = gameReducer(state, {
         type: "SELECT_CARD",
         player: "scientist",
         card: desiredScientistCard.id,
       });
-      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+      state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
       state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION (auto-draws)
       state = gameReducer(state, {
         type: "SELECT_CARD",
@@ -1557,7 +1551,7 @@ describe("Game Reducer - Card System", () => {
           player: "scientist",
           card: scientistCard3.id,
         });
-        state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+        state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
         state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
         state = gameReducer(state, {
           type: "SELECT_CARD",
@@ -1748,14 +1742,14 @@ describe("Game Reducer - Action Phase", () => {
         y: space.coordinate.y,
       });
     }
-    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_READY
+    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION
     state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION (auto-draws)
     state = gameReducer(state, {
       type: "SELECT_CARD",
       player: "scientist",
       card: desiredScientistCard.id,
     });
-    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
     state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION (auto-draws)
     state = gameReducer(state, {
       type: "SELECT_CARD",
@@ -1807,14 +1801,14 @@ describe("Game Reducer - Action Phase", () => {
         y: space.coordinate.y,
       });
     }
-    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_READY
+    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION
     state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> SCIENTIST_CARD_SELECTION (auto-draws)
     state = gameReducer(state, {
       type: "SELECT_CARD",
       player: "scientist",
       card: desiredScientistCard.id,
     });
-    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_READY
+    state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION
     state = gameReducer(state, { type: "ADVANCE_PHASE" }); // -> RAPTOR_CARD_SELECTION (auto-draws)
     state = gameReducer(state, {
       type: "SELECT_CARD",
@@ -2094,14 +2088,14 @@ describe("Game Reducer - Action Phase", () => {
   });
 
   describe("END_ROUND", () => {
-    it("transitions from ROUND_END to SCIENTIST_READY", () => {
+    it("transitions from ROUND_END to SCIENTIST_CARD_SELECTION", () => {
       let state = getToActionPhaseRaptorActive();
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
       expect(state.phase).toBe("ROUND_END");
 
       state = gameReducer(state, { type: "END_ROUND" });
 
-      expect(state.phase).toBe("SCIENTIST_READY");
+      expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
       // actionPoints preserved for CardResolution display until next CARD_REVEAL
       expect(state.activePlayer).toBe("scientist");
     });

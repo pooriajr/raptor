@@ -2,7 +2,6 @@ import Board from "./Board.tsx";
 import { RaptorPlayerArea, ScientistPlayerArea, UndoButton } from "./PlayerArea";
 import CardResolution from "./CardResolution.tsx";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
-import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
 import MainMenu from "./MainMenu.tsx";
 import Trackers from "./Trackers.tsx";
 import { useGame } from "./state/GameContext.tsx";
@@ -32,8 +31,6 @@ function GameLayout() {
       <ScientistPlayerArea />
       {state.phase === "MAIN_MENU" && <MainMenu />}
       {state.phase === "CARD_REVEAL" && <CardRevealOverlay />}
-      {state.phase === "SCIENTIST_READY" && <PlayerReadyScreen player="scientist" />}
-      {state.phase === "RAPTOR_READY" && <PlayerReadyScreen player="raptor" />}
     </div>
   );
 }

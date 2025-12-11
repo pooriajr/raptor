@@ -203,10 +203,12 @@ Logic classes instantiated from `PieceState` for computing valid moves and actio
 ### Game Phases
 
 ```
-RAPTOR_SETUP → SCIENTIST_SETUP → SCIENTIST_READY → SCIENTIST_CARD_SELECTION →
-RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTION_PHASE →
-MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_READY
+RAPTOR_SETUP → SCIENTIST_SETUP → SCIENTIST_CARD_SELECTION →
+RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTION_PHASE →
+MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_CARD_SELECTION
 ```
+
+Note: Card selection phases use a privacy screen overlay on the hand that the selecting player must click to dismiss before seeing their cards.
 
 ### Space Actions System
 
@@ -282,6 +284,19 @@ Mother's Call and Jeep use two-step selection via `selectedActorId`:
 2. **Observation mechanic** - After disappearance, see opponent's next card before choosing
 3. **Recovery completion** - Remove sleep tokens from mother (currently only wakes babies)
 4. **Deck shuffle** - Shuffle deck when cards 1 are played
+
+### Card Animation Rules
+
+**Golden Rule**: Every card movement between deck, hand, and discard MUST be visible with an animation.
+
+**When cards move:**
+
+1. **Raptor Setup Phase**: 3 cards animate from raptor deck to raptor hand
+2. **Scientist Setup Phase**: 3 cards animate from scientist deck to scientist hand
+3. **Round End Phase** (sequential animations):
+   - Played card animates to discard pile
+   - If deck is empty or cards were played with value 1, shuffle animation plays (discard → deck)
+   - New card animates from deck to hand
 
 ### Technical Notes
 

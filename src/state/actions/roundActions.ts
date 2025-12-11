@@ -16,7 +16,7 @@ export type RoundAction = { type: "END_ROUND" };
  * 1. Draw cards to refill hand to 3 (shuffling discard into deck if needed)
  *    Note: Cards are already discarded during CARD_REVEAL exit
  * 2. Reset round-based restrictions
- * 3. Transition to next round's card selection (SCIENTIST_READY)
+ * 3. Transition to next round's card selection (SCIENTIST_CARD_SELECTION)
  */
 export function handleEndRound(state: GameState): GameState {
   if (state.phase !== "ROUND_END" && state.phase !== "ACTION_PHASE") {
@@ -41,7 +41,7 @@ export function handleEndRound(state: GameState): GameState {
     // Note: observationActive is NOT reset here - it persists to the next card selection
     // Note: activeEffectCard and actionPoints are cleared when entering CARD_REVEAL
   };
-  return transitionToPhase(newState, "SCIENTIST_READY");
+  return transitionToPhase(newState, "SCIENTIST_CARD_SELECTION");
 }
 
 // Handler map for round actions

@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import Card from "../Card";
+import PrivacyScreen from "./PrivacyScreen";
 import { useGame } from "../state/GameContext";
 import type { CardId } from "@/data/cards.ts";
 import "./Hand.css";
@@ -25,18 +27,30 @@ function Hand({ player }: HandProps) {
     (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
     (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
 
-  const faceDown = isOpponentSelecting;
-  const faceDownUnselected = !isThisPlayerSelecting;
+  // Privacy screen state - resets when entering card selection phase
+  const [privacyDismissed, setPrivacyDismissed] = useState(false);
+
+  // Reset privacy screen when this player's card selection phase starts
+  useEffect(() => {
+    if (isThisPlayerSelecting) {
+      setPrivacyDismissed(false);
+    }
+  }, [isThisPlayerSelecting]);
+
+  const showPrivacyScreen = isThisPlayerSelecting && !privacyDismissed;
+
+  const faceDown = isOpponentSelecting || showPrivacyScreen;
+  const faceDownUnselected = !isThisPlayerSelecting || showPrivacyScreen;
   const selectedCardId = interaction.selectedCard;
 
   // Card selection handler
   const handleCardSelect = (cardId: CardId) => {
-    if (!isThisPlayerSelecting) return;
+    if (!isThisPlayerSelecting || showPrivacyScreen) return;
     const newCard = interaction.selectedCard === cardId ? null : cardId;
     dispatch({ type: "SELECT_CARD", player, card: newCard });
   };
 
-  const canSelect = !faceDown;
+  const canSelect = !faceDown && !showPrivacyScreen;
   const hasSelection = selectedCardId != null;
 
   return (
@@ -61,6 +75,7 @@ function Hand({ player }: HandProps) {
             </div>
           );
         })}
+        <PrivacyScreen player={player} visible={showPrivacyScreen} onDismiss={() => setPrivacyDismissed(true)} />
       </div>
     </div>
   );
