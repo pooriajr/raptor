@@ -53,14 +53,51 @@
   gap: 8px;
 }
 
-.tracker-pip {
-  font-size: 2rem;
-  transition: filter 0.3s ease;
-  filter: grayscale(1) contrast(0) brightness(0.3) drop-shadow(1px 0 0 currentColor) drop-shadow(-1px 0 0 currentColor)
-    drop-shadow(0 1px 0 currentColor) drop-shadow(0 -1px 0 currentColor);
+.tracker-pip-slot {
+  position: relative;
 }
 
-.tracker-pip.filled {
-  filter: grayscale(0) contrast(1) brightness(1) drop-shadow(1px 0 0 currentColor) drop-shadow(-1px 0 0 currentColor)
-    drop-shadow(0 1px 0 currentColor) drop-shadow(0 -1px 0 currentColor);
+.tracker-pip {
+  font-size: 2rem;
+  transition: filter 0.8s ease;
+}
+
+/* Escaped babies - green */
+.tracker-row.escaped .tracker-pip {
+  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #2d5a27) drop-shadow(-1px 0 0 #2d5a27)
+    drop-shadow(0 1px 0 #2d5a27) drop-shadow(0 -1px 0 #2d5a27);
+}
+
+.tracker-row.escaped .tracker-pip-slot.has-baby .tracker-pip.empty {
+  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #8bc34a) drop-shadow(-1px 0 0 #8bc34a)
+    drop-shadow(0 1px 0 #8bc34a) drop-shadow(0 -1px 0 #8bc34a);
+}
+
+/* Sleep tokens - red */
+.tracker-row.sleep-tokens .tracker-pip {
+  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #5a2020) drop-shadow(-1px 0 0 #5a2020)
+    drop-shadow(0 1px 0 #5a2020) drop-shadow(0 -1px 0 #5a2020);
+}
+
+.tracker-row.sleep-tokens .tracker-pip-slot.has-pip .tracker-pip.empty {
+  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #ff4444) drop-shadow(-1px 0 0 #ff4444)
+    drop-shadow(0 1px 0 #ff4444) drop-shadow(0 -1px 0 #ff4444);
+}
+
+/* Captured babies - orange */
+.tracker-row.captured .tracker-pip {
+  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #6b4a20) drop-shadow(-1px 0 0 #6b4a20)
+    drop-shadow(0 1px 0 #6b4a20) drop-shadow(0 -1px 0 #6b4a20);
+}
+
+.tracker-row.captured .tracker-pip-slot.has-baby .tracker-pip.empty {
+  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #ffb347) drop-shadow(-1px 0 0 #ffb347)
+    drop-shadow(0 1px 0 #ffb347) drop-shadow(0 -1px 0 #ffb347);
+}
+
+.tracker-pip-slot .tracker-pip.filled {
+  position: absolute;
+  top: 0;
+  left: 0;
+  filter: none;
 }

@@ -1,6 +1,5 @@
 import type { GameState, GamePhase, Player } from "@/types/gameState";
 import { saveGame } from "@/utils/saveLoad";
-import { getEffectLimit } from "@/utils/effectUtils";
 import { drawToHand } from "./actions/cardActions";
 
 function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | null {
@@ -45,11 +44,9 @@ export function transitionToPhase(state: GameState, phase: GamePhase): GameState
 
   // Save snapshot when entering effect phase
   if (phase === "EFFECT_PHASE") {
-    const effectActionsRemaining = getEffectLimit(state);
     newState = {
       ...newState,
-      effectActionsRemaining,
-      effectPhaseSavedState: { ...newState, effectActionsRemaining },
+      undoSnapshot: newState,
     };
   }
 
@@ -58,7 +55,7 @@ export function transitionToPhase(state: GameState, phase: GamePhase): GameState
     newState = {
       ...newState,
       effectActionsRemaining: 0,
-      effectPhaseSavedState: null,
+      undoSnapshot: null,
     };
   }
 

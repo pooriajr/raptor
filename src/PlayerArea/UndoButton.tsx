@@ -24,28 +24,23 @@ function UndoButton({ player }: UndoButtonProps) {
 
   const showEffectUndo = isThisPlayerEffect && shouldShowEffectUndo(state);
   const showActionReset =
-    isThisPlayerAction &&
-    state.actionPhaseSavedState !== null &&
-    state.actionPoints < state.actionPhaseSavedState.actionPoints;
+    isThisPlayerAction && state.undoSnapshot !== null && state.actionPoints < state.undoSnapshot.actionPoints;
 
-  const handleEffectUndo = () => {
-    dispatch({ type: "REVERT_EFFECT_PHASE" });
-  };
-
-  const handleActionReset = () => {
-    if (state.actionPhaseSavedState) {
-      dispatch({ type: "RESET_ACTION_PHASE", savedState: state.actionPhaseSavedState });
+  const handleUndo = () => {
+    if (isEffectPhase) {
+      dispatch({ type: "REVERT_EFFECT_PHASE" });
+    } else {
+      dispatch({ type: "RESET_ACTION_PHASE" });
       dispatch({ type: "SELECT_ACTOR", player, pieceId: null });
     }
   };
 
   const showButton = showEffectUndo || showActionReset;
-  const handleClick = showEffectUndo ? handleEffectUndo : handleActionReset;
 
   return (
     <button
       className={`undo-button ${player}${showButton ? " visible" : ""}`}
-      onClick={handleClick}
+      onClick={handleUndo}
       disabled={!showButton}
       title="Restart"
     >

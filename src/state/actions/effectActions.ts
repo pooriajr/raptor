@@ -250,14 +250,11 @@ export function handleMoveJeep(
 
 export function handleRevertEffectPhase(state: GameState): GameState {
   if (state.phase !== "EFFECT_PHASE") return state;
-  if (!state.effectPhaseSavedState) return state;
+  if (!state.undoSnapshot) return state;
 
-  // Restore the saved state but keep the phase as EFFECT_PHASE
   return {
-    ...state.effectPhaseSavedState,
-    phase: "EFFECT_PHASE",
-    effectPhaseSavedState: state.effectPhaseSavedState,
-    effectActionsRemaining: state.effectPhaseSavedState.effectActionsRemaining,
+    ...state.undoSnapshot,
+    undoSnapshot: state.undoSnapshot,
   };
 }
 

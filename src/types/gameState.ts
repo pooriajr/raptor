@@ -101,11 +101,10 @@ export interface GameState {
   // UI/Interaction state - per player
   raptorInteraction: InteractionState;
   scientistInteraction: InteractionState;
-  // Effect phase - snapshot/revert pattern
+  // Effect phase
   effectActionsRemaining: number;
-  effectPhaseSavedState: GameState | null;
-  // Action phase saved state for reset
-  actionPhaseSavedState: GameState | null;
+  // Undo snapshot - saved at start of effect/action phase for reset functionality
+  undoSnapshot: GameState | null;
 }
 
 // Create initial card state with full shuffled deck
@@ -176,7 +175,6 @@ export function createInitialGameState(): GameState {
     raptorInteraction: createInitialInteractionState(),
     scientistInteraction: createInitialInteractionState(),
     effectActionsRemaining: 0,
-    effectPhaseSavedState: null,
-    actionPhaseSavedState: null,
+    undoSnapshot: null,
   };
 }

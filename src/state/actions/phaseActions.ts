@@ -10,6 +10,13 @@ import { CARDS } from "@/data/cards.ts";
 export type PhaseAction = { type: "ADVANCE_PHASE" };
 
 /**
+ * Save a snapshot of the current state for undo functionality.
+ */
+function saveUndoSnapshot(state: GameState): GameState {
+  return { ...state, undoSnapshot: state };
+}
+
+/**
  * ADVANCE_PHASE - The single action that handles all phase transitions.
  *
  * Called when the player clicks "Done" or similar confirmation buttons.
@@ -161,7 +168,7 @@ function runExitEffects(state: GameState, exitingPhase: GamePhase): GameState {
     newState = {
       ...newState,
       effectActionsRemaining: 0,
-      effectPhaseSavedState: null,
+      undoSnapshot: null,
     };
   }
 
@@ -169,7 +176,7 @@ function runExitEffects(state: GameState, exitingPhase: GamePhase): GameState {
   if (exitingPhase === "ACTION_PHASE") {
     newState = {
       ...newState,
-      actionPhaseSavedState: null,
+      undoSnapshot: null,
       raptorInteraction: createInitialInteractionState(),
       scientistInteraction: createInitialInteractionState(),
     };
@@ -214,24 +221,20 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
       break;
 
     case "CARD_REVEAL": {
-      // Calculate round resolution: activeEffectCard (lower card) and actionPoints (difference)
+      // Calculate round resolution: activeEffectCard (lower card), actionPoints (difference), effectActionsRemaining
       const resolution = calculateRoundResolution(newState);
       newState = {
         ...newState,
         activeEffectCard: resolution.activeEffectCard,
         actionPoints: resolution.actionPoints,
+        effectActionsRemaining: getEffectLimit({ ...newState, activeEffectCard: resolution.activeEffectCard }),
       };
       break;
     }
 
     case "EFFECT_PHASE": {
-      // Save snapshot and set effect limit
-      const effectActionsRemaining = getEffectLimit(newState);
-      newState = {
-        ...newState,
-        effectActionsRemaining,
-        effectPhaseSavedState: { ...newState, effectActionsRemaining },
-      };
+      // Save snapshot for undo
+      newState = saveUndoSnapshot(newState);
       // Auto-disappearance for raptor disappearance effect
       if (newState.activeEffectCard?.player === "raptor" && newState.activeEffectCard?.effectType === "disappearance") {
         newState = {
@@ -245,10 +248,7 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
 
     case "ACTION_PHASE":
       // Save snapshot for undo functionality
-      newState = {
-        ...newState,
-        actionPhaseSavedState: newState,
-      };
+      newState = saveUndoSnapshot(newState);
       break;
 
     case "ROUND_END": {

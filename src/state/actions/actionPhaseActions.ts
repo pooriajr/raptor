@@ -1,4 +1,4 @@
-import type { GameState, PieceState, FireToken } from "@/types/gameState.ts";
+import type { GameState } from "@/types/gameState.ts";
 import { getAllPieces, isSpaceOccupied, arePiecesAdjacent } from "@/utils/boardUtils.ts";
 import { hasLineOfSight } from "@/utils/lineOfSight.ts";
 import { getConnectedFires } from "@/utils/fireUtils.ts";
@@ -6,15 +6,6 @@ import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates
 import { BabyRaptor } from "@/pieces/BabyRaptor.ts";
 import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
-
-// Saved state for action phase reset
-export interface ActionPhaseSavedState {
-  mother: PieceState;
-  babies: PieceState[];
-  scientists: PieceState[];
-  fireTokens: FireToken[];
-  actionPoints: number;
-}
 
 // Action types for action phase
 export type ActionPhaseAction =
@@ -59,7 +50,7 @@ export type ActionPhaseAction =
     }
   | { type: "ACTION_SCIENTIST_SHOOT_MOTHER"; scientistId: string }
   | { type: "ACTION_SCIENTIST_STAND_UP"; scientistId: string }
-  | { type: "RESET_ACTION_PHASE"; savedState: ActionPhaseSavedState };
+  | { type: "RESET_ACTION_PHASE" };
 
 export function handleActionMoveBaby(
   state: GameState,
@@ -408,17 +399,13 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
 
 // END_ACTION_PHASE is now handled by ADVANCE_PHASE
 
-export function handleResetActionPhase(state: GameState, action: { savedState: ActionPhaseSavedState }): GameState {
+export function handleResetActionPhase(state: GameState): GameState {
   if (state.phase !== "ACTION_PHASE") return state;
+  if (!state.undoSnapshot) return state;
 
-  // Restore the saved state from the start of the action phase
   return {
-    ...state,
-    mother: action.savedState.mother,
-    babies: action.savedState.babies,
-    scientists: action.savedState.scientists,
-    fireTokens: action.savedState.fireTokens,
-    actionPoints: action.savedState.actionPoints,
+    ...state.undoSnapshot,
+    undoSnapshot: state.undoSnapshot,
   };
 }
 

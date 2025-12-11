@@ -47,7 +47,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "ACTION_SCIENTIST_CAPTURE_BABY": return h.handleScientistCaptureBaby(state, action);
     case "ACTION_SCIENTIST_SHOOT_MOTHER": return h.handleScientistShootMother(state, action);
     case "ACTION_SCIENTIST_STAND_UP": return h.handleScientistStandUp(state, action);
-    case "RESET_ACTION_PHASE": return h.handleResetActionPhase(state, action);
+    case "RESET_ACTION_PHASE": return h.handleResetActionPhase(state);
     // Round actions
     case "END_ROUND": return h.handleEndRound(state);
     // Phase actions
@@ -61,8 +61,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "SELECT_CARD": return h.interactionHandlers.SELECT_CARD(state, action);
     case "SET_NEW_DRAW": return h.interactionHandlers.SET_NEW_DRAW(state, action);
     case "SELECT_ACTOR": return h.interactionHandlers.SELECT_ACTOR(state, action);
-    case "SAVE_ACTION_PHASE_STATE": return h.interactionHandlers.SAVE_ACTION_PHASE_STATE(state, action);
-    case "CLEAR_ACTION_PHASE_STATE": return h.interactionHandlers.CLEAR_ACTION_PHASE_STATE(state);
     case "RESET_INTERACTION": return h.interactionHandlers.RESET_INTERACTION(state, action);
     case "RESET_ALL_INTERACTIONS": return h.interactionHandlers.RESET_ALL_INTERACTIONS(state);
     default: return state;

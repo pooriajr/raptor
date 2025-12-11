@@ -8,8 +8,6 @@ export type InteractionAction =
   | { type: "SET_NEW_DRAW"; player: Player; isNewDraw: boolean }
   // Actor selection (action phase and effect phase)
   | { type: "SELECT_ACTOR"; player: Player; pieceId: string | null }
-  | { type: "SAVE_ACTION_PHASE_STATE"; savedState: GameState }
-  | { type: "CLEAR_ACTION_PHASE_STATE" }
   // Reset
   | { type: "RESET_INTERACTION"; player: Player }
   | { type: "RESET_ALL_INTERACTIONS" };
@@ -62,27 +60,11 @@ export function handleResetAllInteractions(state: GameState): GameState {
   };
 }
 
-export function handleSaveActionPhaseState(state: GameState, action: { savedState: GameState }): GameState {
-  return {
-    ...state,
-    actionPhaseSavedState: action.savedState,
-  };
-}
-
-export function handleClearActionPhaseState(state: GameState): GameState {
-  return {
-    ...state,
-    actionPhaseSavedState: null,
-  };
-}
-
 // Handler map for interaction actions
 export const interactionHandlers = {
   SELECT_CARD: handleSelectCard,
   SET_NEW_DRAW: handleSetNewDraw,
   SELECT_ACTOR: handleSelectActor,
-  SAVE_ACTION_PHASE_STATE: handleSaveActionPhaseState,
-  CLEAR_ACTION_PHASE_STATE: handleClearActionPhaseState,
   RESET_INTERACTION: handleResetInteraction,
   RESET_ALL_INTERACTIONS: handleResetAllInteractions,
 };
