@@ -11,7 +11,7 @@ interface SpaceProps {
   space: SpaceType;
   highlight?: { style: HighlightStyle; action?: unknown };
   showCoordinates?: boolean;
-  onSpaceClick: (tileId: number, x: number, y: number, pieceId: string | null) => void;
+  onSpaceClick: (tileId: number, x: number, y: number, spaceId: string) => void;
 }
 
 function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick }: SpaceProps) {
@@ -33,7 +33,7 @@ function Space({ tileId, space, highlight, showCoordinates = false, onSpaceClick
       data-mountain={space.hasMountain}
       data-unusable={space.isUnusable}
       data-highlight={highlightStyle}
-      onClick={() => onSpaceClick(tileId, space.coordinate.x, space.coordinate.y, pieceOnSpace?.id ?? null)}
+      onClick={() => onSpaceClick(tileId, space.coordinate.x, space.coordinate.y, space.id)}
     >
       {showCoordinates && (
         <span className="coord">

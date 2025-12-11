@@ -419,7 +419,53 @@ export function buildHighlights(state: GameState): SpaceHighlights<GameAction> {
     }
   }
 
-  // Valid moves (action phase)
+  // Action phase piece selection
+  if (state.phase === "ACTION_PHASE") {
+    const player = state.activePlayer;
+
+    // Controllable pieces can be clicked to select/deselect
+    if (player === "raptor") {
+      // Mother can be selected (if not already selected via highlights above)
+      if (state.mother && state.mother.tileId !== -1) {
+        const action: GameAction =
+          selectedActorId === state.mother.id
+            ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
+            : { type: "SELECT_ACTOR", player: "raptor", pieceId: state.mother.id };
+        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "validMove", action);
+      }
+      // Babies can be selected (awake only)
+      for (const baby of state.babies) {
+        if (baby.tileId === -1 || baby.isAsleep) continue;
+        const action: GameAction =
+          selectedActorId === baby.id
+            ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
+            : { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "validMove", action);
+      }
+    } else if (player === "scientist") {
+      for (const scientist of state.scientists) {
+        if (scientist.tileId === -1) continue;
+
+        // Frightened scientist: can stand up (costs 1 AP, not same round frightened)
+        if (scientist.isFrightened) {
+          if (state.actionPoints > 0 && !state.frightenedThisRound.includes(scientist.id)) {
+            const action: GameAction = { type: "ACTION_SCIENTIST_STAND_UP", scientistId: scientist.id };
+            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "friendlyTarget", action);
+          }
+          continue;
+        }
+
+        // Non-frightened scientist: can be selected
+        const action: GameAction =
+          selectedActorId === scientist.id
+            ? { type: "SELECT_ACTOR", player: "scientist", pieceId: null }
+            : { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "validMove", action);
+      }
+    }
+  }
+
+  // Valid moves (action phase) - destinations for selected piece
   const activePiece = selectedActorId ? findPieceById(state, selectedActorId) : null;
   if (activePiece && selectedActorId && state.phase === "ACTION_PHASE") {
     const validMoves = getValidMoves(state, activePiece, selectedActorId);
@@ -454,8 +500,28 @@ export function buildHighlights(state: GameState): SpaceHighlights<GameAction> {
     }
   }
 
-  // Setup placements
+  // Setup phase
   if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
+    // Placed pieces can be removed by clicking on them
+    if (state.phase === "RAPTOR_SETUP") {
+      if (state.mother && state.mother.tileId !== -1) {
+        const action: GameAction = { type: "REMOVE_PIECE", pieceId: state.mother.id };
+        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "setupPlacement", action);
+      }
+      for (const baby of state.babies) {
+        if (baby.tileId === -1) continue;
+        const action: GameAction = { type: "REMOVE_PIECE", pieceId: baby.id };
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "setupPlacement", action);
+      }
+    } else {
+      for (const scientist of state.scientists) {
+        if (scientist.tileId === -1) continue;
+        const action: GameAction = { type: "REMOVE_PIECE", pieceId: scientist.id };
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "setupPlacement", action);
+      }
+    }
+
+    // Empty spaces for placement
     const validTiles = getValidSetupTiles(state);
     for (const tileId of validTiles) {
       for (const { x, y } of getValidSetupSpaces(state, tileId)) {
@@ -471,7 +537,7 @@ export function buildHighlights(state: GameState): SpaceHighlights<GameAction> {
       }
     }
 
-    // Setup move targets
+    // Setup move targets (empty spaces on tiles with pieces)
     for (const tile of state.tiles) {
       const pieceOnTile =
         state.phase === "RAPTOR_SETUP"

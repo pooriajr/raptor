@@ -3,7 +3,6 @@ import Tile from "./Tile.tsx";
 import { useEffect } from "react";
 import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import type { PieceState } from "./types/gameState.ts";
 import { buildHighlights, getValidSetupTileIds } from "./utils/buildHighlights.ts";
 
 function Board() {
@@ -17,14 +16,6 @@ function Board() {
       dispatch({ type: "SELECT_CARD", player: currentPlayer, card: null });
     }
   }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Helper to find a piece by ID
-  const findPieceById = (id: string): PieceState | undefined => {
-    if (state.mother?.id === id) return state.mother;
-    const baby = state.babies.find((b) => b.id === id);
-    if (baby) return baby;
-    return state.scientists.find((s) => s.id === id);
-  };
 
   // Reset interactions when leaving effect/action phases
   useEffect(() => {
@@ -68,79 +59,15 @@ function Board() {
     }
   }, [state.phase, dispatch]);
 
-  // Handle piece interactions for action phase only
-  const handlePieceInteraction = (pieceId: string): boolean => {
-    if (state.phase !== "ACTION_PHASE") return false;
-
-    const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
-    const selectedActorId = interaction.selectedActorId;
-    const piece = findPieceById(pieceId);
-    if (!piece) return false;
-
-    // Check if piece can be controlled
-    const canControl =
-      (state.activePlayer === "raptor" && (piece.type === "baby" || piece.type === "mother")) ||
-      (state.activePlayer === "scientist" && piece.type === "scientist");
-
-    if (!canControl) return false;
-    if (piece.type === "baby" && piece.isAsleep) return false;
-
-    // Frightened scientist standing up
-    if (piece.type === "scientist" && piece.isFrightened) {
-      if (state.actionPoints > 0 && !state.frightenedThisRound.includes(pieceId)) {
-        dispatch({ type: "ACTION_SCIENTIST_STAND_UP", scientistId: pieceId });
-        if (currentPlayer) {
-          dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
-        }
-      }
-      return true;
-    }
-
-    // Toggle selection
-    if (currentPlayer) {
-      if (selectedActorId === pieceId) {
-        dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId: null });
-      } else {
-        dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
-      }
-    }
-    return true;
-  };
-
   // Build highlights from state
   const highlights = buildHighlights(state);
   const validSetupTileIds = getValidSetupTileIds(state);
 
-  // Unified space click handler
-  const handleSpaceClick = (tileId: number, x: number, y: number, pieceId: string | null) => {
-    const spaceId = `${tileId}-${x}-${y}`;
-
-    // Setup phase: clicking on a placed piece removes it
-    if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
-      if (pieceId) {
-        const isRaptorPiece = pieceId === "mother" || pieceId.startsWith("baby-");
-        const isScientistPiece = pieceId.startsWith("scientist-");
-        if (
-          (state.phase === "RAPTOR_SETUP" && isRaptorPiece) ||
-          (state.phase === "SCIENTIST_SETUP" && isScientistPiece)
-        ) {
-          dispatch({ type: "REMOVE_PIECE", pieceId });
-          return;
-        }
-        return;
-      }
-    }
-
-    // Check if space has a highlight with action
+  // Space click handler - just dispatch the highlight action
+  const handleSpaceClick = (_tileId: number, _x: number, _y: number, spaceId: string) => {
     const highlight = highlights.get(spaceId);
     if (highlight?.action) {
       dispatch(highlight.action);
-      return;
-    }
-
-    // Handle piece interactions (action phase only)
-    if (pieceId) {
-      handlePieceInteraction(pieceId);
     }
   };
 

@@ -8,7 +8,7 @@ interface TileProps {
   highlights: SpaceHighlights;
   isValidSetupTile?: boolean;
   showCoordinates?: boolean;
-  onSpaceClick: (tileId: number, x: number, y: number, pieceId: string | null) => void;
+  onSpaceClick: (tileId: number, x: number, y: number, spaceId: string) => void;
 }
 
 function Tile({ tile, highlights, isValidSetupTile = false, showCoordinates = false, onSpaceClick }: TileProps) {

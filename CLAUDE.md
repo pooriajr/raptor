@@ -210,12 +210,18 @@ MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_READY
 
 ### Highlight System
 
-Board.tsx builds a `SpaceHighlights` map that associates each space with:
+`buildHighlights.ts` builds a `SpaceHighlights` map that associates each space with:
 
 - A visual style (e.g., `validMove`, `effectTarget`, `hostileTarget`)
 - An optional action to dispatch on click
 
-This enables declarative click handling - Space components just dispatch the action associated with their highlight.
+**IMPORTANT RULES:**
+
+- Pieces are never directly clickable - only Spaces receive click events
+- All click handling goes through the highlights system
+- If a space has a highlight with an action, clicking dispatches that action
+- If a space has no highlight action, clicking does nothing
+- Board.tsx should NOT have any click handling logic outside of dispatching highlight actions
 
 **Highlight styles:**
 
