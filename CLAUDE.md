@@ -144,34 +144,52 @@ npm run preview
 - React Context (`GameContext`) provides state and dispatch to all components
 - Phase-based state machine controls game flow
 - Piece data stored as plain objects (`PieceState`); piece classes used for logic only
+- Snapshot-revert pattern for undoable phases (effect and action)
 
 ### Components
 
 - **App.tsx**: Root component, holds game state via `useReducer`, provides `GameContext`
-- **Board.tsx**: Game board container, manages effect phase UI state, dispatches actions
+- **Board.tsx**: Game board container, builds highlights map, dispatches actions
 - **Tile.tsx**: Individual tile component with data attributes for styling
-- **SetupPanel.tsx**: Displays pieces available for placement during setup (draggable)
+- **Space.tsx**: Individual space within a tile, renders pieces/fire/highlights
 - **CardDeck.tsx**: Visual card deck display
 - **Hand.tsx**: Player's hand of cards with selection UI
-- **EffectPhaseBanner.tsx**: Banner showing current effect with instructions and confirm/skip buttons
+- **CardRevealOverlay.tsx**: Card reveal animation with effect/action point display
+- **PlayerReadyScreen.tsx**: Screen shown between player turns
 - **DevPanel.tsx**: Development tools for testing (auto-setup, skip to effects)
+- **PlayerArea/**: Player-specific UI components (DoneButton, UndoButton, Tracker, etc.)
 
 ### State (`src/state/`)
 
-- **gameReducer.ts**: Handles all state changes via actions
+- **gameReducer.ts**: Main reducer, dispatches to action handlers
 - **GameContext.tsx**: React Context and `useGame()` hook for accessing state/dispatch
+- **phaseTransition.ts**: Handles phase changes and snapshot management
+- **actions/**: Action handlers organized by domain:
+  - `setupActions.ts` - Piece placement during setup
+  - `cardActions.ts` - Card selection and reveal
+  - `effectActions.ts` - Effect phase actions (fear, sleeping gas, etc.)
+  - `actionPhaseActions.ts` - Action phase actions (movement, attacks)
+  - `roundActions.ts` - Round end logic
+  - `interactionActions.ts` - UI state (selected actor, card selection)
+  - `devActions.ts` - Development/debug actions
 
 ### Types (`src/types/`)
 
-- **gameState.ts**: GameState, PieceState, CardState, FireToken types + `createInitialGameState()`
-- **board.ts**: Coordinate, Space, SquareTile, LTile types + `createBoard()` returns `Tile[]`
+- **gameState.ts**: GameState, PieceState, CardState, FireToken, InteractionState
+- **board.ts**: Coordinate, Space, SquareTile, LTile types + `createBoard()`
 - **coordinates.ts**: Global coordinate system (localToGlobal, globalToLocal, adjacency)
+- **highlights.ts**: SpaceHighlight, HighlightStyle types for board highlighting
 
 ### Utilities (`src/utils/`)
 
 - **pathfinding.ts**: BFS pathfinding for Mother's Call, jeep destinations with paths
+- **lineOfSight.ts**: Line of sight calculation for scientist shooting
+- **effectUtils.ts**: Effect type lookup, effect player detection
 - **cardEffects.ts**: Card effect name lookup
 - **pieceUtils.ts**: Piece emoji helpers
+- **fireUtils.ts**: Fire token utilities
+- **boardUtils.ts**: Board space utilities
+- **saveLoad.ts**: Game state persistence
 
 ### Pieces (`src/pieces/`)
 
@@ -186,36 +204,48 @@ Logic classes instantiated from `PieceState` for computing valid moves and actio
 
 ```
 RAPTOR_SETUP → SCIENTIST_SETUP → SCIENTIST_READY → SCIENTIST_CARD_SELECTION →
-RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTION_PHASE
+RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTION_PHASE →
+MOTHER_RETURN (if applicable) → ROUND_END → back to SCIENTIST_READY
 ```
 
-### Reducer Actions
+### Highlight System
 
-**Setup:**
+Board.tsx builds a `SpaceHighlights` map that associates each space with:
 
-- `PLACE_SCIENTIST`, `PLACE_MOTHER`, `PLACE_BABY`, `MOVE_PIECE`, `START_GAME`
+- A visual style (e.g., `validMove`, `effectTarget`, `hostileTarget`)
+- An optional action to dispatch on click
 
-**Card Flow:**
+This enables declarative click handling - Space components just dispatch the action associated with their highlight.
 
-- `PLAYER_READY`, `DRAW_CARDS`, `PLAY_CARD`, `CONFIRM_REVEAL`
+**Highlight styles:**
 
-**Effect Phase (Raptor):**
+- `validMove` - Action phase movement (green)
+- `setupPlacement` / `setupMoveTarget` - Setup phase (light green)
+- `effectTarget` - Selectable pieces for two-step effects (gold)
+- `effectDestination` - Effect destinations (teal)
+- `hostileTarget` - Enemy pieces that can be attacked (red)
+- `friendlyTarget` - Friendly pieces/fire to interact with (purple)
+- `fire` / `pendingFire` - Fire tokens (orange)
+- `pathTrail` - Movement path indicators
 
-- `FRIGHTEN_SCIENTISTS` - Fear effect
-- `MOTHERS_CALL` - Move babies to mother's tile
-- `DISAPPEARANCE` - Remove mother from board
-- `WAKE_BABIES` - Recovery effect (wake sleeping babies)
+### Snapshot-Revert Pattern
 
-**Effect Phase (Scientist):**
+Both Effect Phase and Action Phase use a **snapshot-revert pattern** for undoable actions:
 
-- `PUT_BABIES_TO_SLEEP` - Sleeping gas effect
-- `REINFORCEMENTS` - Place scientists from reserve
-- `PLACE_FIRE` - Fire effect
-- `JEEP_MOVES` - Jeep movement with fire extinguishing
+1. **On phase entry**: Save a snapshot of entire game state
+2. **During phase**: Execute actions immediately (state updates right away)
+3. **Track limits**: Use counters like `effectActionsRemaining` or `actionPoints`
+4. **On confirm (Done)**: Discard the snapshot, proceed to next phase
+5. **On revert (Undo)**: Restore the snapshot, resetting all changes
 
-**Other:**
+This keeps UI simple - components render actual state, no "pending" vs "real" distinction.
 
-- `END_EFFECT_PHASE`, `DEV_SKIP_TO_EFFECT`
+### Two-Step Effects
+
+Mother's Call and Jeep use two-step selection via `selectedActorId`:
+
+1. Click piece to select it (shows `effectTarget` highlight)
+2. Click destination (shows `effectDestination` highlights for selected piece only)
 
 ## Current Progress
 
@@ -224,37 +254,28 @@ RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTI
 - ✅ Board type system with Coordinate, Space, SquareTile, LTile
 - ✅ Board generation with asymmetric L-tile exit configuration
 - ✅ Visual board rendering with 10 tiles in correct positions
-- ✅ L-tile CSS for all 4 orientations (left/right × top/bottom)
 - ✅ Global coordinate system (localToGlobal, globalToLocal, adjacency)
 - ✅ Piece classes (MotherRaptor, BabyRaptor, Scientist) with movement rules
 - ✅ Setup phase with piece placement and validation
-- ✅ Mountain patterns randomly assigned to square tiles
-- ✅ GameState with PieceState, CardState, FireToken
-- ✅ gameReducer with comprehensive action handling
-- ✅ GameContext and useGame() hook
 - ✅ Card selection UI (sequential: scientist picks, then raptor)
 - ✅ Card reveal animation with Framer Motion
-- ✅ **Effect Phase - All card effects implemented:**
-  - Fear (cards 3, 8) - frighten scientists
-  - Sleeping Gas (cards 1, 4) - put babies to sleep
-  - Mother's Call (cards 1, 4) - move babies to mother's tile with pathfinding
-  - Disappearance (cards 2, 6) - auto-removes mother from board
-  - Recovery (cards 5, 7) - wake sleeping babies
-  - Reinforcements (cards 2, 6) - place scientists on board edges
-  - Fire (cards 5, 7) - place fire tokens adjacent to scientists/fire
-  - Jeep (cards 3, 8) - straight-line movement, extinguishes fires
-- ✅ Effect phase UI with target highlighting (gold for pieces, teal for destinations)
-- ✅ Pending move visualization (footprints for babies, smoke trails for jeeps)
-- ✅ Dev panel for testing effects
-- ✅ Comprehensive test suite (130 tests, all passing)
+- ✅ **Effect Phase** - All card effects implemented with undo support
+- ✅ **Action Phase** - All actions implemented:
+  - Mother: move, kill scientist, wake baby, extinguish fire
+  - Baby: move, escape via exit
+  - Scientist: move, stand up, sleep baby, capture baby, shoot mother
+- ✅ Line of sight calculation for scientist shooting
+- ✅ Snapshot-revert pattern for both effect and action phases
+- ✅ Two-step selection for Mother's Call and Jeep effects
+- ✅ Win condition tracking (escapedBabies, capturedBabies, motherSleepTokens)
+- ✅ Comprehensive test suite (145 tests)
 
 ### Next Steps
 
-1. **Action phase** - Spend action points for movement and actions
-2. **Line of sight** - Calculate shooting paths for scientists
-3. **Win condition checking** - Track escaped babies, captured babies, sleep tokens
-4. **Disappearance completion** - Replace mother after opponent's action, observation mechanic
-5. **Recovery completion** - Remove sleep tokens from mother
+1. **Win condition UI** - Display game over screen when win conditions are met
+2. **Observation mechanic** - After disappearance, see opponent's next card before choosing
+3. **Recovery completion** - Remove sleep tokens from mother (currently only wakes babies)
+4. **Deck shuffle** - Shuffle deck when cards 1 are played
 
 ### Technical Notes
 
@@ -266,15 +287,4 @@ RAPTOR_READY → RAPTOR_CARD_SELECTION → CARD_REVEAL → EFFECT_PHASE → ACTI
 - State lives in single GameState object at App level via useReducer
 - Pieces in state are plain objects; piece classes encapsulate movement/action logic
 - Phase-based state machine controls valid actions at each point
-
-### Snapshot-Revert Pattern
-
-Both Effect Phase and Action Phase use a **snapshot-revert pattern** for undoable actions:
-
-1. **On phase entry**: Save a snapshot of entire game state
-2. **During phase**: Execute actions immediately (state updates right away)
-3. **Track limits**: Use counters like `effectActionsRemaining` or `actionPoints` to enforce limits
-4. **On confirm (Done)**: Discard the snapshot, proceed to next phase
-5. **On revert (Undo)**: Restore the snapshot, resetting all changes made during the phase
-
-This pattern keeps UI simple - components just render actual state, no "pending" vs "real" distinction needed.
+- `selectedActorId` is shared between action phase and effect phase for piece selection
