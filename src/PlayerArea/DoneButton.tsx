@@ -77,7 +77,7 @@ function DoneButton({ player }: DoneButtonProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isActivePlayer, disabled]);
 
-  const className = `done-button ${disabled ? "done-button--disabled" : "done-button--ready"}`;
+  const className = `done-button ${player} ${disabled ? "done-button--disabled" : "done-button--ready"}`;
 
   return (
     <button className={className} disabled={disabled} onClick={handleClick}>

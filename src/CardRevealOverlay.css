@@ -51,7 +51,7 @@
 }
 
 .reveal-card-section.scientist .player-label {
-  color: #87ceeb;
+  color: #ffb347;
 }
 
 .reveal-card-section.raptor .player-label {
@@ -70,8 +70,8 @@
 }
 
 .reveal-card-section.scientist .reveal-card {
-  background: linear-gradient(145deg, #1a3a5c, #0d1f33);
-  border: 3px solid #4a8ac4;
+  background: linear-gradient(145deg, #8a5a1a, #5a3810);
+  border: 3px solid #e68a11;
 }
 
 .reveal-card-section.raptor .reveal-card {
@@ -85,7 +85,7 @@
 }
 
 .reveal-card-section.scientist .card-value {
-  color: #87ceeb;
+  color: #ffb347;
 }
 
 .reveal-card-section.raptor .card-value {

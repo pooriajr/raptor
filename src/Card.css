@@ -54,12 +54,12 @@
 
 /* Scientist card colors */
 .Card.scientist .card-front {
-  background: linear-gradient(145deg, #1a3a5c, #0d1f33);
-  color: #87ceeb;
+  background: linear-gradient(145deg, #8a5a1a, #5a3810);
+  color: #ffb347;
 }
 
 .Card.scientist .card-back {
-  background: linear-gradient(145deg, #2a4a6c, #1d3044);
+  background: linear-gradient(145deg, #8a5a1a, #5a3810);
 }
 
 .card-value {

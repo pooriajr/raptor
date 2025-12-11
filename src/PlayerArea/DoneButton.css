@@ -75,3 +75,20 @@
   opacity: 0.6;
   font-weight: normal;
 }
+
+/* Scientist color scheme */
+.done-button.scientist .done-button__edge {
+  background: linear-gradient(to left, #8a4a0a 0%, #b56a1a 8%, #b56a1a 92%, #8a4a0a 100%);
+}
+
+.done-button.scientist .done-button__front {
+  background: linear-gradient(180deg, #ffb347 0%, #e68a11 40%, #c97a0a 100%);
+}
+
+.done-button.scientist.done-button--disabled .done-button__front {
+  background: linear-gradient(180deg, #8a5a20 0%, #6a4a18 40%, #4a3510 100%);
+}
+
+.done-button.scientist.done-button--disabled .done-button__edge {
+  background: linear-gradient(to left, #3a2508 0%, #5a3a10 8%, #5a3a10 92%, #3a2508 100%);
+}
