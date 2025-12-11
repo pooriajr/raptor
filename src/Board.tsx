@@ -1,6 +1,7 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
 import { LayoutGroup } from "framer-motion";
+import DevPanel from "./DevPanel.tsx";
 import { useGame } from "./state/GameContext.tsx";
 
 function Board() {
@@ -15,6 +16,7 @@ function Board() {
 
   return (
     <div className="board-container">
+      <DevPanel />
       <LayoutGroup>
         <div className="Board">
           {state.tiles.map((tile) => (

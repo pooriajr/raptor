@@ -2,7 +2,6 @@ import Board from "./Board.tsx";
 import { RaptorPlayerArea, ScientistPlayerArea } from "./PlayerArea";
 import CardRevealOverlay from "./CardRevealOverlay.tsx";
 import PlayerReadyScreen from "./PlayerReadyScreen.tsx";
-import DevPanel from "./DevPanel.tsx";
 import { useGame } from "./state/GameContext.tsx";
 import "./GameLayout.css";
 
@@ -19,7 +18,6 @@ function GameLayout() {
       {state.phase === "CARD_REVEAL" && <CardRevealOverlay />}
       {state.phase === "SCIENTIST_READY" && <PlayerReadyScreen player="scientist" />}
       {state.phase === "RAPTOR_READY" && <PlayerReadyScreen player="raptor" />}
-      <DevPanel />
     </div>
   );
 }

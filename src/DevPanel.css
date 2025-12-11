@@ -1,5 +1,5 @@
 .DevPanel {
-  position: fixed;
+  position: absolute;
   top: 10px;
   right: 10px;
   background-color: rgba(30, 30, 30, 0.95);
