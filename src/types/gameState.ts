@@ -3,6 +3,7 @@ import { createBoard } from "./board.ts";
 
 // Game phases - raptor sets up first, then scientist, then card selection begins
 export type GamePhase =
+  | "MAIN_MENU"
   | "RAPTOR_SETUP"
   | "SCIENTIST_SETUP"
   | "SCIENTIST_READY"
@@ -161,30 +162,18 @@ export function createInitialScientists(): PieceState[] {
   }));
 }
 
-// Create initial card state with hand already drawn
-function createInitialCardStateWithHand(): CardState {
-  const deck = createShuffledDeck();
-  // Draw 3 cards to hand
-  return {
-    deck: deck.slice(3),
-    hand: deck.slice(0, 3),
-    played: null,
-    discard: [],
-  };
-}
-
-// Create initial game state - raptor sets up first
+// Create initial game state - starts at main menu
 export function createInitialGameState(): GameState {
   return {
-    phase: "RAPTOR_SETUP",
+    phase: "MAIN_MENU",
     tiles: createBoard(),
     mother: createInitialMother(),
     babies: createInitialBabies(),
     scientists: createInitialScientists(),
     scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     fireTokens: [],
-    raptorCards: createInitialCardStateWithHand(), // Raptor draws at start of their setup
-    scientistCards: createInitialCardState(), // Scientist draws when entering their setup
+    raptorCards: createInitialCardState(),
+    scientistCards: createInitialCardState(),
     actionPoints: 0,
     activePlayer: "raptor",
     aggressiveActionsUsed: [],

@@ -23,8 +23,8 @@ export function handleAdvancePhase(state: GameState): GameState {
   newState = transitionTo(newState, nextPhase);
   newState = runEntryEffects(newState, nextPhase);
 
-  // Auto-save on phase changes (skip initial setup)
-  if (nextPhase !== "RAPTOR_SETUP") {
+  // Auto-save on phase changes (skip main menu and initial setup)
+  if (nextPhase !== "MAIN_MENU" && nextPhase !== "RAPTOR_SETUP") {
     saveGame(newState);
   }
 
@@ -37,6 +37,9 @@ export function handleAdvancePhase(state: GameState): GameState {
  */
 function getNextPhase(state: GameState): GamePhase | null {
   switch (state.phase) {
+    case "MAIN_MENU":
+      return "RAPTOR_SETUP";
+
     case "RAPTOR_SETUP":
       if (!isRaptorSetupComplete(state)) return null;
       return "SCIENTIST_SETUP";
@@ -163,6 +166,14 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
   }
 
   switch (enteringPhase) {
+    case "RAPTOR_SETUP":
+      // Raptor draws their initial hand when entering setup
+      newState = {
+        ...newState,
+        raptorCards: drawToHand(newState.raptorCards),
+      };
+      break;
+
     case "SCIENTIST_SETUP":
       // Scientist draws their initial hand when entering setup
       newState = {

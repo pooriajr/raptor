@@ -9,9 +9,17 @@ import {
   getUnplacedScientists,
 } from "../utils/pieceUtils";
 
+// Helper to start game from MAIN_MENU (advances to RAPTOR_SETUP)
+function startGame(initialState: GameState): GameState {
+  expect(initialState.phase).toBe("MAIN_MENU");
+  const state = gameReducer(initialState, { type: "ADVANCE_PHASE" });
+  expect(state.phase).toBe("RAPTOR_SETUP");
+  return state;
+}
+
 // Helper to complete raptor setup and transition to scientist setup phase
 function completeRaptorSetup(initialState: GameState): GameState {
-  let state = initialState;
+  let state = initialState.phase === "MAIN_MENU" ? startGame(initialState) : initialState;
   const squareTiles = state.tiles.filter((t) => t.shape === "square");
 
   // Place mother on tile 2
@@ -103,7 +111,7 @@ function getToCardSelectionPhase(initialState: GameState, player: "scientist" | 
 describe("Game Reducer - Setup Rules", () => {
   describe("Scientist Placement", () => {
     it("transitions to SCIENTIST_SETUP after raptor setup is confirmed", () => {
-      let state = createInitialGameState();
+      let state = startGame(createInitialGameState());
       expect(state.phase).toBe("RAPTOR_SETUP");
 
       const squareTiles = state.tiles.filter((t) => t.shape === "square");
@@ -305,7 +313,7 @@ describe("Game Reducer - Setup Rules", () => {
 
   describe("Mother Raptor Placement", () => {
     it("allows mother raptor placement on central square tile 2", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const space = tile2.spaces.find((s) => !s.hasMountain)!;
 
@@ -372,7 +380,7 @@ describe("Game Reducer - Setup Rules", () => {
     });
 
     it("displaces baby when mother is placed on tile that has a baby", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const spaces = tile2.spaces.filter((s) => !s.hasMountain);
 
@@ -401,7 +409,7 @@ describe("Game Reducer - Setup Rules", () => {
 
   describe("Baby Raptor Placement", () => {
     it("allows baby raptor placement on square tiles", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
       const space = squareTile.spaces.find((s) => !s.hasMountain)!;
 
@@ -433,7 +441,7 @@ describe("Game Reducer - Setup Rules", () => {
     });
 
     it("rejects baby raptor placement on tile that already has a raptor", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
       const spaces = squareTile.spaces.filter((s) => !s.hasMountain);
 
@@ -457,7 +465,7 @@ describe("Game Reducer - Setup Rules", () => {
     });
 
     it("allows baby placement on different square tiles (one per tile)", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const squareTiles = state.tiles.filter((t) => t.shape === "square" && t.id !== 2 && t.id !== 7);
 
       // Place on first tile
@@ -482,7 +490,7 @@ describe("Game Reducer - Setup Rules", () => {
     });
 
     it("rejects baby placement if both central tiles (2 and 7) would be blocked", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const tile7 = state.tiles.find((t) => t.id === 7)!;
 
@@ -509,7 +517,7 @@ describe("Game Reducer - Setup Rules", () => {
     });
 
     it("allows baby placement on one central tile, leaving other for mother", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const space2 = tile2.spaces.find((s) => !s.hasMountain)!;
 
@@ -548,7 +556,7 @@ describe("Game Reducer - Setup Rules", () => {
 
   describe("Remove Piece During Setup", () => {
     it("removes mother and returns to holding pen", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const space = tile2.spaces.find((s) => !s.hasMountain)!;
 
@@ -572,7 +580,7 @@ describe("Game Reducer - Setup Rules", () => {
     });
 
     it("removes baby and returns to holding pen", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const squareTile = state.tiles.find((t) => t.shape === "square" && t.id !== 2 && t.id !== 7)!;
       const space = squareTile.spaces.find((s) => !s.hasMountain)!;
 
@@ -598,7 +606,7 @@ describe("Game Reducer - Setup Rules", () => {
 
     it("removes scientist and returns to holding pen", () => {
       // First complete raptor setup
-      let state = createInitialGameState();
+      let state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
 
@@ -653,7 +661,7 @@ describe("Game Reducer - Setup Rules", () => {
 
     it("ignores remove action outside setup phases", () => {
       // First complete full setup
-      let state = createInitialGameState();
+      let state = startGame(createInitialGameState());
       const tile2 = state.tiles.find((t) => t.id === 2)!;
       const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
 
@@ -711,7 +719,7 @@ describe("Game Reducer - Setup Rules", () => {
 
   describe("Space Occupation Rules", () => {
     it("rejects placement on exact space already occupied by another piece", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const lTile = state.tiles.find((t) => t.shape === "L")!;
       const space = lTile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
 
@@ -797,27 +805,36 @@ describe("Game Reducer - Setup Rules", () => {
 
 describe("Game Reducer - Card System", () => {
   describe("Initial Card State", () => {
-    it("initial state has shuffled deck of cards 1-9 for each player", () => {
+    it("initial state (MAIN_MENU) has full deck and empty hands", () => {
       const state = createInitialGameState();
 
-      // Raptor has 6 cards in deck (3 drawn to hand), scientist has 9
+      // Both decks should have 9 cards, hands empty
       expect(state.scientistCards.deck).toHaveLength(9);
-      expect(state.raptorCards.deck).toHaveLength(6);
+      expect(state.raptorCards.deck).toHaveLength(9);
+      expect(state.scientistCards.hand).toHaveLength(0);
+      expect(state.raptorCards.hand).toHaveLength(0);
 
-      // All cards should be accounted for (deck + hand = 9)
+      // Both decks should contain cards 1-9
       expect([...state.scientistCards.deck].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-      expect([...state.raptorCards.deck, ...state.raptorCards.hand].sort((a, b) => a - b)).toEqual([
-        1, 2, 3, 4, 5, 6, 7, 8, 9,
-      ]);
+      expect([...state.raptorCards.deck].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
 
-    it("raptor starts with hand drawn, scientist hand empty until their setup", () => {
-      const state = createInitialGameState();
+    it("raptor draws hand when entering RAPTOR_SETUP", () => {
+      const state = startGame(createInitialGameState());
 
-      // Raptor draws at start of game (RAPTOR_SETUP)
+      // Raptor draws when entering RAPTOR_SETUP
       expect(state.raptorCards.hand).toHaveLength(3);
-      // Scientist draws when entering SCIENTIST_SETUP
+      expect(state.raptorCards.deck).toHaveLength(6);
+      // Scientist still has empty hand
       expect(state.scientistCards.hand).toHaveLength(0);
+    });
+
+    it("scientist draws hand when entering SCIENTIST_SETUP", () => {
+      const state = completeRaptorSetup(createInitialGameState());
+
+      // Scientist draws when entering SCIENTIST_SETUP
+      expect(state.scientistCards.hand).toHaveLength(3);
+      expect(state.scientistCards.deck).toHaveLength(6);
     });
 
     it("initial state has no played cards", () => {
@@ -948,19 +965,8 @@ describe("Game Reducer - Card System", () => {
 
     it("draws for raptor player", () => {
       let state = createInitialGameState();
-      // Raptor already has 3 cards drawn at game start
-      expect(state.raptorCards.hand).toHaveLength(3);
-
-      // Simulate having only 2 cards in hand to test draw
-      state = {
-        ...state,
-        raptorCards: {
-          ...state.raptorCards,
-          hand: state.raptorCards.hand.slice(0, 2),
-          deck: [...state.raptorCards.deck, state.raptorCards.hand[2]],
-        },
-      };
-      expect(state.raptorCards.hand).toHaveLength(2);
+      // Initial state has empty hand
+      expect(state.raptorCards.hand).toHaveLength(0);
 
       state = gameReducer(state, { type: "DRAW_CARDS", player: "raptor" });
 
