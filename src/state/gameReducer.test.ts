@@ -2102,7 +2102,7 @@ describe("Game Reducer - Action Phase", () => {
       state = gameReducer(state, { type: "END_ROUND" });
 
       expect(state.phase).toBe("SCIENTIST_READY");
-      expect(state.actionPoints).toBe(0);
+      // actionPoints preserved for CardResolution display until next CARD_REVEAL
       expect(state.activePlayer).toBe("scientist");
     });
 

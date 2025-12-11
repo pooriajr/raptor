@@ -27,6 +27,7 @@ function DoneButton({ player }: DoneButtonProps) {
 
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
   const isThisPlayerAction = isActionPhase && state.activePlayer === player;
+  const isMotherReturn = state.phase === "MOTHER_RETURN" && isRaptor;
 
   // === Handler ===
 
@@ -47,6 +48,10 @@ function DoneButton({ player }: DoneButtonProps) {
     }
     if (isThisPlayerEffect || isThisPlayerAction) {
       return false;
+    }
+    if (isMotherReturn) {
+      // Only enabled if mother has been placed back on the board
+      return state.mother.tileId === -1;
     }
     // Not this player's turn
     return true;

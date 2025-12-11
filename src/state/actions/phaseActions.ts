@@ -181,6 +181,15 @@ function runExitEffects(state: GameState, exitingPhase: GamePhase): GameState {
     };
   }
 
+  // Clear round resolution state when leaving ROUND_END (starting new round)
+  if (exitingPhase === "ROUND_END") {
+    newState = {
+      ...newState,
+      activeEffectCard: null,
+      actionPoints: 0,
+    };
+  }
+
   return newState;
 }
 
@@ -250,12 +259,11 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
 
     case "ROUND_END": {
       // Draw new cards, reset round state (cards already discarded after CARD_REVEAL)
+      // Note: activeEffectCard and actionPoints are preserved for CardResolution display
       newState = {
         ...newState,
         scientistCards: drawToHand(newState.scientistCards),
         raptorCards: drawToHand(newState.raptorCards),
-        activeEffectCard: null,
-        actionPoints: 0,
         aggressiveActionsUsed: [],
         frightenedThisRound: [],
         asleepThisRound: [],

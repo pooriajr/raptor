@@ -65,7 +65,6 @@ function PlayerAreaBase({
         phaseLabel: "Action Phase",
         progress: null,
         instruction: actionInstruction,
-        actionPoints: state.actionPoints,
       };
     }
     return null;
@@ -86,12 +85,6 @@ function PlayerAreaBase({
         <div className="player-area-action">
           {actionInfo && (
             <div className="action-info">
-              {"actionPoints" in actionInfo && actionInfo.actionPoints !== undefined && (
-                <div className="action-points-display">
-                  <span className="action-points-value">{actionInfo.actionPoints}</span>
-                  <span className="action-points-label">AP</span>
-                </div>
-              )}
               <div className="action-text">
                 <div className="action-phase-label">{actionInfo.phaseLabel}</div>
                 {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}

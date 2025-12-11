@@ -36,6 +36,11 @@
   animation: pulse-scientist 1.5s ease-in-out infinite;
 }
 
+.CardResolution .half.done {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
 @keyframes pulse-raptor {
   0%,
   100% {
@@ -63,19 +68,32 @@
 
 .CardResolution .effect {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.CardResolution .effect .effect-info {
+  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .CardResolution .effect .icon {
-  font-size: 3rem;
+  font-size: 2.4rem;
 }
 
 .CardResolution .effect .label {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+.CardResolution .effect .effect-count {
+  font-size: 2.4rem;
+  font-weight: bold;
   opacity: 0.9;
 }
 

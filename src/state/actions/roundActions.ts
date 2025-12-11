@@ -32,9 +32,6 @@ export function handleEndRound(state: GameState): GameState {
     // Updated card states
     scientistCards: scientistAfterDraw,
     raptorCards: raptorAfterDraw,
-    // Reset action phase state
-    actionPoints: 0,
-    activeEffectCard: null,
     // Reset round-based restrictions
     aggressiveActionsUsed: [],
     frightenedThisRound: [],
@@ -42,6 +39,7 @@ export function handleEndRound(state: GameState): GameState {
     motherPaidWoundCost: false,
     motherDisappeared: false,
     // Note: observationActive is NOT reset here - it persists to the next card selection
+    // Note: activeEffectCard and actionPoints are cleared when entering CARD_REVEAL
   };
   return transitionToPhase(newState, "SCIENTIST_READY");
 }
