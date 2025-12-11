@@ -5,7 +5,6 @@ import { LayoutGroup } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import type { PieceState } from "./types/gameState.ts";
 import { buildHighlights, getValidSetupTileIds } from "./utils/buildHighlights.ts";
-import { getCurrentEffectType } from "./utils/effectUtils.ts";
 
 function Board() {
   const { state, dispatch } = useGame();
@@ -69,68 +68,43 @@ function Board() {
     }
   }, [state.phase, dispatch]);
 
-  // Handle piece interactions - returns true if handled
+  // Handle piece interactions for action phase only
   const handlePieceInteraction = (pieceId: string): boolean => {
-    // Handle effect phase targeting (immediate execution for simple effects)
-    if (state.phase === "EFFECT_PHASE" && state.effectActionsRemaining > 0) {
-      const effectType = getCurrentEffectType(state);
-      const piece = findPieceById(pieceId);
-      if (!piece) return false;
+    if (state.phase !== "ACTION_PHASE") return false;
 
-      if (effectType === "fear" && piece.type === "scientist" && !piece.isFrightened) {
-        dispatch({ type: "FRIGHTEN_SCIENTIST", pieceId });
-        return true;
-      }
-      if (effectType === "sleeping_gas" && piece.type === "baby" && !piece.isAsleep) {
-        dispatch({ type: "PUT_BABY_TO_SLEEP", pieceId });
-        return true;
-      }
-      if (effectType === "recovery" && piece.type === "baby" && piece.isAsleep) {
-        dispatch({ type: "WAKE_BABY", pieceId });
-        return true;
-      }
-      // Mother's Call, Jeep, and Recovery (mother) are handled via highlights
-      return false;
-    }
+    const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
+    const selectedActorId = interaction.selectedActorId;
+    const piece = findPieceById(pieceId);
+    if (!piece) return false;
 
-    // Handle action phase
-    if (state.phase === "ACTION_PHASE") {
-      const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
-      const selectedActorId = interaction.selectedActorId;
-      const piece = findPieceById(pieceId);
-      if (!piece) return false;
+    // Check if piece can be controlled
+    const canControl =
+      (state.activePlayer === "raptor" && (piece.type === "baby" || piece.type === "mother")) ||
+      (state.activePlayer === "scientist" && piece.type === "scientist");
 
-      // Check if piece can be controlled
-      const canControl =
-        (state.activePlayer === "raptor" && (piece.type === "baby" || piece.type === "mother")) ||
-        (state.activePlayer === "scientist" && piece.type === "scientist");
+    if (!canControl) return false;
+    if (piece.type === "baby" && piece.isAsleep) return false;
 
-      if (!canControl) return false;
-      if (piece.type === "baby" && piece.isAsleep) return false;
-
-      // Frightened scientist standing up
-      if (piece.type === "scientist" && piece.isFrightened) {
-        if (state.actionPoints > 0 && !state.frightenedThisRound.includes(pieceId)) {
-          dispatch({ type: "ACTION_SCIENTIST_STAND_UP", scientistId: pieceId });
-          if (currentPlayer) {
-            dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
-          }
-        }
-        return true;
-      }
-
-      // Toggle selection
-      if (currentPlayer) {
-        if (selectedActorId === pieceId) {
-          dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId: null });
-        } else {
+    // Frightened scientist standing up
+    if (piece.type === "scientist" && piece.isFrightened) {
+      if (state.actionPoints > 0 && !state.frightenedThisRound.includes(pieceId)) {
+        dispatch({ type: "ACTION_SCIENTIST_STAND_UP", scientistId: pieceId });
+        if (currentPlayer) {
           dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
         }
       }
       return true;
     }
 
-    return false;
+    // Toggle selection
+    if (currentPlayer) {
+      if (selectedActorId === pieceId) {
+        dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId: null });
+      } else {
+        dispatch({ type: "SELECT_ACTOR", player: currentPlayer, pieceId });
+      }
+    }
+    return true;
   };
 
   // Build highlights from state
@@ -164,7 +138,7 @@ function Board() {
       return;
     }
 
-    // Handle piece interactions
+    // Handle piece interactions (action phase only)
     if (pieceId) {
       handlePieceInteraction(pieceId);
     }

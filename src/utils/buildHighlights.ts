@@ -257,6 +257,33 @@ export function buildHighlights(state: GameState): SpaceHighlights<GameAction> {
     const effectType = getCurrentEffectType(state);
     const allPieces = getAllPieces(state);
 
+    // Fear: highlight scientists that can be frightened
+    if (effectType === "fear") {
+      for (const scientist of state.scientists) {
+        if (scientist.tileId === -1 || scientist.isFrightened) continue;
+        const action: GameAction = { type: "FRIGHTEN_SCIENTIST", pieceId: scientist.id };
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "effectTarget", action);
+      }
+    }
+
+    // Sleeping Gas: highlight babies that can be put to sleep
+    if (effectType === "sleeping_gas") {
+      for (const baby of state.babies) {
+        if (baby.tileId === -1 || baby.isAsleep) continue;
+        const action: GameAction = { type: "PUT_BABY_TO_SLEEP", pieceId: baby.id };
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "effectTarget", action);
+      }
+    }
+
+    // Recovery: highlight sleeping babies that can be woken
+    if (effectType === "recovery") {
+      for (const baby of state.babies) {
+        if (baby.tileId === -1 || !baby.isAsleep) continue;
+        const action: GameAction = { type: "WAKE_BABY", pieceId: baby.id };
+        set(createSpaceId(baby.tileId, baby.x, baby.y), "effectTarget", action);
+      }
+    }
+
     // Mother's Call: two-step selection - first select baby, then destination
     if (effectType === "mothers_call" && state.mother) {
       const selectedBaby = selectedActorId ? state.babies.find((b) => b.id === selectedActorId) : null;
