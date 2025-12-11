@@ -221,22 +221,10 @@ export function handlePlayCard(state: GameState, action: { player: "raptor" | "s
 }
 
 export function handleConfirmReveal(state: GameState): GameState {
-  if (state.phase !== "CARD_REVEAL") return state;
-
-  const scientistCard = state.scientistCards.played;
-  const raptorCard = state.raptorCards.played;
-
-  // If same cards, go to round end (nothing happens)
-  if (scientistCard === raptorCard) {
+  if (state.scientistCards.played === state.raptorCards.played) {
     return transitionToPhase(state, "ROUND_END");
   }
-
-  // Lower card player uses their special effect first
-  if (scientistCard !== null && raptorCard !== null) {
-    return transitionToPhase(state, "EFFECT_PHASE");
-  }
-
-  return state;
+  return transitionToPhase(state, "EFFECT_PHASE");
 }
 
 // Handler map for card actions

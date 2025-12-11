@@ -1,6 +1,20 @@
 import type { GameState, GamePhase, Player } from "@/types/gameState";
 import { saveGame } from "@/utils/saveLoad";
 
+function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | null {
+  if (phase.startsWith("RAPTOR")) return "raptor";
+  if (phase.startsWith("SCIENTIST")) return "scientist";
+  if (phase === "EFFECT_PHASE") {
+    // Lower card gets the effect
+    return state.raptorCards.played! < state.scientistCards.played! ? "raptor" : "scientist";
+  }
+  if (phase === "ACTION_PHASE") {
+    // Higher card gets action points
+    return state.raptorCards.played! > state.scientistCards.played! ? "raptor" : "scientist";
+  }
+  return state.activePlayer;
+}
+
 /**
  * Helper for transitioning between game phases.
  * - Sets the new phase
@@ -8,12 +22,7 @@ import { saveGame } from "@/utils/saveLoad";
  * - Auto-saves the game (except during setup)
  */
 export function transitionToPhase(state: GameState, phase: GamePhase): GameState {
-  // Calculate active player based on phase
-  const activePlayer: Player | null = phase.startsWith("RAPTOR")
-    ? "raptor"
-    : phase.startsWith("SCIENTIST")
-      ? "scientist"
-      : state.activePlayer;
+  const activePlayer = getActivePlayerForPhase(state, phase);
 
   const newState = {
     ...state,

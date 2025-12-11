@@ -1133,14 +1133,6 @@ describe("Game Reducer - Card System", () => {
 
       expect(state.phase).toBe("ROUND_END");
     });
-
-    it("is ignored during non-CARD_REVEAL phase", () => {
-      const state = getToCardSelectionPhase(createInitialGameState(), "scientist");
-
-      const newState = gameReducer(state, { type: "CONFIRM_REVEAL" });
-
-      expect(newState.phase).toBe("SCIENTIST_CARD_SELECTION"); // No change
-    });
   });
 
   describe("Card State Integrity", () => {

@@ -136,23 +136,7 @@ function createPieceFromState(piece: PieceState) {
 function Board() {
   const { state, dispatch } = useGame();
 
-  // Helper to get current player based on phase
-  const getCurrentPlayer = (): "raptor" | "scientist" | null => {
-    if (state.phase === "RAPTOR_CARD_SELECTION" || state.phase === "RAPTOR_SETUP") return "raptor";
-    if (state.phase === "SCIENTIST_CARD_SELECTION" || state.phase === "SCIENTIST_SETUP") return "scientist";
-    if (state.phase === "EFFECT_PHASE") {
-      // Inline logic from getEffectPlayer to avoid forward reference
-      const scientistCard = state.scientistCards.played;
-      const raptorCard = state.raptorCards.played;
-      if (scientistCard === null || raptorCard === null) return null;
-      return raptorCard < scientistCard ? "raptor" : "scientist";
-    }
-    if (state.phase === "ACTION_PHASE") return state.activePlayer;
-    return null;
-  };
-
-  // Get interaction state for current player (or raptor as fallback)
-  const currentPlayer = getCurrentPlayer();
+  const currentPlayer = state.activePlayer;
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
 
   const prevPhaseRef = useRef(state.phase);
