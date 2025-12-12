@@ -57,10 +57,14 @@ function isBlockedAt(state: GameState, globalX: number, globalY: number): boolea
         if (space.hasMountain) return true;
 
         // Check for standing (non-frightened) scientist
-        const pieceHere = state.scientists.find(
-          (s) => s.tileId === tile.id && s.x === space.coordinate.x && s.y === space.coordinate.y,
+        const scientistHere = Object.values(state.scientists).find(
+          (s) =>
+            s.position &&
+            s.position.tileId === tile.id &&
+            s.position.x === space.coordinate.x &&
+            s.position.y === space.coordinate.y,
         );
-        if (pieceHere && !pieceHere.isFrightened) {
+        if (scientistHere && scientistHere.position && !scientistHere.isFrightened) {
           return true;
         }
       }

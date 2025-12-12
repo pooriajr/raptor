@@ -13,7 +13,7 @@ function Piece({ piece, isSelected }: PieceProps) {
     <motion.span
       layout
       layoutId={`piece-${piece.id}`}
-      className={`piece piece-${piece.type} ${piece.isAsleep ? "asleep" : ""} ${piece.isFrightened ? "frightened" : ""} ${isSelected ? "action-selected" : ""}`}
+      className={`piece piece-${piece.type} ${piece.isAsleep ? "asleep" : ""} ${isSelected ? "action-selected" : ""}`}
       transition={{
         layout: {
           type: "tween",
@@ -24,7 +24,6 @@ function Piece({ piece, isSelected }: PieceProps) {
     >
       {getPieceEmoji(piece.type)}
       {piece.isAsleep && <span className="status-icon">💤</span>}
-      {piece.isFrightened && <span className="status-icon">😨</span>}
     </motion.span>
   );
 }

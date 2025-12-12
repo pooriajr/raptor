@@ -8,7 +8,6 @@ export type GameAction =
   | h.CardAction
   | h.EffectAction
   | h.ActionPhaseAction
-  | h.RoundAction
   | h.DevAction
   | h.InteractionAction
   | h.PhaseAction;
@@ -48,8 +47,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "ACTION_SCIENTIST_SHOOT_MOTHER": return h.handleScientistShootMother(state, action);
     case "ACTION_SCIENTIST_STAND_UP": return h.handleScientistStandUp(state, action);
     case "RESET_ACTION_PHASE": return h.handleResetActionPhase(state);
-    // Round actions
-    case "END_ROUND": return h.handleEndRound(state);
     // Phase actions
     case "ADVANCE_PHASE": return h.handleAdvancePhase(state);
     // Dev actions

@@ -8,6 +8,7 @@ import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
 import { checkWinConditions } from "@/utils/winConditions.ts";
 import { deleteSave } from "@/utils/saveLoad.ts";
+import { scientistToPieceState } from "@/utils/scientistUtils.ts";
 
 /**
  * Wraps an action handler to check for win conditions after execution.
@@ -149,15 +150,20 @@ export function handleActionMoveScientist(
   if (state.actionPoints <= 0) return state;
 
   // Find the scientist
-  const scientist = state.scientists.find((s) => s.id === action.pieceId);
-  if (!scientist) return state;
+  const scientist = state.scientists[action.pieceId];
+  if (!scientist?.position) return state;
 
   // Scientist can't move if frightened
   if (scientist.isFrightened) return state;
 
   // Validate the move using Scientist class (normal mode, not jeep)
   const allPieces = getAllPieces(state);
-  const scientistPiece = new Scientist(scientist.id, scientist.tileId, scientist.x, scientist.y);
+  const scientistPiece = new Scientist(
+    scientist.id,
+    scientist.position.tileId,
+    scientist.position.x,
+    scientist.position.y,
+  );
   const validMoves = scientistPiece.getValidMoves(state.tiles, allPieces);
 
   const isValidMove = validMoves.some((m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y);
@@ -174,9 +180,10 @@ export function handleActionMoveScientist(
 
   return {
     ...state,
-    scientists: state.scientists.map((s) =>
-      s.id === action.pieceId ? { ...s, tileId: action.tileId, x: action.x, y: action.y } : s,
-    ),
+    scientists: {
+      ...state.scientists,
+      [action.pieceId]: { ...scientist, position: { tileId: action.tileId, x: action.x, y: action.y } },
+    },
     actionPoints: state.actionPoints - 1,
   };
 }
@@ -237,16 +244,20 @@ function _handleMotherKillScientist(state: GameState, action: { targetId: string
   if (state.actionPoints <= 0) return state;
 
   const mother = state.mother;
-  const scientist = state.scientists.find((s) => s.id === action.targetId);
-  if (!mother || !scientist) return state;
+  const scientist = state.scientists[action.targetId];
+  if (!mother || !scientist?.position) return state;
 
-  // Must be adjacent
-  if (!arePiecesAdjacent(mother, scientist)) return state;
+  // Must be adjacent - convert scientist to PieceState for adjacency check
+  const scientistPiece = scientistToPieceState(scientist);
+  if (!scientistPiece || !arePiecesAdjacent(mother, scientistPiece)) return state;
 
-  // Remove the scientist from the game (killed, not returned to reserve)
+  // Mark the scientist as dead (not returned to reserve)
   return {
     ...state,
-    scientists: state.scientists.filter((s) => s.id !== action.targetId),
+    scientists: {
+      ...state.scientists,
+      [action.targetId]: { ...scientist, position: null, isDead: true },
+    },
     actionPoints: state.actionPoints - 1,
   };
 }
@@ -319,27 +330,31 @@ export function handleScientistSleepBaby(
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
 
-  const scientist = state.scientists.find((s) => s.id === action.scientistId);
+  const scientist = state.scientists[action.scientistId];
   const baby = state.babies.find((b) => b.id === action.targetId);
-  if (!scientist || !baby) return state;
+  if (!scientist?.position || !baby) return state;
 
   // Scientist can't act if frightened
   if (scientist.isFrightened) return state;
 
   // Scientist can only use one aggressive action per round
-  if (state.aggressiveActionsUsed.includes(action.scientistId)) return state;
+  if (scientist.hasUsedAggressiveAction) return state;
 
   // Baby must not already be asleep
   if (baby.isAsleep) return state;
 
   // Must be adjacent
-  if (!arePiecesAdjacent(scientist, baby)) return state;
+  const scientistPiece = scientistToPieceState(scientist);
+  if (!scientistPiece || !arePiecesAdjacent(scientistPiece, baby)) return state;
 
   return {
     ...state,
     babies: state.babies.map((b) => (b.id === action.targetId ? { ...b, isAsleep: true } : b)),
+    scientists: {
+      ...state.scientists,
+      [action.scientistId]: { ...scientist, hasUsedAggressiveAction: true },
+    },
     actionPoints: state.actionPoints - 1,
-    aggressiveActionsUsed: [...state.aggressiveActionsUsed, action.scientistId],
   };
 }
 
@@ -348,29 +363,33 @@ function _handleScientistCaptureBaby(state: GameState, action: { scientistId: st
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
 
-  const scientist = state.scientists.find((s) => s.id === action.scientistId);
+  const scientist = state.scientists[action.scientistId];
   const baby = state.babies.find((b) => b.id === action.targetId);
-  if (!scientist || !baby) return state;
+  if (!scientist?.position || !baby) return state;
 
   // Scientist can't act if frightened
   if (scientist.isFrightened) return state;
 
   // Scientist can only use one aggressive action per round
-  if (state.aggressiveActionsUsed.includes(action.scientistId)) return state;
+  if (scientist.hasUsedAggressiveAction) return state;
 
   // Baby must be asleep to capture
   if (!baby.isAsleep) return state;
 
   // Must be adjacent
-  if (!arePiecesAdjacent(scientist, baby)) return state;
+  const scientistPiece = scientistToPieceState(scientist);
+  if (!scientistPiece || !arePiecesAdjacent(scientistPiece, baby)) return state;
 
   // Mark baby as captured and remove from board
   const updatedBaby = { ...baby, tileId: -1, x: -1, y: -1, isCaptured: true };
   return {
     ...state,
     babies: state.babies.map((b) => (b.id === baby.id ? updatedBaby : b)),
+    scientists: {
+      ...state.scientists,
+      [action.scientistId]: { ...scientist, hasUsedAggressiveAction: true },
+    },
     actionPoints: state.actionPoints - 1,
-    aggressiveActionsUsed: [...state.aggressiveActionsUsed, action.scientistId],
   };
 }
 
@@ -379,24 +398,28 @@ function _handleScientistShootMother(state: GameState, action: { scientistId: st
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
 
-  const scientist = state.scientists.find((s) => s.id === action.scientistId);
+  const scientist = state.scientists[action.scientistId];
   const mother = state.mother;
-  if (!scientist || !mother) return state;
+  if (!scientist?.position || !mother) return state;
 
   // Scientist can't act if frightened
   if (scientist.isFrightened) return state;
 
   // Scientist can only use one aggressive action per round
-  if (state.aggressiveActionsUsed.includes(action.scientistId)) return state;
+  if (scientist.hasUsedAggressiveAction) return state;
 
-  // Must have line of sight
-  if (!hasLineOfSight(state, scientist, mother)) return state;
+  // Must have line of sight - convert scientist to PieceState for line of sight check
+  const scientistPiece = scientistToPieceState(scientist);
+  if (!scientistPiece || !hasLineOfSight(state, scientistPiece, mother)) return state;
 
   return {
     ...state,
     motherSleepTokens: state.motherSleepTokens + 1,
+    scientists: {
+      ...state.scientists,
+      [action.scientistId]: { ...scientist, hasUsedAggressiveAction: true },
+    },
     actionPoints: state.actionPoints - 1,
-    aggressiveActionsUsed: [...state.aggressiveActionsUsed, action.scientistId],
   };
 }
 
@@ -405,18 +428,21 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
   if (state.activePlayer !== "scientist") return state;
   if (state.actionPoints <= 0) return state;
 
-  const scientist = state.scientists.find((s) => s.id === action.scientistId);
-  if (!scientist) return state;
+  const scientist = state.scientists[action.scientistId];
+  if (!scientist?.position) return state;
 
   // Scientist must be frightened to stand up
   if (!scientist.isFrightened) return state;
 
   // Can't stand up if frightened this round
-  if (state.frightenedThisRound.includes(action.scientistId)) return state;
+  if (scientist.frightenedThisRound) return state;
 
   return {
     ...state,
-    scientists: state.scientists.map((s) => (s.id === action.scientistId ? { ...s, isFrightened: false } : s)),
+    scientists: {
+      ...state.scientists,
+      [action.scientistId]: { ...scientist, isFrightened: false },
+    },
     actionPoints: state.actionPoints - 1,
   };
 }

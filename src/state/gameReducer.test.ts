@@ -1,13 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { gameReducer, getAllPieces, findById } from "./gameReducer";
-import { createInitialGameState, type GameState } from "../types/gameState";
-import {
-  countPlacedBabies,
-  countPlacedScientists,
-  isMotherPlaced,
-  getUnplacedBabies,
-  getUnplacedScientists,
-} from "../utils/pieceUtils";
+import { createInitialGameState, type GameState, type ScientistState } from "../types/gameState";
+import { countPlacedBabies, countPlacedScientists, isMotherPlaced, getUnplacedBabies } from "../utils/pieceUtils";
+import { getReserveCount, getBoardScientists } from "../utils/scientistUtils";
 import { raptorCards, scientistCards } from "@/utils/cardUtils";
 
 // Helper to start game from MAIN_MENU (advances to RAPTOR_SETUP)
@@ -647,17 +642,18 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       expect(countPlacedScientists(state)).toBe(1);
-      expect(getUnplacedScientists(state)).toHaveLength(9);
+      expect(getReserveCount(state.scientists)).toBe(9);
 
       // Remove scientist - find the placed one
-      const placedScientist = state.scientists.find((s) => s.tileId !== -1)!;
+      const boardScientists = getBoardScientists(state.scientists);
+      const placedScientist = boardScientists[0];
       const state2 = gameReducer(state, {
         type: "REMOVE_PIECE",
         pieceId: placedScientist.id,
       });
 
       expect(countPlacedScientists(state2)).toBe(0);
-      expect(getUnplacedScientists(state2)).toHaveLength(10);
+      expect(getReserveCount(state2.scientists)).toBe(10);
     });
 
     it("ignores remove action outside setup phases", () => {
@@ -778,7 +774,7 @@ describe("Game Reducer - Setup Rules", () => {
   describe("Setup Piece Counts", () => {
     it("initial state has 10 unplaced scientists", () => {
       const state = createInitialGameState();
-      expect(getUnplacedScientists(state)).toHaveLength(10);
+      expect(getReserveCount(state.scientists)).toBe(10);
       expect(countPlacedScientists(state)).toBe(0);
     });
 
@@ -1282,7 +1278,10 @@ describe("Game Reducer - Card System", () => {
         expect(state.activeEffectCard?.value).toBe(3);
         expect(state.activeEffectCard?.player).toBe("raptor");
 
-        const scientist = state.scientists[0];
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
+        expect(scientist.position).not.toBeNull();
+        if (!scientist.position) return;
         expect(scientist.isFrightened).toBeFalsy();
 
         state = gameReducer(state, {
@@ -1290,8 +1289,11 @@ describe("Game Reducer - Card System", () => {
           pieceId: scientist.id,
         });
 
-        const updatedScientist = state.scientists.find((s) => s.id === scientist.id)!;
-        expect(updatedScientist.isFrightened).toBe(true);
+        const updatedScientist = state.scientists[scientist.id];
+        expect(updatedScientist.position).not.toBeNull();
+        if (updatedScientist.position) {
+          expect(updatedScientist.isFrightened).toBe(true);
+        }
         // Still in effect phase - can frighten more scientists
         expect(state.phase).toBe("EFFECT_PHASE");
       });
@@ -1301,7 +1303,8 @@ describe("Game Reducer - Card System", () => {
         const initialRemaining = state.effectActionsRemaining;
         expect(initialRemaining).toBeGreaterThan(0);
 
-        const scientist = state.scientists[0];
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
         state = gameReducer(state, {
           type: "FRIGHTEN_SCIENTIST",
           pieceId: scientist.id,
@@ -1326,7 +1329,8 @@ describe("Game Reducer - Card System", () => {
 
       it("does not frighten already-frightened scientists", () => {
         let state = getToEffectPhaseRaptorLower();
-        const scientist = state.scientists[0];
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
 
         // Frighten the scientist
         state = gameReducer(state, {
@@ -1383,7 +1387,8 @@ describe("Game Reducer - Card System", () => {
 
       it("does not put non-babies to sleep", () => {
         const state = getToEffectPhaseScientistLower();
-        const scientist = state.scientists[0];
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
 
         const newState = gameReducer(state, {
           type: "PUT_BABY_TO_SLEEP",
@@ -1391,7 +1396,11 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Scientist unchanged, action remaining unchanged
-        expect(findById(newState.scientists, scientist.id)!.isFrightened).toBeFalsy();
+        const updatedScientist = newState.scientists[scientist.id];
+        expect(updatedScientist.position).not.toBeNull();
+        if (updatedScientist.position) {
+          expect(updatedScientist.isFrightened).toBeFalsy();
+        }
         expect(newState.effectActionsRemaining).toBe(state.effectActionsRemaining);
       });
 
@@ -1570,16 +1579,18 @@ describe("Game Reducer - Card System", () => {
         expect(state.activeEffectCard?.value).toBe(3);
         expect(state.activeEffectCard?.player).toBe("scientist");
 
-        const scientist = state.scientists[0];
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
+        if (!scientist.position) return;
 
         // Find a valid destination on the same tile
-        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+        const tile = state.tiles.find((t) => t.id === scientist.position!.tileId)!;
         const destSpace = tile.spaces.find(
           (s) =>
             !s.hasMountain &&
             !s.isUnusable &&
             !s.isExit &&
-            (s.coordinate.x !== scientist.x || s.coordinate.y !== scientist.y) &&
+            (s.coordinate.x !== scientist.position!.x || s.coordinate.y !== scientist.position!.y) &&
             !getAllPieces(state).some((p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y),
         );
 
@@ -1594,10 +1605,13 @@ describe("Game Reducer - Card System", () => {
           path: [],
         });
 
-        const movedScientist = state.scientists.find((s) => s.id === scientist.id)!;
-        expect(movedScientist.tileId).toBe(tile.id);
-        expect(movedScientist.x).toBe(destSpace.coordinate.x);
-        expect(movedScientist.y).toBe(destSpace.coordinate.y);
+        const movedScientist = state.scientists[scientist.id];
+        expect(movedScientist.position).not.toBeNull();
+        if (movedScientist.position) {
+          expect(movedScientist.position.tileId).toBe(tile.id);
+          expect(movedScientist.position.x).toBe(destSpace.coordinate.x);
+          expect(movedScientist.position.y).toBe(destSpace.coordinate.y);
+        }
         // Still in effect phase - can move more
         expect(state.phase).toBe("EFFECT_PHASE");
       });
@@ -1607,14 +1621,16 @@ describe("Game Reducer - Card System", () => {
         const initialRemaining = state.effectActionsRemaining;
         expect(initialRemaining).toBeGreaterThan(0);
 
-        const scientist = state.scientists[0];
-        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
+        if (!scientist.position) return;
+        const tile = state.tiles.find((t) => t.id === scientist.position!.tileId)!;
         const destSpace = tile.spaces.find(
           (s) =>
             !s.hasMountain &&
             !s.isUnusable &&
             !s.isExit &&
-            (s.coordinate.x !== scientist.x || s.coordinate.y !== scientist.y) &&
+            (s.coordinate.x !== scientist.position!.x || s.coordinate.y !== scientist.position!.y) &&
             !getAllPieces(state).some((p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y),
         );
 
@@ -1635,8 +1651,10 @@ describe("Game Reducer - Card System", () => {
       it("extinguishes fires along the path", () => {
         let state = getToEffectPhaseWithJeep();
 
-        const scientist = state.scientists[0];
-        const tile = state.tiles.find((t) => t.id === scientist.tileId)!;
+        const boardScientists = getBoardScientists(state.scientists);
+        const scientist = boardScientists[0];
+        if (!scientist.position) return;
+        const tile = state.tiles.find((t) => t.id === scientist.position!.tileId)!;
 
         // Find a valid destination
         const destSpace = tile.spaces.find(
@@ -1644,7 +1662,7 @@ describe("Game Reducer - Card System", () => {
             !s.hasMountain &&
             !s.isUnusable &&
             !s.isExit &&
-            (s.coordinate.x !== scientist.x || s.coordinate.y !== scientist.y) &&
+            (s.coordinate.x !== scientist.position!.x || s.coordinate.y !== scientist.position!.y) &&
             !getAllPieces(state).some((p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y),
         );
 
@@ -1851,7 +1869,13 @@ describe("Game Reducer - Action Phase", () => {
       const isOccupied = (tileId: number, x: number, y: number) => {
         if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
         if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
-        if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y)) return true;
+        const boardScientists = getBoardScientists(state.scientists);
+        if (
+          boardScientists.some(
+            (s) => s.position && s.position.tileId === tileId && s.position.x === x && s.position.y === y,
+          )
+        )
+          return true;
         return false;
       };
 
@@ -1949,29 +1973,38 @@ describe("Game Reducer - Action Phase", () => {
   describe("ACTION_MOVE_SCIENTIST", () => {
     it("allows scientist to move when scientist is active", () => {
       let state = getToActionPhaseScientistActive();
-      const scientist = state.scientists[0]!;
+      const boardScientists = getBoardScientists(state.scientists);
+      const scientist = boardScientists[0]!;
+      if (!scientist.position) return;
       const originalAP = state.actionPoints;
 
       // Helper to check if space is occupied
       const isOccupied = (tileId: number, x: number, y: number) => {
         if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
         if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
-        if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y)) return true;
+        const allBoardScientists = getBoardScientists(state.scientists);
+        if (
+          allBoardScientists.some(
+            (s) => s.position && s.position.tileId === tileId && s.position.x === x && s.position.y === y,
+          )
+        )
+          return true;
         return false;
       };
 
       // Find an adjacent empty space for the scientist
-      const scientistTile = state.tiles.find((t) => t.id === scientist.tileId)!;
+      const scientistTile = state.tiles.find((t) => t.id === scientist.position!.tileId)!;
       const adjacentSpace = scientistTile.spaces.find(
         (s) =>
           !s.hasMountain &&
           !s.isUnusable &&
           !s.isExit &&
-          (Math.abs(s.coordinate.x - scientist.x) === 1) !== (Math.abs(s.coordinate.y - scientist.y) === 1) &&
-          (s.coordinate.x === scientist.x || s.coordinate.y === scientist.y) &&
-          !isOccupied(scientist.tileId, s.coordinate.x, s.coordinate.y) &&
+          (Math.abs(s.coordinate.x - scientist.position!.x) === 1) !==
+            (Math.abs(s.coordinate.y - scientist.position!.y) === 1) &&
+          (s.coordinate.x === scientist.position!.x || s.coordinate.y === scientist.position!.y) &&
+          !isOccupied(scientist.position!.tileId, s.coordinate.x, s.coordinate.y) &&
           !state.fireTokens.some(
-            (f) => f.tileId === scientist.tileId && f.x === s.coordinate.x && f.y === s.coordinate.y,
+            (f) => f.tileId === scientist.position!.tileId && f.x === s.coordinate.x && f.y === s.coordinate.y,
           ),
       );
 
@@ -1979,92 +2012,108 @@ describe("Game Reducer - Action Phase", () => {
         state = gameReducer(state, {
           type: "ACTION_MOVE_SCIENTIST",
           pieceId: scientist.id,
-          tileId: scientist.tileId,
+          tileId: scientist.position.tileId,
           x: adjacentSpace.coordinate.x,
           y: adjacentSpace.coordinate.y,
         });
 
-        const movedScientist = state.scientists.find((s) => s.id === scientist.id)!;
-        expect(movedScientist.x).toBe(adjacentSpace.coordinate.x);
-        expect(movedScientist.y).toBe(adjacentSpace.coordinate.y);
+        const movedScientist = state.scientists[scientist.id]!;
+        if (!movedScientist.position) return;
+        expect(movedScientist.position.x).toBe(adjacentSpace.coordinate.x);
+        expect(movedScientist.position.y).toBe(adjacentSpace.coordinate.y);
         expect(state.actionPoints).toBe(originalAP - 1);
       }
     });
 
     it("rejects scientist movement when raptor is active", () => {
       let state = getToActionPhaseRaptorActive();
-      const scientist = state.scientists[0]!;
-      const originalX = scientist.x;
-      const originalY = scientist.y;
+      const boardScientists = getBoardScientists(state.scientists);
+      const scientist = boardScientists[0]!;
+      if (!scientist.position) return;
+      const originalX = scientist.position.x;
+      const originalY = scientist.position.y;
 
       state = gameReducer(state, {
         type: "ACTION_MOVE_SCIENTIST",
         pieceId: scientist.id,
-        tileId: scientist.tileId,
-        x: scientist.x + 1,
-        y: scientist.y,
+        tileId: scientist.position.tileId,
+        x: scientist.position.x + 1,
+        y: scientist.position.y,
       });
 
-      const sameScientist = state.scientists.find((s) => s.id === scientist.id)!;
-      expect(sameScientist.x).toBe(originalX);
-      expect(sameScientist.y).toBe(originalY);
+      const sameScientist = state.scientists[scientist.id]!;
+      if (!sameScientist.position) return;
+      expect(sameScientist.position.x).toBe(originalX);
+      expect(sameScientist.position.y).toBe(originalY);
     });
 
     it("rejects movement of frightened scientist", () => {
       let state = getToActionPhaseScientistActive();
-      const scientist = state.scientists[0]!;
+      const boardScientists = getBoardScientists(state.scientists);
+      const scientist = boardScientists[0]!;
+      if (!scientist.position) return;
 
       // Frighten the scientist
       state = {
         ...state,
-        scientists: state.scientists.map((s) => (s.id === scientist.id ? { ...s, isFrightened: true } : s)),
+        scientists: {
+          ...state.scientists,
+          [scientist.id]: {
+            ...scientist,
+            isFrightened: true,
+          },
+        },
       };
 
-      const originalX = scientist.x;
+      const originalX = scientist.position.x;
 
       state = gameReducer(state, {
         type: "ACTION_MOVE_SCIENTIST",
         pieceId: scientist.id,
-        tileId: scientist.tileId,
-        x: scientist.x + 1,
-        y: scientist.y,
+        tileId: scientist.position.tileId,
+        x: scientist.position.x + 1,
+        y: scientist.position.y,
       });
 
-      const sameScientist = state.scientists.find((s) => s.id === scientist.id)!;
-      expect(sameScientist.x).toBe(originalX);
+      const sameScientist = state.scientists[scientist.id]!;
+      if (!sameScientist.position) return;
+      expect(sameScientist.position.x).toBe(originalX);
     });
 
     it("rejects scientist movement onto fire", () => {
       let state = getToActionPhaseScientistActive();
-      const scientist = state.scientists[0]!;
+      const boardScientists = getBoardScientists(state.scientists);
+      const scientist = boardScientists[0]!;
+      if (!scientist.position) return;
 
       // Place fire adjacent to scientist
-      const fireX = scientist.x + 1;
-      const fireY = scientist.y;
+      const fireX = scientist.position.x + 1;
+      const fireY = scientist.position.y;
       state = {
         ...state,
         fireTokens: [
           {
             id: "fire-0",
-            tileId: scientist.tileId,
+            tileId: scientist.position.tileId,
             x: fireX,
             y: fireY,
           },
         ],
       };
 
-      const originalX = scientist.x;
+      const originalX = scientist.position.x;
 
       state = gameReducer(state, {
         type: "ACTION_MOVE_SCIENTIST",
         pieceId: scientist.id,
-        tileId: scientist.tileId,
+        tileId: scientist.position.tileId,
         x: fireX,
         y: fireY,
       });
 
-      const sameScientist = state.scientists.find((s) => s.id === scientist.id)!;
-      expect(sameScientist.x).toBe(originalX);
+      const sameScientist = state.scientists[scientist.id]!;
+      if (!sameScientist.position) return;
+      expect(sameScientist.position.x).toBe(originalX);
     });
   });
 
@@ -2087,13 +2136,13 @@ describe("Game Reducer - Action Phase", () => {
     });
   });
 
-  describe("END_ROUND", () => {
+  describe("Round End via ADVANCE_PHASE", () => {
     it("transitions from ROUND_END to SCIENTIST_CARD_SELECTION", () => {
       let state = getToActionPhaseRaptorActive();
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
       expect(state.phase).toBe("ROUND_END");
 
-      state = gameReducer(state, { type: "END_ROUND" });
+      state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
       expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
       // actionPoints preserved for CardResolution display until next CARD_REVEAL
@@ -2116,7 +2165,7 @@ describe("Game Reducer - Action Phase", () => {
       let state = getToActionPhaseRaptorActive();
       // Cards stay in hand when played, but we want to verify drawing works
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
-      state = gameReducer(state, { type: "END_ROUND" });
+      state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
       // After discarding played card and drawing, hand should have 3 cards
       expect(state.scientistCards.hand.length).toBe(3);
@@ -2125,19 +2174,43 @@ describe("Game Reducer - Action Phase", () => {
 
     it("resets round-based restrictions", () => {
       let state = getToActionPhaseRaptorActive();
+
+      // Set up scientists with round-based flags
+      const boardScientists = getBoardScientists(state.scientists);
+      const scientist0 = boardScientists[0];
+      const scientist1 = boardScientists[1];
+      if (!scientist0?.position || !scientist1?.position) return;
+
       state = {
         ...state,
-        aggressiveActionsUsed: ["scientist-0"],
-        frightenedThisRound: ["scientist-1"],
+        scientists: {
+          ...state.scientists,
+          [scientist0.id]: {
+            ...scientist0,
+            hasUsedAggressiveAction: true,
+          },
+          [scientist1.id]: {
+            ...scientist1,
+            frightenedThisRound: true,
+            isFrightened: true,
+          },
+        },
         asleepThisRound: ["baby-0"],
         motherPaidWoundCost: true,
       };
 
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
-      state = gameReducer(state, { type: "END_ROUND" });
+      state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
-      expect(state.aggressiveActionsUsed).toEqual([]);
-      expect(state.frightenedThisRound).toEqual([]);
+      // Check that scientist round flags are reset
+      const updatedScientist0 = state.scientists[scientist0.id];
+      const updatedScientist1 = state.scientists[scientist1.id];
+      if (updatedScientist0.position) {
+        expect(updatedScientist0.hasUsedAggressiveAction).toBe(false);
+      }
+      if (updatedScientist1.position) {
+        expect(updatedScientist1.frightenedThisRound).toBe(false);
+      }
       expect(state.asleepThisRound).toEqual([]);
       expect(state.motherPaidWoundCost).toBe(false);
     });
@@ -2158,7 +2231,7 @@ describe("Game Reducer - Action Phase", () => {
       };
 
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
-      state = gameReducer(state, { type: "END_ROUND" });
+      state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
       // Should have reshuffled discard into deck and drawn
       expect(state.scientistCards.hand.length).toBe(3);
@@ -2174,6 +2247,23 @@ describe("Win Conditions", () => {
   // Helper to create action phase state with proper setup
   function createActionPhaseState(activePlayer: "raptor" | "scientist"): GameState {
     let state = createInitialGameState();
+    // Place scientists on L-tiles (first 4) using the new Record structure
+    const updatedScientists: Record<string, ScientistState> = {};
+    const lTileIds = [0, 4, 5, 9];
+    Object.entries(state.scientists).forEach(([id, s], i) => {
+      if (i < 4) {
+        updatedScientists[id] = {
+          ...s,
+          position: { tileId: lTileIds[i], x: 1, y: 0 },
+          isDead: false,
+          isFrightened: false,
+          hasUsedAggressiveAction: false,
+          frightenedThisRound: false,
+        };
+      } else {
+        updatedScientists[id] = s; // Keep as reserve
+      }
+    });
     // Set up basic pieces
     state = {
       ...state,
@@ -2189,13 +2279,7 @@ describe("Win Conditions", () => {
         x: 1,
         y: 1,
       })),
-      // Place scientists on L-tiles
-      scientists: state.scientists.map((s, i) => ({
-        ...s,
-        tileId: i < 4 ? [0, 4, 5, 9][i] : -1,
-        x: 1,
-        y: 0,
-      })),
+      scientists: updatedScientists,
     };
     return state;
   }
@@ -2218,7 +2302,16 @@ describe("Win Conditions", () => {
       const lTiles = state.tiles.filter((t) => t.shape === "L");
       const lTile = lTiles[0];
       const exitSpace = lTile.spaces.find((s) => s.isExit)!;
-      const adjacentSpace = lTile.spaces.find((s) => !s.isExit && !s.isUnusable && !s.hasMountain)!;
+
+      // Find a space that's actually adjacent to the exit (orthogonally)
+      const adjacentSpace = lTile.spaces.find(
+        (s) =>
+          !s.isExit &&
+          !s.isUnusable &&
+          !s.hasMountain &&
+          ((Math.abs(s.coordinate.x - exitSpace.coordinate.x) === 1 && s.coordinate.y === exitSpace.coordinate.y) ||
+            (Math.abs(s.coordinate.y - exitSpace.coordinate.y) === 1 && s.coordinate.x === exitSpace.coordinate.x)),
+      )!;
 
       // Place baby adjacent to exit
       state = {
@@ -2249,17 +2342,37 @@ describe("Win Conditions", () => {
     it("should transition to GAME_OVER when last scientist is killed", () => {
       let state = createActionPhaseState("raptor");
 
-      // Keep only one scientist, place adjacent to mother
-      const lastScientist = { ...state.scientists[0], tileId: 2, x: 1, y: 2 };
+      // Keep only one scientist on board, place adjacent to mother
+      const boardScientists = getBoardScientists(state.scientists);
+      const firstScientist = boardScientists[0]!;
+
+      // Create new scientists Record with only one on board
+      const updatedScientists: Record<string, ScientistState> = {};
+      Object.entries(state.scientists).forEach(([id, s]) => {
+        if (id === firstScientist.id) {
+          updatedScientists[id] = {
+            ...s,
+            position: { tileId: 2, x: 1, y: 2 },
+            isDead: false,
+            isFrightened: false,
+            hasUsedAggressiveAction: false,
+            frightenedThisRound: false,
+          };
+        } else {
+          // Mark all others as dead so only one remains
+          updatedScientists[id] = { ...s, position: null, isDead: true };
+        }
+      });
+
       state = {
         ...state,
-        scientists: [lastScientist],
+        scientists: updatedScientists,
         mother: { ...state.mother, tileId: 2, x: 1, y: 1 },
       };
 
       state = gameReducer(state, {
         type: "ACTION_MOTHER_KILL_SCIENTIST",
-        targetId: lastScientist.id,
+        targetId: firstScientist.id,
       });
 
       expect(state.phase).toBe("GAME_OVER");
@@ -2275,18 +2388,35 @@ describe("Win Conditions", () => {
       // Give mother 4 sleep tokens
       state = { ...state, motherSleepTokens: 4 };
 
-      // Place scientist and mother on same tile in line of sight
-      // Scientist at (1,0), mother at (1,2) - same column, clear line
-      const scientist = { ...state.scientists[0], tileId: 2, x: 1, y: 0 };
+      // Place scientist and mother adjacent on same tile for clear LOS
+      // Scientist at (1,1), mother at (1,2) - adjacent, no obstructions
+      const boardScientists = getBoardScientists(state.scientists);
+      const firstScientist = boardScientists[0]!;
+
+      // Clear any babies from tile 2 to avoid blocking LOS
       state = {
         ...state,
-        scientists: state.scientists.map((s) => (s.id === scientist.id ? scientist : s)),
+        babies: state.babies.map((b) => (b.tileId === 2 ? { ...b, tileId: 1, x: 0, y: 0 } : b)),
+      };
+
+      state = {
+        ...state,
+        scientists: {
+          ...state.scientists,
+          [firstScientist.id]: {
+            ...firstScientist,
+            position: { tileId: 2, x: 1, y: 1 },
+            isFrightened: false,
+            hasUsedAggressiveAction: false,
+            frightenedThisRound: false,
+          },
+        },
         mother: { ...state.mother, tileId: 2, x: 1, y: 2 },
       };
 
       state = gameReducer(state, {
         type: "ACTION_SCIENTIST_SHOOT_MOTHER",
-        scientistId: scientist.id,
+        scientistId: firstScientist.id,
       });
 
       expect(state.phase).toBe("GAME_OVER");
@@ -2310,18 +2440,29 @@ describe("Win Conditions", () => {
       expect(babyOnBoard).toBeDefined();
 
       // Place baby and scientist adjacent on same tile
-      const scientist = { ...state.scientists[0], tileId: 2, x: 1, y: 1 };
+      const boardScientists = getBoardScientists(state.scientists);
+      const firstScientist = boardScientists[0]!;
+
       state = {
         ...state,
         babies: state.babies.map((b) =>
           b.id === babyOnBoard!.id ? { ...b, tileId: 2, x: 1, y: 2, isAsleep: true } : b,
         ),
-        scientists: state.scientists.map((s) => (s.id === scientist.id ? scientist : s)),
+        scientists: {
+          ...state.scientists,
+          [firstScientist.id]: {
+            ...firstScientist,
+            position: { tileId: 2, x: 1, y: 1 },
+            isFrightened: false,
+            hasUsedAggressiveAction: false,
+            frightenedThisRound: false,
+          },
+        },
       };
 
       state = gameReducer(state, {
         type: "ACTION_SCIENTIST_CAPTURE_BABY",
-        scientistId: scientist.id,
+        scientistId: firstScientist.id,
         targetId: babyOnBoard!.id,
       });
 

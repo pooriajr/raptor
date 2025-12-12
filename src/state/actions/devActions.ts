@@ -54,23 +54,17 @@ function devAutoSetup(state: GameState): GameState {
   };
 
   // Place scientists on L-tiles
-  const newScientists = [...newState.scientists];
-  let scientistIndex = 0;
-  for (const tile of lTiles) {
-    if (scientistIndex >= 4) break;
+  const scientistIds = Object.keys(newState.scientists);
+  const scientists = { ...newState.scientists };
+  for (let i = 0; i < 4 && i < lTiles.length; i++) {
+    const tile = lTiles[i];
     const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
-    newScientists[scientistIndex] = {
-      ...newScientists[scientistIndex],
-      tileId: tile.id,
-      x: space.coordinate.x,
-      y: space.coordinate.y,
+    scientists[scientistIds[i]] = {
+      ...scientists[scientistIds[i]],
+      position: { tileId: tile.id, x: space.coordinate.x, y: space.coordinate.y },
     };
-    scientistIndex++;
   }
-  newState = {
-    ...newState,
-    scientists: newScientists,
-  };
+  newState = { ...newState, scientists };
 
   return newState;
 }

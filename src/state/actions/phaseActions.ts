@@ -1,4 +1,4 @@
-import type { GameState, GamePhase, Player } from "@/types/gameState.ts";
+import type { GameState, GamePhase, Player, ScientistState } from "@/types/gameState.ts";
 import { createInitialInteractionState } from "@/types/gameState.ts";
 import { saveGame } from "@/utils/saveLoad.ts";
 import { getEffectLimit } from "@/utils/effectUtils.ts";
@@ -6,6 +6,18 @@ import { drawToHand, discardPlayedCard, calculateRoundResolution, shuffleDiscard
 import { isRaptorSetupComplete } from "@/utils/boardUtils.ts";
 import { countPlacedScientists } from "@/utils/pieceUtils.ts";
 import { CARDS } from "@/data/cards.ts";
+// Reset per-round flags on all board scientists
+function resetScientistRoundFlags(scientists: Record<string, ScientistState>): Record<string, ScientistState> {
+  const result: Record<string, ScientistState> = {};
+  for (const [id, scientist] of Object.entries(scientists)) {
+    if (scientist.position) {
+      result[id] = { ...scientist, hasUsedAggressiveAction: false, frightenedThisRound: false };
+    } else {
+      result[id] = scientist;
+    }
+  }
+  return result;
+}
 
 export type PhaseAction = { type: "ADVANCE_PHASE" };
 
@@ -258,8 +270,8 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
         ...newState,
         scientistCards: drawToHand(newState.scientistCards),
         raptorCards: drawToHand(newState.raptorCards),
-        aggressiveActionsUsed: [],
-        frightenedThisRound: [],
+        // Reset scientist per-round flags (hasUsedAggressiveAction, frightenedThisRound)
+        scientists: resetScientistRoundFlags(newState.scientists),
         asleepThisRound: [],
         motherPaidWoundCost: false,
         motherDisappeared: false,

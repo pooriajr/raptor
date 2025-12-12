@@ -2,6 +2,7 @@ import type { GameState } from "@/types/gameState.ts";
 import { findById, getAllPieces, isSpaceOccupied } from "@/utils/boardUtils.ts";
 import { getReachableDestinationsOnMotherTile } from "@/utils/pathfinding.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
+import { getNextReserveScientist } from "@/utils/scientistUtils.ts";
 
 // Action types for effect phase - single target actions (executed immediately)
 export type EffectAction =
@@ -33,13 +34,15 @@ function decrementEffectActions(state: GameState): GameState {
 }
 
 export function handleFrightenScientist(state: GameState, action: { pieceId: string }): GameState {
-  const scientist = findById(state.scientists, action.pieceId);
-  if (!scientist || scientist.isFrightened) return state;
+  const scientist = state.scientists[action.pieceId];
+  if (!scientist?.position || scientist.isFrightened) return state;
 
   return decrementEffectActions({
     ...state,
-    scientists: state.scientists.map((s) => (s.id === action.pieceId ? { ...s, isFrightened: true } : s)),
-    frightenedThisRound: [...state.frightenedThisRound, action.pieceId],
+    scientists: {
+      ...state.scientists,
+      [action.pieceId]: { ...scientist, isFrightened: true, frightenedThisRound: true },
+    },
   });
 }
 
@@ -138,7 +141,9 @@ export function handlePlaceReinforcement(
   state: GameState,
   action: { tileId: number; x: number; y: number },
 ): GameState {
-  if (state.scientistReserve <= 0) return state;
+  // Get next reserve scientist
+  const reserveScientist = getNextReserveScientist(state.scientists);
+  if (!reserveScientist) return state;
 
   // Validate placement on long edge of square tiles
   const topRowTiles = [1, 2, 3];
@@ -159,16 +164,15 @@ export function handlePlaceReinforcement(
 
   if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
 
-  // Find an unplaced scientist to place
-  const unplacedScientist = state.scientists.find((s) => s.tileId === -1);
-  if (!unplacedScientist) return state;
-
   return decrementEffectActions({
     ...state,
-    scientists: state.scientists.map((s) =>
-      s.id === unplacedScientist.id ? { ...s, tileId: action.tileId, x: action.x, y: action.y } : s,
-    ),
-    scientistReserve: state.scientistReserve - 1,
+    scientists: {
+      ...state.scientists,
+      [reserveScientist.id]: {
+        ...reserveScientist,
+        position: { tileId: action.tileId, x: action.x, y: action.y },
+      },
+    },
   });
 }
 
@@ -189,8 +193,9 @@ export function handlePlaceFireToken(state: GameState, action: { tileId: number;
   const placementGlobal = localToGlobal(action.tileId, action.x, action.y);
   const adjacentGlobals = getAdjacentGlobalCoordinates(placementGlobal.globalX, placementGlobal.globalY);
 
-  const isAdjacentToScientist = state.scientists.some((s) => {
-    const sGlobal = localToGlobal(s.tileId, s.x, s.y);
+  const isAdjacentToScientist = Object.values(state.scientists).some((s) => {
+    if (!s.position) return false;
+    const sGlobal = localToGlobal(s.position.tileId, s.position.x, s.position.y);
     return adjacentGlobals.some((adj) => adj.globalX === sGlobal.globalX && adj.globalY === sGlobal.globalY);
   });
 
@@ -224,13 +229,8 @@ export function handleMoveJeep(
     path: Array<{ tileId: number; x: number; y: number }>;
   },
 ): GameState {
-  const scientist = findById(state.scientists, action.scientistId);
-  if (!scientist) return state;
-
-  // Move the scientist
-  const updatedScientists = state.scientists.map((s) =>
-    s.id === action.scientistId ? { ...s, tileId: action.tileId, x: action.x, y: action.y } : s,
-  );
+  const scientist = state.scientists[action.scientistId];
+  if (!scientist?.position) return state;
 
   // Extinguish fires along the path (including destination)
   const allPositions = [...action.path, { tileId: action.tileId, x: action.x, y: action.y }];
@@ -240,7 +240,10 @@ export function handleMoveJeep(
 
   return decrementEffectActions({
     ...state,
-    scientists: updatedScientists,
+    scientists: {
+      ...state.scientists,
+      [action.scientistId]: { ...scientist, position: { tileId: action.tileId, x: action.x, y: action.y } },
+    },
     fireTokens: updatedFireTokens,
     // Clear actor selection after completing the move
     scientistInteraction: { ...state.scientistInteraction, selectedActorId: null },

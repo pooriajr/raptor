@@ -42,10 +42,9 @@ export function isSpaceOccupied(
   if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y && b.id !== excludePieceId)) {
     return true;
   }
-  if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y && s.id !== excludePieceId)) {
-    return true;
-  }
-  return false;
+  return Object.values(state.scientists).some(
+    (s) => s.position?.tileId === tileId && s.position?.x === x && s.position?.y === y && s.id !== excludePieceId,
+  );
 }
 
 // Helper to check if tile has a raptor (mother or baby)
@@ -56,7 +55,7 @@ export function tileHasRaptor(state: GameState, tileId: number): boolean {
 
 // Helper to check if tile has a scientist
 export function tileHasScientist(state: GameState, tileId: number): boolean {
-  return state.scientists.some((s) => s.tileId === tileId);
+  return Object.values(state.scientists).some((s) => s.position?.tileId === tileId);
 }
 
 // Helper to check if a space has a mountain

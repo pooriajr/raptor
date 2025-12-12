@@ -54,7 +54,9 @@ function DevPanel() {
 
       for (const tile of lTiles) {
         if (scientistsPlaced >= 4) break;
-        const hasScientist = state.scientists.some((s) => s.tileId === tile.id);
+        const hasScientist = Object.values(state.scientists).some(
+          (s) => s.status.type === "board" && s.status.tileId === tile.id,
+        );
         if (hasScientist) continue;
 
         const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;

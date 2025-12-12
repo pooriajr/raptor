@@ -1,6 +1,7 @@
 import type { GameState, PieceState } from "@/types/gameState.ts";
 import { isSpaceOccupied, tileHasRaptor, tileHasScientist, spaceHasMountain } from "@/utils/boardUtils.ts";
-import { isPlaced, isMotherPlaced, getUnplacedScientists, getUnplacedBabies } from "@/utils/pieceUtils.ts";
+import { isPlaced, isMotherPlaced, getUnplacedBabies } from "@/utils/pieceUtils.ts";
+import { getNextReserveScientist, scientistToPieceState } from "@/utils/scientistUtils.ts";
 
 // Action types for setup phase
 export type SetupAction =
@@ -14,10 +15,9 @@ export function handlePlaceScientist(state: GameState, action: { tileId: number;
   // Validate: must be in scientist setup phase
   if (state.phase !== "SCIENTIST_SETUP") return state;
 
-  // Validate: must have unplaced scientists available
-  const unplacedScientists = getUnplacedScientists(state);
-  if (unplacedScientists.length === 0) return state;
-  const unplacedScientist = unplacedScientists[0];
+  // Validate: must have scientists in reserve
+  const reserveScientist = getNextReserveScientist(state.scientists);
+  if (!reserveScientist) return state;
 
   // Validate: must be an L-tile
   const tile = state.tiles.find((t) => t.id === action.tileId);
@@ -38,9 +38,13 @@ export function handlePlaceScientist(state: GameState, action: { tileId: number;
 
   return {
     ...state,
-    scientists: state.scientists.map((s) =>
-      s.id === unplacedScientist.id ? { ...s, tileId: action.tileId, x: action.x, y: action.y } : s,
-    ),
+    scientists: {
+      ...state.scientists,
+      [reserveScientist.id]: {
+        ...reserveScientist,
+        position: { tileId: action.tileId, x: action.x, y: action.y },
+      },
+    },
   };
 }
 
@@ -68,7 +72,10 @@ export function handlePlaceMother(state: GameState, action: { tileId: number; x:
   }
 
   // Validate: specific space not occupied by another piece (scientist shouldn't be here during raptor setup, but check anyway)
-  if (state.scientists.some((s) => s.tileId === action.tileId && s.x === action.x && s.y === action.y)) {
+  const scientistOnSpace = Object.values(state.scientists).some(
+    (s) => s.position && s.position.tileId === action.tileId && s.position.x === action.x && s.position.y === action.y,
+  );
+  if (scientistOnSpace) {
     return state;
   }
 
@@ -142,12 +149,15 @@ export function handleRemovePiece(state: GameState, action: { pieceId: string })
     };
   }
 
-  // Check if it's a scientist (and placed)
-  const scientist = state.scientists.find((s) => s.id === pieceId && isPlaced(s));
-  if (scientist) {
+  // Check if it's a scientist (and on board)
+  const scientist = state.scientists[pieceId];
+  if (scientist?.position) {
     return {
       ...state,
-      scientists: state.scientists.map((s) => (s.id === pieceId ? { ...s, tileId: -1, x: -1, y: -1 } : s)),
+      scientists: {
+        ...state.scientists,
+        [pieceId]: { ...scientist, position: null },
+      },
     };
   }
 
@@ -173,9 +183,9 @@ export function handleMovePieceOnTile(
     if (baby) {
       piece = baby;
     } else {
-      const scientist = state.scientists.find((s) => s.id === pieceId);
+      const scientist = state.scientists[pieceId];
       if (scientist) {
-        piece = scientist;
+        piece = scientistToPieceState(scientist);
       }
     }
   }
@@ -211,9 +221,14 @@ export function handleMovePieceOnTile(
       babies: state.babies.map((b) => (b.id === pieceId ? { ...b, x, y } : b)),
     };
   } else if (piece.type === "scientist") {
+    const scientist = state.scientists[pieceId];
+    if (!scientist?.position) return state;
     return {
       ...state,
-      scientists: state.scientists.map((s) => (s.id === pieceId ? { ...s, x, y } : s)),
+      scientists: {
+        ...state.scientists,
+        [pieceId]: { ...scientist, position: { ...scientist.position, x, y } },
+      },
     };
   }
 

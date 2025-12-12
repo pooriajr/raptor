@@ -27,6 +27,17 @@ export type WinCondition =
 // Piece types as plain data (not class instances)
 export type PieceType = "mother" | "baby" | "scientist";
 
+// Scientist state - consolidated in one place
+// position: null = in reserve or dead, otherwise board coordinates
+export interface ScientistState {
+  id: string;
+  position: { tileId: number; x: number; y: number } | null;
+  isDead: boolean;
+  isFrightened: boolean;
+  hasUsedAggressiveAction: boolean; // Resets each round
+  frightenedThisRound: boolean; // Can't stand up same round
+}
+
 export interface PieceState {
   id: string;
   type: PieceType;
@@ -34,7 +45,6 @@ export interface PieceState {
   x: number;
   y: number;
   isAsleep?: boolean; // Baby raptors can be put to sleep
-  isFrightened?: boolean; // Scientists can be frightened
   isEscaped?: boolean; // Baby raptors that escaped the board (raptor win condition)
   isCaptured?: boolean; // Baby raptors captured by scientists (scientist win condition)
 }
@@ -88,8 +98,7 @@ export interface GameState {
   // All pieces exist from start with tileId: -1 meaning unplaced
   mother: PieceState;
   babies: PieceState[];
-  scientists: PieceState[];
-  scientistReserve: number; // Scientists available for reinforcements (starts at 6 after setup)
+  scientists: Record<string, ScientistState>;
   fireTokens: FireToken[];
   raptorCards: CardState;
   scientistCards: CardState;
@@ -97,8 +106,6 @@ export interface GameState {
   activeEffectCard: CardInfo | null; // The lower card (determines effect), null if tied
   actionPoints: number; // Card difference (for higher card player)
   activePlayer: Player | null; // Current active player (effect player, then action player)
-  aggressiveActionsUsed: string[]; // Scientist IDs that used aggressive action this round (shoot/capture)
-  frightenedThisRound: string[]; // Scientist IDs frightened this round (can't stand up same round)
   asleepThisRound: string[]; // Baby IDs put to sleep this round (can't wake same round)
   motherPaidWoundCost: boolean; // Whether mother has paid her wound cost this round (sleep tokens)
   // Disappearance tracking
@@ -148,15 +155,21 @@ export function createInitialBabies(): PieceState[] {
   }));
 }
 
-// Create all 10 scientists with stable IDs (unplaced initially)
-export function createInitialScientists(): PieceState[] {
-  return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => ({
-    id: `scientist-${i}`,
-    type: "scientist" as const,
-    tileId: -1, // -1 means unplaced
-    x: -1,
-    y: -1,
-  }));
+// Create all 10 scientists with stable IDs (in reserve initially)
+export function createInitialScientists(): Record<string, ScientistState> {
+  const scientists: Record<string, ScientistState> = {};
+  for (let i = 0; i < 10; i++) {
+    const id = `scientist-${i}`;
+    scientists[id] = {
+      id,
+      position: null,
+      isDead: false,
+      isFrightened: false,
+      hasUsedAggressiveAction: false,
+      frightenedThisRound: false,
+    };
+  }
+  return scientists;
 }
 
 // Create initial game state - starts at main menu
@@ -167,15 +180,12 @@ export function createInitialGameState(): GameState {
     mother: createInitialMother(),
     babies: createInitialBabies(),
     scientists: createInitialScientists(),
-    scientistReserve: 6, // 10 total - 4 placed during setup = 6 in reserve
     fireTokens: [],
     raptorCards: createInitialCardState(raptorCards),
     scientistCards: createInitialCardState(scientistCards),
     activeEffectCard: null,
     actionPoints: 0,
     activePlayer: "raptor",
-    aggressiveActionsUsed: [],
-    frightenedThisRound: [],
     asleepThisRound: [],
     motherPaidWoundCost: false,
     motherDisappeared: false,

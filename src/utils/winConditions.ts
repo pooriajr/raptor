@@ -20,7 +20,7 @@ export function checkWinConditions(state: GameState): WinResult {
   }
 
   // Raptor win: No scientists on board
-  const scientistsOnBoard = state.scientists.filter((s) => s.tileId !== -1);
+  const scientistsOnBoard = Object.values(state.scientists).filter((s) => s.position !== null);
   if (scientistsOnBoard.length === 0) {
     return { winner: "raptor", condition: "scientists_eliminated" };
   }

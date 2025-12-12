@@ -1,4 +1,5 @@
 import type { PieceState, PieceType, GameState } from "../types/gameState.ts";
+import { boardScientistsToPieceStates } from "./scientistUtils.ts";
 
 // Get emoji for a piece type
 export function getPieceEmoji(type: PieceType): string {
@@ -37,14 +38,9 @@ export function countPlacedBabies(state: GameState): number {
   return getPlacedBabies(state).length;
 }
 
-// Get all placed scientists (on the board)
+// Get all placed scientists (on the board) as PieceState
 export function getPlacedScientists(state: GameState): PieceState[] {
-  return state.scientists.filter(isPlaced);
-}
-
-// Get all unplaced scientists (in holding pen)
-export function getUnplacedScientists(state: GameState): PieceState[] {
-  return state.scientists.filter((s) => !isPlaced(s));
+  return boardScientistsToPieceStates(state.scientists);
 }
 
 // Count placed scientists

@@ -15,13 +15,18 @@ import { MotherRaptor } from "../pieces/MotherRaptor";
 import { BabyRaptor } from "../pieces/BabyRaptor";
 import { Scientist } from "../pieces/Scientist";
 import { hasLineOfSight } from "./lineOfSight";
+import { getBoardScientists, scientistToPieceState, getReserveCount } from "./scientistUtils";
 
 // Helper to get all pieces as a single array
 function getAllPieces(state: GameState): PieceState[] {
   const pieces: PieceState[] = [];
   if (state.mother) pieces.push(state.mother);
   pieces.push(...state.babies);
-  pieces.push(...state.scientists);
+  // Convert board scientists to PieceState
+  for (const scientist of getBoardScientists(state.scientists)) {
+    const pieceState = scientistToPieceState(scientist);
+    if (pieceState) pieces.push(pieceState);
+  }
   return pieces;
 }
 
@@ -29,8 +34,9 @@ function getAllPieces(state: GameState): PieceState[] {
 function isSpaceOccupied(state: GameState, tileId: number, x: number, y: number): boolean {
   if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
   if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
-  if (state.scientists.some((s) => s.tileId === tileId && s.x === x && s.y === y)) return true;
-  return false;
+  return Object.values(state.scientists).some(
+    (s) => s.position?.tileId === tileId && s.position?.x === x && s.position?.y === y,
+  );
 }
 
 // Helper to check if tile has raptors
@@ -60,7 +66,11 @@ function getValidSetupTiles(state: GameState): number[] {
   }
   if (state.phase === "SCIENTIST_SETUP") {
     const lTiles = state.tiles.filter((t) => t.shape === "L");
-    const tilesWithScientist = new Set(state.scientists.map((s) => s.tileId));
+    const tilesWithScientist = new Set(
+      Object.values(state.scientists)
+        .filter((s) => s.position)
+        .map((s) => s.position!.tileId),
+    );
     return lTiles.filter((t) => !tilesWithScientist.has(t.id)).map((t) => t.id);
   }
   return [];
@@ -154,12 +164,18 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
         });
       }
     }
-  } else if (
+  }
+
+  // Check if this scientist can use aggressive actions
+  const scientistState = state.scientists[selectedPiece.id];
+  const canUseAggressive =
     selectedPiece.type === "scientist" &&
     state.activePlayer === "scientist" &&
-    !selectedPiece.isFrightened &&
-    !state.aggressiveActionsUsed.includes(selectedPiece.id)
-  ) {
+    scientistState?.position &&
+    !scientistState.isFrightened &&
+    !scientistState.hasUsedAggressiveAction;
+
+  if (canUseAggressive) {
     for (const adj of adjacentPieces) {
       if (adj.type === "baby") {
         const action: GameAction = adj.isAsleep
@@ -188,7 +204,10 @@ function findPieceById(state: GameState, id: string): PieceState | undefined {
   if (state.mother?.id === id) return state.mother;
   const baby = state.babies.find((b) => b.id === id);
   if (baby) return baby;
-  return state.scientists.find((s) => s.id === id);
+  // Check scientists
+  const scientist = state.scientists[id];
+  if (scientist) return scientistToPieceState(scientist) ?? undefined;
+  return undefined;
 }
 
 // Calculate valid moves for action phase
@@ -259,10 +278,10 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
 
     // Fear: highlight scientists that can be frightened
     if (effectType === "fear") {
-      for (const scientist of state.scientists) {
-        if (scientist.tileId === -1 || scientist.isFrightened) continue;
+      for (const scientist of Object.values(state.scientists)) {
+        if (!scientist.position || scientist.isFrightened) continue;
         const action: GameAction = { type: "FRIGHTEN_SCIENTIST", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
+        set(createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y), "selectable", action);
       }
     }
 
@@ -315,7 +334,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     }
 
     // Reinforcements: highlight valid edge spaces
-    if (effectType === "reinforcements" && state.scientistReserve > 0) {
+    if (effectType === "reinforcements" && getReserveCount(state.scientists) > 0) {
       const topRowTiles = [1, 2, 3];
       const bottomRowTiles = [6, 7, 8];
       for (const tile of state.tiles) {
@@ -343,9 +362,9 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     // Fire: highlight valid fire placement spaces
     if (effectType === "fire") {
       const scientistAdjacents = new Set<string>();
-      for (const scientist of state.scientists) {
-        if (scientist.tileId === -1) continue;
-        const pGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
+      for (const scientist of Object.values(state.scientists)) {
+        if (!scientist.position) continue;
+        const pGlobal = localToGlobal(scientist.position.tileId, scientist.position.x, scientist.position.y);
         for (const adj of getAdjacentGlobalCoordinates(pGlobal.globalX, pGlobal.globalY)) {
           scientistAdjacents.add(`${adj.globalX},${adj.globalY}`);
         }
@@ -383,21 +402,24 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
 
     // Jeep: two-step selection - first select scientist, then destination
     if (effectType === "jeep") {
-      const selectedScientist = selectedActorId ? state.scientists.find((s) => s.id === selectedActorId) : null;
+      const selectedScientistState = selectedActorId ? state.scientists[selectedActorId] : null;
+      const selectedScientistPiece = selectedScientistState?.position
+        ? scientistToPieceState(selectedScientistState)
+        : null;
 
-      if (selectedScientist && selectedScientist.tileId !== -1 && !selectedScientist.isFrightened) {
+      if (selectedScientistPiece && selectedScientistState?.position && !selectedScientistState.isFrightened) {
         // Step 2: Show destinations for the selected scientist only
         const destinations = getJeepDestinationsWithPaths(
           state.tiles,
           allPieces,
           state.fireTokens,
-          selectedScientist,
+          selectedScientistPiece,
           [],
         );
         for (const dest of destinations) {
           const action: GameAction = {
             type: "MOVE_JEEP",
-            scientistId: selectedScientist.id,
+            scientistId: selectedScientistPiece.id,
             tileId: dest.tileId,
             x: dest.x,
             y: dest.y,
@@ -407,12 +429,18 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         }
       } else {
         // Step 1: Highlight scientists that can use jeep (have reachable destinations)
-        for (const scientist of state.scientists) {
-          if (scientist.tileId === -1 || scientist.isFrightened) continue;
-          const destinations = getJeepDestinationsWithPaths(state.tiles, allPieces, state.fireTokens, scientist, []);
+        for (const scientist of Object.values(state.scientists)) {
+          if (!scientist.position || scientist.isFrightened) continue;
+          const pieceState = scientistToPieceState(scientist);
+          if (!pieceState) continue;
+          const destinations = getJeepDestinationsWithPaths(state.tiles, allPieces, state.fireTokens, pieceState, []);
           if (destinations.length > 0) {
             const action: GameAction = { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
-            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
+            set(
+              createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y),
+              "selectable",
+              action,
+            );
           }
         }
       }
@@ -447,14 +475,18 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         set(createSpaceId(baby.tileId, baby.x, baby.y), isSelected ? "selected" : "selectable", action);
       }
     } else if (player === "scientist") {
-      for (const scientist of state.scientists) {
-        if (scientist.tileId === -1) continue;
+      for (const scientist of Object.values(state.scientists)) {
+        if (!scientist.position) continue;
 
         // Frightened scientist: can stand up (costs 1 AP, not same round frightened)
         if (scientist.isFrightened) {
-          if (state.actionPoints > 0 && !state.frightenedThisRound.includes(scientist.id)) {
+          if (state.actionPoints > 0 && !scientist.frightenedThisRound) {
             const action: GameAction = { type: "ACTION_SCIENTIST_STAND_UP", scientistId: scientist.id };
-            set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
+            set(
+              createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y),
+              "selectable",
+              action,
+            );
           }
           continue;
         }
@@ -464,7 +496,11 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         const action: GameAction = isSelected
           ? { type: "SELECT_ACTOR", player: "scientist", pieceId: null }
           : { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), isSelected ? "selected" : "selectable", action);
+        set(
+          createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y),
+          isSelected ? "selected" : "selectable",
+          action,
+        );
       }
     }
   }
@@ -518,10 +554,10 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
       }
     } else {
-      for (const scientist of state.scientists) {
-        if (scientist.tileId === -1) continue;
+      for (const scientist of Object.values(state.scientists)) {
+        if (!scientist.position) continue;
         const action: GameAction = { type: "REMOVE_PIECE", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
+        set(createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y), "selectable", action);
       }
     }
 
@@ -543,12 +579,22 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
 
     // Setup move targets (empty spaces on tiles with pieces)
     for (const tile of state.tiles) {
-      const pieceOnTile =
-        state.phase === "RAPTOR_SETUP"
-          ? state.mother?.tileId === tile.id
-            ? state.mother
-            : state.babies.find((b) => b.tileId === tile.id)
-          : state.scientists.find((s) => s.tileId === tile.id);
+      let pieceOnTile: PieceState | null = null;
+      if (state.phase === "RAPTOR_SETUP") {
+        if (state.mother?.tileId === tile.id) {
+          pieceOnTile = state.mother;
+        } else {
+          pieceOnTile = state.babies.find((b) => b.tileId === tile.id) ?? null;
+        }
+      } else {
+        // Find scientist on this tile
+        for (const scientist of Object.values(state.scientists)) {
+          if (scientist.position?.tileId === tile.id) {
+            pieceOnTile = scientistToPieceState(scientist);
+            break;
+          }
+        }
+      }
 
       if (pieceOnTile) {
         for (const space of tile.spaces) {
