@@ -1,6 +1,7 @@
 // Visual styles for clickable spaces (CSS styling)
 export type SpaceStyle =
   | "selectable" // Any clickable/interactive space (blue)
+  | "selected" // Currently selected piece (yellow)
   | "hostileTarget" // Enemy pieces that can be attacked (red)
   | "fire"; // Existing fire token (orange)
 

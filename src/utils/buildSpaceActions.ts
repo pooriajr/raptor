@@ -427,20 +427,24 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     if (player === "raptor") {
       // Mother can be selected (if not already selected via highlights above)
       if (state.mother && state.mother.tileId !== -1) {
-        const action: GameAction =
-          selectedActorId === state.mother.id
-            ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
-            : { type: "SELECT_ACTOR", player: "raptor", pieceId: state.mother.id };
-        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "selectable", action);
+        const isSelected = selectedActorId === state.mother.id;
+        const action: GameAction = isSelected
+          ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
+          : { type: "SELECT_ACTOR", player: "raptor", pieceId: state.mother.id };
+        set(
+          createSpaceId(state.mother.tileId, state.mother.x, state.mother.y),
+          isSelected ? "selected" : "selectable",
+          action,
+        );
       }
       // Babies can be selected (awake only)
       for (const baby of state.babies) {
         if (baby.tileId === -1 || baby.isAsleep) continue;
-        const action: GameAction =
-          selectedActorId === baby.id
-            ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
-            : { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
+        const isSelected = selectedActorId === baby.id;
+        const action: GameAction = isSelected
+          ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
+          : { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
+        set(createSpaceId(baby.tileId, baby.x, baby.y), isSelected ? "selected" : "selectable", action);
       }
     } else if (player === "scientist") {
       for (const scientist of state.scientists) {
@@ -456,11 +460,11 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         }
 
         // Non-frightened scientist: can be selected
-        const action: GameAction =
-          selectedActorId === scientist.id
-            ? { type: "SELECT_ACTOR", player: "scientist", pieceId: null }
-            : { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
-        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), "selectable", action);
+        const isSelected = selectedActorId === scientist.id;
+        const action: GameAction = isSelected
+          ? { type: "SELECT_ACTOR", player: "scientist", pieceId: null }
+          : { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
+        set(createSpaceId(scientist.tileId, scientist.x, scientist.y), isSelected ? "selected" : "selectable", action);
       }
     }
   }
