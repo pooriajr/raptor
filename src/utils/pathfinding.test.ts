@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { getJeepDestinationsWithPaths } from "./pathfinding";
 import { createBoard } from "../types/board";
 import type { Tile } from "../types/board";
-import type { PieceState, FireToken } from "../types/gameState";
+import type { BoardPosition, FireToken } from "../types/gameState";
 
 // Helper to create a minimal set of pieces for testing
-function createTestPieces(): PieceState[] {
+function createTestPieces(): BoardPosition[] {
   return [];
 }
 
@@ -52,15 +52,21 @@ describe("Jeep Pathfinding", () => {
       const tile = tiles.find((t) => t.id === 2)!;
       const startSpace = findValidSpace(tile)!;
 
-      const scientist: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientistId = "scientist-1";
+      const scientistPos: BoardPosition = {
+        id: scientistId,
         tileId: tile.id,
         x: startSpace.x,
         y: startSpace.y,
       };
 
-      const destinations = getJeepDestinationsWithPaths(tiles, [scientist, ...pieces], fireTokens, scientist);
+      const destinations = getJeepDestinationsWithPaths(
+        tiles,
+        [scientistPos, ...pieces],
+        fireTokens,
+        scientistId,
+        scientistPos,
+      );
 
       expect(destinations.length).toBeGreaterThan(0);
 
@@ -69,7 +75,7 @@ describe("Jeep Pathfinding", () => {
         // Check that path positions form a straight line
         if (dest.path.length > 0) {
           const allPositions = [
-            { tileId: scientist.tileId, x: scientist.x, y: scientist.y },
+            { tileId: scientistPos.tileId, x: scientistPos.x, y: scientistPos.y },
             ...dest.path,
             { tileId: dest.tileId, x: dest.x, y: dest.y },
           ];
@@ -107,15 +113,15 @@ describe("Jeep Pathfinding", () => {
       );
 
       if (adjacentSpace) {
-        const scientist: PieceState = {
-          id: "scientist-1",
-          type: "scientist",
+        const scientistId = "scientist-1";
+        const scientistPos: BoardPosition = {
+          id: scientistId,
           tileId: tileWithMountain!.id,
           x: adjacentSpace.x,
           y: adjacentSpace.y,
         };
 
-        const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
+        const destinations = getJeepDestinationsWithPaths(tiles, [scientistPos], fireTokens, scientistId, scientistPos);
 
         // Mountain space should not be in destinations
         const hasMountainDest = destinations.some(
@@ -140,24 +146,29 @@ describe("Jeep Pathfinding", () => {
 
       if (!startSpace) return; // Skip if this specific space isn't available
 
-      const scientist: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientistId = "scientist-1";
+      const scientistPos: BoardPosition = {
+        id: scientistId,
         tileId: tile.id,
         x: 0,
         y: 1,
       };
 
       // Place another scientist at x=2, y=1 (blocking the line)
-      const blockingPiece: PieceState = {
+      const blockingPiece: BoardPosition = {
         id: "scientist-2",
-        type: "scientist",
         tileId: tile.id,
         x: 2,
         y: 1,
       };
 
-      const destinations = getJeepDestinationsWithPaths(tiles, [scientist, blockingPiece], fireTokens, scientist);
+      const destinations = getJeepDestinationsWithPaths(
+        tiles,
+        [scientistPos, blockingPiece],
+        fireTokens,
+        scientistId,
+        scientistPos,
+      );
 
       // x=1, y=1 should be reachable (between scientist and blocker)
       const canReachMiddle = destinations.some((d) => d.tileId === tile.id && d.x === 1 && d.y === 1);
@@ -182,15 +193,15 @@ describe("Jeep Pathfinding", () => {
 
       if (!nonExitSpace) return;
 
-      const scientist: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientistId = "scientist-1";
+      const scientistPos: BoardPosition = {
+        id: scientistId,
         tileId: lTile.id,
         x: nonExitSpace.coordinate.x,
         y: nonExitSpace.coordinate.y,
       };
 
-      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientistPos], fireTokens, scientistId, scientistPos);
 
       // No destination should be an exit space
       for (const dest of destinations) {
@@ -218,9 +229,9 @@ describe("Jeep Pathfinding", () => {
 
       if (validRow === null) return; // Skip if no valid row
 
-      const scientist: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientistId = "scientist-1";
+      const scientistPos: BoardPosition = {
+        id: scientistId,
         tileId: tile.id,
         x: 0,
         y: validRow,
@@ -229,7 +240,7 @@ describe("Jeep Pathfinding", () => {
       // Place fire at x=1
       const fireTokens: FireToken[] = [{ id: "fire-1", tileId: tile.id, x: 1, y: validRow }];
 
-      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientistPos], fireTokens, scientistId, scientistPos);
 
       // Should be able to reach x=1 (fire) and x=2 (beyond fire)
       const canReachFire = destinations.some((d) => d.tileId === tile.id && d.x === 1 && d.y === validRow);
@@ -257,15 +268,15 @@ describe("Jeep Pathfinding", () => {
 
       if (validRow === null) return;
 
-      const scientist: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientistId = "scientist-1";
+      const scientistPos: BoardPosition = {
+        id: scientistId,
         tileId: tile.id,
         x: 0,
         y: validRow,
       };
 
-      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientistPos], fireTokens, scientistId, scientistPos);
 
       // Find destination at x=2 (should have path through x=1)
       const farDest = destinations.find((d) => d.tileId === tile.id && d.x === 2 && d.y === validRow);
@@ -297,18 +308,17 @@ describe("Jeep Pathfinding", () => {
       if (validRow === null) return;
 
       // Scientist 1 starts at x=0
-      const scientist1: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientist1Id = "scientist-1";
+      const scientist1Pos: BoardPosition = {
+        id: scientist1Id,
         tileId: tile.id,
         x: 0,
         y: validRow,
       };
 
       // Scientist 2 starts at x=1 but has a pending move to x=2
-      const scientist2: PieceState = {
+      const scientist2Pos: BoardPosition = {
         id: "scientist-2",
-        type: "scientist",
         tileId: tile.id,
         x: 1,
         y: validRow,
@@ -325,9 +335,10 @@ describe("Jeep Pathfinding", () => {
 
       const destinations = getJeepDestinationsWithPaths(
         tiles,
-        [scientist1, scientist2],
+        [scientist1Pos, scientist2Pos],
         fireTokens,
-        scientist1,
+        scientist1Id,
+        scientist1Pos,
         pendingMoves,
       );
 
@@ -348,15 +359,15 @@ describe("Jeep Pathfinding", () => {
       const tile = tiles.find((t) => t.id === 2)!;
       const startSpace = findValidSpace(tile)!;
 
-      const scientist: PieceState = {
-        id: "scientist-1",
-        type: "scientist",
+      const scientistId = "scientist-1";
+      const scientistPos: BoardPosition = {
+        id: scientistId,
         tileId: tile.id,
         x: startSpace.x,
         y: startSpace.y,
       };
 
-      const destinations = getJeepDestinationsWithPaths(tiles, [scientist], fireTokens, scientist);
+      const destinations = getJeepDestinationsWithPaths(tiles, [scientistPos], fireTokens, scientistId, scientistPos);
 
       // Should have destinations on other tiles
       const otherTileDestinations = destinations.filter((d) => d.tileId !== tile.id);

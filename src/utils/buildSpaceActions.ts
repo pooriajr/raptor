@@ -1,4 +1,4 @@
-import type { GameState, PieceState } from "../types/gameState";
+import type { GameState, BoardPosition, BabyState, ScientistState, MotherState } from "../types/gameState";
 import type { GameAction } from "../state/gameReducer";
 import {
   createSpaceId,
@@ -10,30 +10,22 @@ import {
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates";
 import { getReachableDestinationsOnMotherTile, getJeepDestinationsWithPaths } from "./pathfinding";
 import { getCurrentEffectType } from "./effectUtils";
-import { isMotherPlaced } from "./pieceUtils";
+import { isMotherPlaced, getBoardBabies } from "./pieceUtils";
 import { MotherRaptor } from "../pieces/MotherRaptor";
 import { BabyRaptor } from "../pieces/BabyRaptor";
 import { Scientist } from "../pieces/Scientist";
 import { hasLineOfSight } from "./lineOfSight";
-import { getBoardScientists, scientistToPieceState, getReserveCount } from "./scientistUtils";
-
-// Helper to get all pieces as a single array
-function getAllPieces(state: GameState): PieceState[] {
-  const pieces: PieceState[] = [];
-  if (state.mother) pieces.push(state.mother);
-  pieces.push(...state.babies);
-  // Convert board scientists to PieceState
-  for (const scientist of getBoardScientists(state.scientists)) {
-    const pieceState = scientistToPieceState(scientist);
-    if (pieceState) pieces.push(pieceState);
-  }
-  return pieces;
-}
+import { getBoardScientists, scientistToBoardPosition, getReserveCount } from "./scientistUtils";
+import { getAllBoardPositions } from "./boardUtils";
 
 // Helper to check if a space is occupied
 function isSpaceOccupied(state: GameState, tileId: number, x: number, y: number): boolean {
-  if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
-  if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
+  if (state.mother.position?.tileId === tileId && state.mother.position.x === x && state.mother.position.y === y)
+    return true;
+  if (
+    Object.values(state.babies).some((b) => b.position?.tileId === tileId && b.position?.x === x && b.position?.y === y)
+  )
+    return true;
   return Object.values(state.scientists).some(
     (s) => s.position?.tileId === tileId && s.position?.x === x && s.position?.y === y,
   );
@@ -41,19 +33,22 @@ function isSpaceOccupied(state: GameState, tileId: number, x: number, y: number)
 
 // Helper to check if tile has raptors
 function tileHasRaptor(state: GameState, tileId: number): boolean {
-  if (state.mother?.tileId === tileId) return true;
-  return state.babies.some((b) => b.tileId === tileId);
+  if (state.mother.position?.tileId === tileId) return true;
+  return Object.values(state.babies).some((b) => b.position?.tileId === tileId);
 }
 
-// Adapter: create a piece class instance from plain state for movement logic
-function createPieceFromState(piece: PieceState) {
-  switch (piece.type) {
+// Piece type for createPieceFromState
+type PieceType = "mother" | "baby" | "scientist";
+
+// Adapter: create a piece class instance from position and type
+function createPieceFromPosition(id: string, type: PieceType, tileId: number, x: number, y: number) {
+  switch (type) {
     case "mother":
-      return new MotherRaptor(piece.id, piece.tileId, piece.x, piece.y);
+      return new MotherRaptor(id, tileId, x, y);
     case "baby":
-      return new BabyRaptor(piece.id, piece.tileId, piece.x, piece.y);
+      return new BabyRaptor(id, tileId, x, y);
     case "scientist":
-      return new Scientist(piece.id, piece.tileId, piece.x, piece.y);
+      return new Scientist(id, tileId, x, y);
   }
 }
 
@@ -111,6 +106,50 @@ interface ActionTargets {
   friendlyFirePositions: FireTarget[];
 }
 
+// Helper to get position info for a piece
+interface PieceInfo {
+  id: string;
+  type: PieceType;
+  tileId: number;
+  x: number;
+  y: number;
+  isAsleep?: boolean;
+}
+
+function getPieceInfo(state: GameState, pieceId: string): PieceInfo | null {
+  if (state.mother.id === pieceId && state.mother.position) {
+    return {
+      id: pieceId,
+      type: "mother",
+      tileId: state.mother.position.tileId,
+      x: state.mother.position.x,
+      y: state.mother.position.y,
+    };
+  }
+  const baby = state.babies[pieceId];
+  if (baby?.position) {
+    return {
+      id: pieceId,
+      type: "baby",
+      tileId: baby.position.tileId,
+      x: baby.position.x,
+      y: baby.position.y,
+      isAsleep: baby.isAsleep,
+    };
+  }
+  const scientist = state.scientists[pieceId];
+  if (scientist?.position) {
+    return {
+      id: pieceId,
+      type: "scientist",
+      tileId: scientist.position.tileId,
+      x: scientist.position.x,
+      y: scientist.position.y,
+    };
+  }
+  return null;
+}
+
 // Calculate action targets for action phase
 function getActionTargets(state: GameState, selectedActorId: string | null): ActionTargets {
   const result: ActionTargets = {
@@ -121,13 +160,48 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
 
   if (state.phase !== "ACTION_PHASE" || !selectedActorId || state.actionPoints <= 0) return result;
 
-  const selectedPiece = findPieceById(state, selectedActorId);
+  const selectedPiece = getPieceInfo(state, selectedActorId);
   if (!selectedPiece) return result;
 
   const selectedGlobal = localToGlobal(selectedPiece.tileId, selectedPiece.x, selectedPiece.y);
   const adjacentCoords = getAdjacentGlobalCoordinates(selectedGlobal.globalX, selectedGlobal.globalY);
-  const allPieces = getAllPieces(state);
-  const adjacentPieces = allPieces.filter((p) => {
+
+  // Build list of all pieces with their positions for adjacency check
+  const allPiecesInfo: PieceInfo[] = [];
+  if (state.mother.position) {
+    allPiecesInfo.push({
+      id: state.mother.id,
+      type: "mother",
+      tileId: state.mother.position.tileId,
+      x: state.mother.position.x,
+      y: state.mother.position.y,
+    });
+  }
+  for (const baby of Object.values(state.babies)) {
+    if (baby.position) {
+      allPiecesInfo.push({
+        id: baby.id,
+        type: "baby",
+        tileId: baby.position.tileId,
+        x: baby.position.x,
+        y: baby.position.y,
+        isAsleep: baby.isAsleep,
+      });
+    }
+  }
+  for (const scientist of Object.values(state.scientists)) {
+    if (scientist.position) {
+      allPiecesInfo.push({
+        id: scientist.id,
+        type: "scientist",
+        tileId: scientist.position.tileId,
+        x: scientist.position.x,
+        y: scientist.position.y,
+      });
+    }
+  }
+
+  const adjacentPieces = allPiecesInfo.filter((p) => {
     if (p.id === selectedActorId) return false;
     const pGlobal = localToGlobal(p.tileId, p.x, p.y);
     return adjacentCoords.some((adj) => adj.globalX === pGlobal.globalX && adj.globalY === pGlobal.globalY);
@@ -143,14 +217,17 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
           y: adj.y,
           action: { type: "ACTION_MOTHER_KILL_SCIENTIST", targetId: adj.id },
         });
-      } else if (adj.type === "baby" && adj.isAsleep && !state.asleepThisRound.includes(adj.id)) {
-        result.selectables.push({
-          pieceId: adj.id,
-          tileId: adj.tileId,
-          x: adj.x,
-          y: adj.y,
-          action: { type: "ACTION_MOTHER_WAKE_BABY", targetId: adj.id },
-        });
+      } else if (adj.type === "baby") {
+        const baby = state.babies[adj.id];
+        if (baby?.isAsleep && !baby.asleepThisRound) {
+          result.selectables.push({
+            pieceId: adj.id,
+            tileId: adj.tileId,
+            x: adj.x,
+            y: adj.y,
+            action: { type: "ACTION_MOTHER_WAKE_BABY", targetId: adj.id },
+          });
+        }
       }
     }
     for (const fire of state.fireTokens) {
@@ -178,19 +255,20 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
   if (canUseAggressive) {
     for (const adj of adjacentPieces) {
       if (adj.type === "baby") {
-        const action: GameAction = adj.isAsleep
+        const baby = state.babies[adj.id];
+        const action: GameAction = baby?.isAsleep
           ? { type: "ACTION_SCIENTIST_CAPTURE_BABY", scientistId: selectedActorId, targetId: adj.id }
           : { type: "ACTION_SCIENTIST_SLEEP_BABY", scientistId: selectedActorId, targetId: adj.id };
         result.hostileTargets.push({ pieceId: adj.id, tileId: adj.tileId, x: adj.x, y: adj.y, action });
       }
     }
     const mother = state.mother;
-    if (mother && hasLineOfSight(state, selectedPiece, mother)) {
+    if (mother.position && hasLineOfSight(state, scientistState, mother)) {
       result.hostileTargets.push({
         pieceId: mother.id,
-        tileId: mother.tileId,
-        x: mother.x,
-        y: mother.y,
+        tileId: mother.position.tileId,
+        x: mother.position.x,
+        y: mother.position.y,
         action: { type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActorId },
       });
     }
@@ -199,30 +277,25 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
   return result;
 }
 
-// Helper to find a piece by ID
-function findPieceById(state: GameState, id: string): PieceState | undefined {
-  if (state.mother?.id === id) return state.mother;
-  const baby = state.babies.find((b) => b.id === id);
-  if (baby) return baby;
-  // Check scientists
-  const scientist = state.scientists[id];
-  if (scientist) return scientistToPieceState(scientist) ?? undefined;
-  return undefined;
-}
-
 // Calculate valid moves for action phase
 function getValidMoves(
   state: GameState,
-  activePiece: PieceState,
+  pieceInfo: PieceInfo,
   selectedActorId: string,
 ): Array<{ tileId: number; x: number; y: number }> {
   if (state.phase !== "ACTION_PHASE" || state.actionPoints <= 0) return [];
-  if (activePiece.type === "mother") {
-    const woundCost = state.motherPaidWoundCost ? 0 : state.motherSleepTokens;
+  if (pieceInfo.type === "mother") {
+    const woundCost = state.mother.paidWoundCost ? 0 : state.mother.sleepTokens;
     if (state.actionPoints < woundCost + 1) return [];
   }
-  const allPieces = getAllPieces(state);
-  const pieceInstance = createPieceFromState(activePiece);
+  const allPieces = getAllBoardPositions(state);
+  const pieceInstance = createPieceFromPosition(
+    pieceInfo.id,
+    pieceInfo.type,
+    pieceInfo.tileId,
+    pieceInfo.x,
+    pieceInfo.y,
+  );
   return pieceInstance.getValidMoves(state.tiles, allPieces, state.fireTokens).filter((move) => {
     const targetTile = state.tiles.find((t) => t.id === move.tileId);
     if (!targetTile) return false;
@@ -274,7 +347,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   // Effect phase highlights
   if (state.phase === "EFFECT_PHASE" && state.effectActionsRemaining > 0) {
     const effectType = getCurrentEffectType(state);
-    const allPieces = getAllPieces(state);
+    const allPieces = getAllBoardPositions(state);
 
     // Fear: highlight scientists that can be frightened
     if (effectType === "fear") {
@@ -287,27 +360,27 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
 
     // Sleeping Gas: highlight babies that can be put to sleep
     if (effectType === "sleeping_gas") {
-      for (const baby of state.babies) {
-        if (baby.tileId === -1 || baby.isAsleep) continue;
+      for (const baby of Object.values(state.babies)) {
+        if (!baby.position || baby.isAsleep) continue;
         const action: GameAction = { type: "PUT_BABY_TO_SLEEP", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
+        set(createSpaceId(baby.position.tileId, baby.position.x, baby.position.y), "selectable", action);
       }
     }
 
     // Recovery: highlight sleeping babies that can be woken
     if (effectType === "recovery") {
-      for (const baby of state.babies) {
-        if (baby.tileId === -1 || !baby.isAsleep) continue;
+      for (const baby of Object.values(state.babies)) {
+        if (!baby.position || !baby.isAsleep) continue;
         const action: GameAction = { type: "WAKE_BABY", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
+        set(createSpaceId(baby.position.tileId, baby.position.x, baby.position.y), "selectable", action);
       }
     }
 
     // Mother's Call: two-step selection - first select baby, then destination
-    if (effectType === "mothers_call" && state.mother) {
-      const selectedBaby = selectedActorId ? state.babies.find((b) => b.id === selectedActorId) : null;
+    if (effectType === "mothers_call" && state.mother.position) {
+      const selectedBaby = selectedActorId ? state.babies[selectedActorId] : null;
 
-      if (selectedBaby && selectedBaby.tileId !== -1) {
+      if (selectedBaby?.position) {
         // Step 2: Show destinations for the selected baby only
         const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, selectedBaby, state.mother);
         for (const dest of destinations) {
@@ -322,12 +395,12 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         }
       } else {
         // Step 1: Highlight babies that can be called (have reachable destinations)
-        for (const baby of state.babies) {
-          if (baby.tileId === -1) continue;
+        for (const baby of Object.values(state.babies)) {
+          if (!baby.position) continue;
           const destinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
           if (destinations.length > 0) {
             const action: GameAction = { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
-            set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
+            set(createSpaceId(baby.position.tileId, baby.position.x, baby.position.y), "selectable", action);
           }
         }
       }
@@ -354,9 +427,13 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     }
 
     // Recovery: highlight mother if she has sleep tokens
-    if (effectType === "recovery" && state.mother && state.motherSleepTokens > 0 && state.mother.tileId !== -1) {
+    if (effectType === "recovery" && state.mother.position && state.mother.sleepTokens > 0) {
       const action: GameAction = { type: "REMOVE_MOTHER_SLEEP_TOKEN" };
-      set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "selectable", action);
+      set(
+        createSpaceId(state.mother.position.tileId, state.mother.position.x, state.mother.position.y),
+        "selectable",
+        action,
+      );
     }
 
     // Fire: highlight valid fire placement spaces
@@ -403,23 +480,21 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     // Jeep: two-step selection - first select scientist, then destination
     if (effectType === "jeep") {
       const selectedScientistState = selectedActorId ? state.scientists[selectedActorId] : null;
-      const selectedScientistPiece = selectedScientistState?.position
-        ? scientistToPieceState(selectedScientistState)
-        : null;
 
-      if (selectedScientistPiece && selectedScientistState?.position && !selectedScientistState.isFrightened) {
+      if (selectedScientistState?.position && !selectedScientistState.isFrightened) {
         // Step 2: Show destinations for the selected scientist only
         const destinations = getJeepDestinationsWithPaths(
           state.tiles,
           allPieces,
           state.fireTokens,
-          selectedScientistPiece,
+          selectedScientistState.id,
+          selectedScientistState.position,
           [],
         );
         for (const dest of destinations) {
           const action: GameAction = {
             type: "MOVE_JEEP",
-            scientistId: selectedScientistPiece.id,
+            scientistId: selectedScientistState.id,
             tileId: dest.tileId,
             x: dest.x,
             y: dest.y,
@@ -431,9 +506,14 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         // Step 1: Highlight scientists that can use jeep (have reachable destinations)
         for (const scientist of Object.values(state.scientists)) {
           if (!scientist.position || scientist.isFrightened) continue;
-          const pieceState = scientistToPieceState(scientist);
-          if (!pieceState) continue;
-          const destinations = getJeepDestinationsWithPaths(state.tiles, allPieces, state.fireTokens, pieceState, []);
+          const destinations = getJeepDestinationsWithPaths(
+            state.tiles,
+            allPieces,
+            state.fireTokens,
+            scientist.id,
+            scientist.position,
+            [],
+          );
           if (destinations.length > 0) {
             const action: GameAction = { type: "SELECT_ACTOR", player: "scientist", pieceId: scientist.id };
             set(
@@ -454,25 +534,29 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     // Controllable pieces can be clicked to select/deselect
     if (player === "raptor") {
       // Mother can be selected (if not already selected via highlights above)
-      if (state.mother && state.mother.tileId !== -1) {
+      if (state.mother.position) {
         const isSelected = selectedActorId === state.mother.id;
         const action: GameAction = isSelected
           ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
           : { type: "SELECT_ACTOR", player: "raptor", pieceId: state.mother.id };
         set(
-          createSpaceId(state.mother.tileId, state.mother.x, state.mother.y),
+          createSpaceId(state.mother.position.tileId, state.mother.position.x, state.mother.position.y),
           isSelected ? "selected" : "selectable",
           action,
         );
       }
       // Babies can be selected (awake only)
-      for (const baby of state.babies) {
-        if (baby.tileId === -1 || baby.isAsleep) continue;
+      for (const baby of Object.values(state.babies)) {
+        if (!baby.position || baby.isAsleep) continue;
         const isSelected = selectedActorId === baby.id;
         const action: GameAction = isSelected
           ? { type: "SELECT_ACTOR", player: "raptor", pieceId: null }
           : { type: "SELECT_ACTOR", player: "raptor", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), isSelected ? "selected" : "selectable", action);
+        set(
+          createSpaceId(baby.position.tileId, baby.position.x, baby.position.y),
+          isSelected ? "selected" : "selectable",
+          action,
+        );
       }
     } else if (player === "scientist") {
       for (const scientist of Object.values(state.scientists)) {
@@ -506,7 +590,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   }
 
   // Valid moves (action phase) - destinations for selected piece
-  const activePiece = selectedActorId ? findPieceById(state, selectedActorId) : null;
+  const activePiece = selectedActorId ? getPieceInfo(state, selectedActorId) : null;
   if (activePiece && selectedActorId && state.phase === "ACTION_PHASE") {
     const selectables = getValidMoves(state, activePiece, selectedActorId);
     for (const move of selectables) {
@@ -544,14 +628,18 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   if (state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP") {
     // Placed pieces can be removed by clicking on them
     if (state.phase === "RAPTOR_SETUP") {
-      if (state.mother && state.mother.tileId !== -1) {
+      if (state.mother.position) {
         const action: GameAction = { type: "REMOVE_PIECE", pieceId: state.mother.id };
-        set(createSpaceId(state.mother.tileId, state.mother.x, state.mother.y), "selectable", action);
+        set(
+          createSpaceId(state.mother.position.tileId, state.mother.position.x, state.mother.position.y),
+          "selectable",
+          action,
+        );
       }
-      for (const baby of state.babies) {
-        if (baby.tileId === -1) continue;
+      for (const baby of Object.values(state.babies)) {
+        if (!baby.position) continue;
         const action: GameAction = { type: "REMOVE_PIECE", pieceId: baby.id };
-        set(createSpaceId(baby.tileId, baby.x, baby.y), "selectable", action);
+        set(createSpaceId(baby.position.tileId, baby.position.x, baby.position.y), "selectable", action);
       }
     } else {
       for (const scientist of Object.values(state.scientists)) {
@@ -579,20 +667,21 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
 
     // Setup move targets (empty spaces on tiles with pieces)
     for (const tile of state.tiles) {
-      let pieceOnTile: PieceState | null = null;
+      let pieceOnTile: { id: string; tileId: number } | null = null;
       if (state.phase === "RAPTOR_SETUP") {
-        if (state.mother?.tileId === tile.id) {
-          pieceOnTile = state.mother;
+        if (state.mother.position?.tileId === tile.id) {
+          pieceOnTile = { id: state.mother.id, tileId: tile.id };
         } else {
-          pieceOnTile = state.babies.find((b) => b.tileId === tile.id) ?? null;
+          const baby = Object.values(state.babies).find((b) => b.position?.tileId === tile.id);
+          if (baby) {
+            pieceOnTile = { id: baby.id, tileId: tile.id };
+          }
         }
       } else {
         // Find scientist on this tile
-        for (const scientist of Object.values(state.scientists)) {
-          if (scientist.position?.tileId === tile.id) {
-            pieceOnTile = scientistToPieceState(scientist);
-            break;
-          }
+        const scientist = Object.values(state.scientists).find((s) => s.position?.tileId === tile.id);
+        if (scientist) {
+          pieceOnTile = { id: scientist.id, tileId: tile.id };
         }
       }
 
@@ -619,12 +708,8 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     for (const tile of state.tiles) {
       for (const space of tile.spaces) {
         if (space.hasMountain || space.isUnusable || space.isExit) continue;
-        // Allow clicking on mother's current position (to see it's selected) or any empty space
-        const isMotherHere =
-          state.mother.tileId === tile.id &&
-          state.mother.x === space.coordinate.x &&
-          state.mother.y === space.coordinate.y;
-        if (!isMotherHere && isSpaceOccupied(state, tile.id, space.coordinate.x, space.coordinate.y)) continue;
+        // Allow clicking any empty space
+        if (isSpaceOccupied(state, tile.id, space.coordinate.x, space.coordinate.y)) continue;
         const action: GameAction = {
           type: "MOTHER_RETURN",
           tileId: tile.id,

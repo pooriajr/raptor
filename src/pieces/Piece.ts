@@ -1,5 +1,5 @@
 import type { Tile } from "../types/board.ts";
-import type { PieceState, FireToken } from "../types/gameState.ts";
+import type { BoardPosition, FireToken } from "../types/gameState.ts";
 
 // Base class for all game pieces
 export abstract class Piece {
@@ -19,12 +19,12 @@ export abstract class Piece {
   abstract getEmoji(): string;
   abstract getValidMoves(
     tiles: Tile[],
-    pieces: PieceState[],
+    pieces: BoardPosition[],
     fireTokens?: FireToken[],
   ): Array<{ tileId: number; x: number; y: number }>;
 
   // Common method to check if a move is valid
-  isValidMove(tiles: Tile[], pieces: PieceState[], tileId: number, x: number, y: number): boolean {
+  isValidMove(tiles: Tile[], pieces: BoardPosition[], tileId: number, x: number, y: number): boolean {
     const validMoves = this.getValidMoves(tiles, pieces);
     return validMoves.some((move) => move.tileId === tileId && move.x === x && move.y === y);
   }

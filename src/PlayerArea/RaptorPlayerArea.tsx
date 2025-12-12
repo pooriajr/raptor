@@ -27,7 +27,7 @@ function RaptorPlayerArea() {
         phaseLabel: "Mother Returns",
         progress: null,
         instruction:
-          state.mother.tileId === -1
+          state.mother.position === null
             ? "Place mother on any empty space"
             : "Click another space to change, or Done to confirm",
       };

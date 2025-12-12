@@ -1,5 +1,5 @@
 import type { GameState } from "@/types/gameState.ts";
-import { getAllPieces, isSpaceOccupied, arePiecesAdjacent } from "@/utils/boardUtils.ts";
+import { getAllBoardPositions, isSpaceOccupied, arePositionsAdjacent } from "@/utils/boardUtils.ts";
 import { hasLineOfSight } from "@/utils/lineOfSight.ts";
 import { getConnectedFires } from "@/utils/fireUtils.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
@@ -8,7 +8,6 @@ import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
 import { checkWinConditions } from "@/utils/winConditions.ts";
 import { deleteSave } from "@/utils/saveLoad.ts";
-import { scientistToPieceState } from "@/utils/scientistUtils.ts";
 
 /**
  * Wraps an action handler to check for win conditions after execution.
@@ -94,15 +93,15 @@ function _handleActionMoveBaby(
   if (state.actionPoints <= 0) return state;
 
   // Find the baby
-  const baby = state.babies.find((b) => b.id === action.pieceId);
-  if (!baby) return state;
+  const baby = state.babies[action.pieceId];
+  if (!baby?.position) return state;
 
   // Baby can't move if asleep
   if (baby.isAsleep) return state;
 
   // Validate the move using BabyRaptor class
-  const allPieces = getAllPieces(state);
-  const babyPiece = new BabyRaptor(baby.id, baby.tileId, baby.x, baby.y);
+  const allPieces = getAllBoardPositions(state);
+  const babyPiece = new BabyRaptor(baby.id, baby.position.tileId, baby.position.x, baby.position.y);
   const validMoves = babyPiece.getValidMoves(state.tiles, allPieces);
 
   const isValidMove = validMoves.some((m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y);
@@ -118,10 +117,12 @@ function _handleActionMoveBaby(
 
   if (isExit) {
     // Baby escapes - mark as escaped and remove from board
-    const updatedBaby = { ...baby, tileId: -1, x: -1, y: -1, isEscaped: true };
     return {
       ...state,
-      babies: state.babies.map((b) => (b.id === baby.id ? updatedBaby : b)),
+      babies: {
+        ...state.babies,
+        [action.pieceId]: { ...baby, position: null, isEscaped: true },
+      },
       actionPoints: state.actionPoints - 1,
     };
   }
@@ -129,9 +130,10 @@ function _handleActionMoveBaby(
   // Normal move
   return {
     ...state,
-    babies: state.babies.map((b) =>
-      b.id === action.pieceId ? { ...b, tileId: action.tileId, x: action.x, y: action.y } : b,
-    ),
+    babies: {
+      ...state.babies,
+      [action.pieceId]: { ...baby, position: { tileId: action.tileId, x: action.x, y: action.y } },
+    },
     actionPoints: state.actionPoints - 1,
   };
 }
@@ -157,7 +159,7 @@ export function handleActionMoveScientist(
   if (scientist.isFrightened) return state;
 
   // Validate the move using Scientist class (normal mode, not jeep)
-  const allPieces = getAllPieces(state);
+  const allPieces = getAllBoardPositions(state);
   const scientistPiece = new Scientist(
     scientist.id,
     scientist.position.tileId,
@@ -199,18 +201,23 @@ export function handleActionMoveMother(
   if (state.activePlayer !== "raptor") return state;
 
   // Find the mother
-  if (!state.mother) return state;
+  if (!state.mother.position) return state;
 
   // Calculate wound cost: mother must pay AP = sleep tokens before first movement
-  const woundCost = state.motherPaidWoundCost ? 0 : state.motherSleepTokens;
+  const woundCost = state.mother.paidWoundCost ? 0 : state.mother.sleepTokens;
   const totalCost = woundCost + 1; // wound cost + 1 for the move itself
 
   // Validate: must have enough action points
   if (state.actionPoints < totalCost) return state;
 
   // Validate the move using MotherRaptor class
-  const allPieces = getAllPieces(state);
-  const motherPiece = new MotherRaptor(state.mother.id, state.mother.tileId, state.mother.x, state.mother.y);
+  const allPieces = getAllBoardPositions(state);
+  const motherPiece = new MotherRaptor(
+    state.mother.id,
+    state.mother.position.tileId,
+    state.mother.position.x,
+    state.mother.position.y,
+  );
   const validMoves = motherPiece.getValidMoves(state.tiles, allPieces, state.fireTokens);
 
   const isValidMove = validMoves.some((m) => m.tileId === action.tileId && m.x === action.x && m.y === action.y);
@@ -229,12 +236,10 @@ export function handleActionMoveMother(
     ...state,
     mother: {
       ...state.mother,
-      tileId: action.tileId,
-      x: action.x,
-      y: action.y,
+      position: { tileId: action.tileId, x: action.x, y: action.y },
+      paidWoundCost: true, // Mark that wound cost has been paid
     },
     actionPoints: state.actionPoints - totalCost,
-    motherPaidWoundCost: true, // Mark that wound cost has been paid
   };
 }
 
@@ -245,11 +250,10 @@ function _handleMotherKillScientist(state: GameState, action: { targetId: string
 
   const mother = state.mother;
   const scientist = state.scientists[action.targetId];
-  if (!mother || !scientist?.position) return state;
+  if (!mother.position || !scientist?.position) return state;
 
-  // Must be adjacent - convert scientist to PieceState for adjacency check
-  const scientistPiece = scientistToPieceState(scientist);
-  if (!scientistPiece || !arePiecesAdjacent(mother, scientistPiece)) return state;
+  // Must be adjacent
+  if (!arePositionsAdjacent(mother.position, scientist.position)) return state;
 
   // Mark the scientist as dead (not returned to reserve)
   return {
@@ -268,21 +272,24 @@ export function handleMotherWakeBaby(state: GameState, action: { targetId: strin
   if (state.actionPoints <= 0) return state;
 
   const mother = state.mother;
-  const baby = state.babies.find((b) => b.id === action.targetId);
-  if (!mother || !baby) return state;
+  const baby = state.babies[action.targetId];
+  if (!mother.position || !baby?.position) return state;
 
   // Baby must be asleep
   if (!baby.isAsleep) return state;
 
   // Can't wake up if put to sleep this round
-  if (state.asleepThisRound.includes(action.targetId)) return state;
+  if (baby.asleepThisRound) return state;
 
   // Must be adjacent
-  if (!arePiecesAdjacent(mother, baby)) return state;
+  if (!arePositionsAdjacent(mother.position, baby.position)) return state;
 
   return {
     ...state,
-    babies: state.babies.map((b) => (b.id === action.targetId ? { ...b, isAsleep: false } : b)),
+    babies: {
+      ...state.babies,
+      [action.targetId]: { ...baby, isAsleep: false },
+    },
     actionPoints: state.actionPoints - 1,
   };
 }
@@ -296,14 +303,14 @@ export function handleMotherExtinguishFire(
   if (state.actionPoints <= 0) return state;
 
   const mother = state.mother;
-  if (!mother) return state;
+  if (!mother.position) return state;
 
   // Check if there's a fire at the target position
   const targetFire = state.fireTokens.find((f) => f.tileId === action.tileId && f.x === action.x && f.y === action.y);
   if (!targetFire) return state;
 
   // Mother must be adjacent to the fire
-  const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
+  const motherGlobal = localToGlobal(mother.position.tileId, mother.position.x, mother.position.y);
   const fireGlobal = localToGlobal(action.tileId, action.x, action.y);
   const adjacentCoords = getAdjacentGlobalCoordinates(motherGlobal.globalX, motherGlobal.globalY);
   const isAdjacent = adjacentCoords.some(
@@ -331,8 +338,8 @@ export function handleScientistSleepBaby(
   if (state.actionPoints <= 0) return state;
 
   const scientist = state.scientists[action.scientistId];
-  const baby = state.babies.find((b) => b.id === action.targetId);
-  if (!scientist?.position || !baby) return state;
+  const baby = state.babies[action.targetId];
+  if (!scientist?.position || !baby?.position) return state;
 
   // Scientist can't act if frightened
   if (scientist.isFrightened) return state;
@@ -344,12 +351,14 @@ export function handleScientistSleepBaby(
   if (baby.isAsleep) return state;
 
   // Must be adjacent
-  const scientistPiece = scientistToPieceState(scientist);
-  if (!scientistPiece || !arePiecesAdjacent(scientistPiece, baby)) return state;
+  if (!arePositionsAdjacent(scientist.position, baby.position)) return state;
 
   return {
     ...state,
-    babies: state.babies.map((b) => (b.id === action.targetId ? { ...b, isAsleep: true } : b)),
+    babies: {
+      ...state.babies,
+      [action.targetId]: { ...baby, isAsleep: true },
+    },
     scientists: {
       ...state.scientists,
       [action.scientistId]: { ...scientist, hasUsedAggressiveAction: true },
@@ -364,8 +373,8 @@ function _handleScientistCaptureBaby(state: GameState, action: { scientistId: st
   if (state.actionPoints <= 0) return state;
 
   const scientist = state.scientists[action.scientistId];
-  const baby = state.babies.find((b) => b.id === action.targetId);
-  if (!scientist?.position || !baby) return state;
+  const baby = state.babies[action.targetId];
+  if (!scientist?.position || !baby?.position) return state;
 
   // Scientist can't act if frightened
   if (scientist.isFrightened) return state;
@@ -377,14 +386,15 @@ function _handleScientistCaptureBaby(state: GameState, action: { scientistId: st
   if (!baby.isAsleep) return state;
 
   // Must be adjacent
-  const scientistPiece = scientistToPieceState(scientist);
-  if (!scientistPiece || !arePiecesAdjacent(scientistPiece, baby)) return state;
+  if (!arePositionsAdjacent(scientist.position, baby.position)) return state;
 
   // Mark baby as captured and remove from board
-  const updatedBaby = { ...baby, tileId: -1, x: -1, y: -1, isCaptured: true };
   return {
     ...state,
-    babies: state.babies.map((b) => (b.id === baby.id ? updatedBaby : b)),
+    babies: {
+      ...state.babies,
+      [action.targetId]: { ...baby, position: null, isCaptured: true },
+    },
     scientists: {
       ...state.scientists,
       [action.scientistId]: { ...scientist, hasUsedAggressiveAction: true },
@@ -400,7 +410,7 @@ function _handleScientistShootMother(state: GameState, action: { scientistId: st
 
   const scientist = state.scientists[action.scientistId];
   const mother = state.mother;
-  if (!scientist?.position || !mother) return state;
+  if (!scientist?.position || !mother.position) return state;
 
   // Scientist can't act if frightened
   if (scientist.isFrightened) return state;
@@ -408,13 +418,12 @@ function _handleScientistShootMother(state: GameState, action: { scientistId: st
   // Scientist can only use one aggressive action per round
   if (scientist.hasUsedAggressiveAction) return state;
 
-  // Must have line of sight - convert scientist to PieceState for line of sight check
-  const scientistPiece = scientistToPieceState(scientist);
-  if (!scientistPiece || !hasLineOfSight(state, scientistPiece, mother)) return state;
+  // Must have line of sight
+  if (!hasLineOfSight(state, scientist, mother)) return state;
 
   return {
     ...state,
-    motherSleepTokens: state.motherSleepTokens + 1,
+    mother: { ...state.mother, sleepTokens: state.mother.sleepTokens + 1 },
     scientists: {
       ...state.scientists,
       [action.scientistId]: { ...scientist, hasUsedAggressiveAction: true },

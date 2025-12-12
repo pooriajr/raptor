@@ -24,8 +24,16 @@ export type WinCondition =
   | "mother_neutralized" // Scientist: Mother has 5 sleep tokens
   | "babies_captured"; // Scientist: 3 babies captured
 
-// Piece types as plain data (not class instances)
-export type PieceType = "mother" | "baby" | "scientist";
+// Player type for action phase
+export type Player = "raptor" | "scientist";
+
+// Position on the board - used for collision detection in piece classes
+export interface BoardPosition {
+  id: string;
+  tileId: number;
+  x: number;
+  y: number;
+}
 
 // Scientist state - consolidated in one place
 // position: null = in reserve or dead, otherwise board coordinates
@@ -38,15 +46,26 @@ export interface ScientistState {
   frightenedThisRound: boolean; // Can't stand up same round
 }
 
-export interface PieceState {
+// Baby raptor state - consolidated in one place
+// position: null = not on board (unplaced, escaped, or captured)
+export interface BabyState {
   id: string;
-  type: PieceType;
-  tileId: number; // -1 means unplaced (in holding pen)
-  x: number;
-  y: number;
-  isAsleep?: boolean; // Baby raptors can be put to sleep
-  isEscaped?: boolean; // Baby raptors that escaped the board (raptor win condition)
-  isCaptured?: boolean; // Baby raptors captured by scientists (scientist win condition)
+  position: { tileId: number; x: number; y: number } | null;
+  isAsleep: boolean;
+  isEscaped: boolean;
+  isCaptured: boolean;
+  asleepThisRound: boolean; // Can't wake up same round put to sleep
+}
+
+// Mother raptor state - consolidated in one place
+// position: null = unplaced or disappeared
+export interface MotherState {
+  id: string;
+  position: { tileId: number; x: number; y: number } | null;
+  sleepTokens: number;
+  paidWoundCost: boolean; // Resets each round
+  disappeared: boolean; // Resets each round
+  observationActive: boolean;
 }
 
 // Card state for each player
@@ -59,16 +78,6 @@ export interface CardState {
 // Fire token - blocks raptor movement, scientists can pass through but not end on
 export interface FireToken {
   id: string;
-  tileId: number;
-  x: number;
-  y: number;
-}
-
-// Player type for action phase
-export type Player = "raptor" | "scientist";
-
-// Position on the board
-export interface Position {
   tileId: number;
   x: number;
   y: number;
@@ -95,9 +104,9 @@ export function createInitialInteractionState(): InteractionState {
 export interface GameState {
   phase: GamePhase;
   tiles: Tile[];
-  // All pieces exist from start with tileId: -1 meaning unplaced
-  mother: PieceState;
-  babies: PieceState[];
+  // All pieces use consolidated state types
+  mother: MotherState;
+  babies: Record<string, BabyState>;
   scientists: Record<string, ScientistState>;
   fireTokens: FireToken[];
   raptorCards: CardState;
@@ -106,13 +115,7 @@ export interface GameState {
   activeEffectCard: CardInfo | null; // The lower card (determines effect), null if tied
   actionPoints: number; // Card difference (for higher card player)
   activePlayer: Player | null; // Current active player (effect player, then action player)
-  asleepThisRound: string[]; // Baby IDs put to sleep this round (can't wake same round)
-  motherPaidWoundCost: boolean; // Whether mother has paid her wound cost this round (sleep tokens)
-  // Disappearance tracking
-  motherDisappeared: boolean; // Whether mother disappeared this round (needs to return after action phase)
-  observationActive: boolean; // Whether raptor can see scientist's card next selection (from disappearance)
   // Win condition tracking
-  motherSleepTokens: number; // Sleep tokens on mother (scientist wins at 5)
   winner: Player | null; // Winner of the game (null if game ongoing)
   winCondition: WinCondition | null; // How the winner won
   // UI/Interaction state - per player
@@ -134,25 +137,32 @@ export function createInitialCardState(cards: CardInfo[]): CardState {
 }
 
 // Create mother raptor (unplaced initially)
-export function createInitialMother(): PieceState {
+export function createInitialMother(): MotherState {
   return {
     id: "mother",
-    type: "mother",
-    tileId: -1, // -1 means unplaced
-    x: -1,
-    y: -1,
+    position: null,
+    sleepTokens: 0,
+    paidWoundCost: false,
+    disappeared: false,
+    observationActive: false,
   };
 }
 
 // Create all 5 baby raptors with stable IDs (unplaced initially)
-export function createInitialBabies(): PieceState[] {
-  return [0, 1, 2, 3, 4].map((i) => ({
-    id: `baby-${i}`,
-    type: "baby" as const,
-    tileId: -1, // -1 means unplaced
-    x: -1,
-    y: -1,
-  }));
+export function createInitialBabies(): Record<string, BabyState> {
+  const babies: Record<string, BabyState> = {};
+  for (let i = 0; i < 5; i++) {
+    const id = `baby-${i}`;
+    babies[id] = {
+      id,
+      position: null,
+      isAsleep: false,
+      isEscaped: false,
+      isCaptured: false,
+      asleepThisRound: false,
+    };
+  }
+  return babies;
 }
 
 // Create all 10 scientists with stable IDs (in reserve initially)
@@ -186,14 +196,8 @@ export function createInitialGameState(): GameState {
     activeEffectCard: null,
     actionPoints: 0,
     activePlayer: "raptor",
-    asleepThisRound: [],
-    motherPaidWoundCost: false,
-    motherDisappeared: false,
-    observationActive: false,
-    motherSleepTokens: 0,
     winner: null,
     winCondition: null,
-
     raptorInteraction: createInitialInteractionState(),
     scientistInteraction: createInitialInteractionState(),
     effectActionsRemaining: 0,

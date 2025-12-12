@@ -1,7 +1,7 @@
 import type { GameState } from "@/types/gameState.ts";
 import * as h from "@/state/actions/index.ts";
 
-export { findById, getAllPieces } from "@/utils/boardUtils.ts";
+export { findById, getAllBoardPositions } from "@/utils/boardUtils.ts";
 
 export type GameAction =
   | h.SetupAction

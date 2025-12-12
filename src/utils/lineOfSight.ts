@@ -1,4 +1,4 @@
-import type { GameState, PieceState } from "@/types/gameState";
+import type { GameState, MotherState, ScientistState } from "@/types/gameState";
 import { localToGlobal } from "@/types/coordinates";
 
 /**
@@ -9,9 +9,11 @@ import { localToGlobal } from "@/types/coordinates";
  * - Blocked by: Rocks (mountains), Active (standing) scientists
  * - Can shoot through: Frightened scientists, fire tokens, baby raptors
  */
-export function hasLineOfSight(state: GameState, scientist: PieceState, mother: PieceState): boolean {
-  const sciGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
-  const motherGlobal = localToGlobal(mother.tileId, mother.x, mother.y);
+export function hasLineOfSight(state: GameState, scientist: ScientistState, mother: MotherState): boolean {
+  if (!scientist.position || !mother.position) return false;
+
+  const sciGlobal = localToGlobal(scientist.position.tileId, scientist.position.x, scientist.position.y);
+  const motherGlobal = localToGlobal(mother.position.tileId, mother.position.x, mother.position.y);
 
   // Must be in same row or column (orthogonal)
   const sameRow = sciGlobal.globalY === motherGlobal.globalY;

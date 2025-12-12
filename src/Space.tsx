@@ -1,12 +1,12 @@
 import "./Space.css";
 import { useGame } from "./state/GameContext.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
-import type { PieceState, GameState, ScientistState } from "./types/gameState.ts";
+import type { GameState, ScientistState, BabyState, MotherState } from "./types/gameState.ts";
 import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
 import { parseSpaceId } from "./types/spaceActions.ts";
 import { buildSpaceActions } from "./utils/buildSpaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
-import Piece from "./Piece.tsx";
+import { BabyPiece, MotherPiece } from "./Piece.tsx";
 import ScientistPiece from "./ScientistPiece.tsx";
 
 interface SpaceProps {
@@ -23,12 +23,7 @@ function Space({ space }: SpaceProps) {
   const { tileId } = parseSpaceId(space.id);
 
   // Find piece on this space
-  const { piece: pieceOnSpace, scientist: scientistOnSpace } = findPieceOnSpace(
-    state,
-    tileId,
-    space.coordinate.x,
-    space.coordinate.y,
-  );
+  const pieceOnSpace = findPieceOnSpace(state, tileId, space.coordinate.x, space.coordinate.y);
 
   // Get interaction state for current player
   const currentPlayer = state.activePlayer;
@@ -50,27 +45,27 @@ function Space({ space }: SpaceProps) {
       data-style={style}
       onClick={handleClick}
     >
-      <SpaceContent
-        space={space}
-        pieceOnSpace={pieceOnSpace}
-        scientistOnSpace={scientistOnSpace}
-        style={style}
-        selectedActorId={selectedActorId}
-      />
+      <SpaceContent space={space} pieceOnSpace={pieceOnSpace} style={style} selectedActorId={selectedActorId} />
     </div>
   );
 }
 
+// Union type for piece on space
+type PieceOnSpace =
+  | { type: "mother"; data: MotherState }
+  | { type: "baby"; data: BabyState }
+  | { type: "scientist"; data: ScientistState }
+  | null;
+
 // Inner component for space content rendering
 interface SpaceContentProps {
   space: SpaceType;
-  pieceOnSpace: PieceState | null;
-  scientistOnSpace: ScientistState | null;
+  pieceOnSpace: PieceOnSpace;
   style?: SpaceStyle;
   selectedActorId: string | null;
 }
 
-function SpaceContent({ space, pieceOnSpace, scientistOnSpace, style, selectedActorId }: SpaceContentProps) {
+function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceContentProps) {
   // Priority 1: Mountain
   if (space.hasMountain) {
     return <span className="mountain">⛰️</span>;
@@ -81,19 +76,20 @@ function SpaceContent({ space, pieceOnSpace, scientistOnSpace, style, selectedAc
     return <span className="exit">🚪</span>;
   }
 
-  // Priority 3: Scientist (uses ScientistPiece component)
-  if (scientistOnSpace) {
-    const isSelected = selectedActorId === scientistOnSpace.id;
-    return <ScientistPiece scientist={scientistOnSpace} isSelected={isSelected} />;
-  }
-
-  // Priority 4: Other pieces (mother, baby)
+  // Priority 3: Piece
   if (pieceOnSpace) {
-    const isSelected = selectedActorId === pieceOnSpace.id;
-    return <Piece piece={pieceOnSpace} isSelected={isSelected} />;
+    const isSelected = selectedActorId === pieceOnSpace.data.id;
+    switch (pieceOnSpace.type) {
+      case "scientist":
+        return <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} />;
+      case "baby":
+        return <BabyPiece baby={pieceOnSpace.data} isSelected={isSelected} />;
+      case "mother":
+        return <MotherPiece mother={pieceOnSpace.data} isSelected={isSelected} />;
+    }
   }
 
-  // Priority 5: Fire token
+  // Priority 4: Fire token
   if (style === "fire") {
     return <span className="fire-token">🔥</span>;
   }
@@ -102,23 +98,26 @@ function SpaceContent({ space, pieceOnSpace, scientistOnSpace, style, selectedAc
 }
 
 // Helper to find piece on a specific space
-// Returns either a PieceState (mother/baby) or ScientistState, but not both
-function findPieceOnSpace(
-  state: GameState,
-  tileId: number,
-  x: number,
-  y: number,
-): { piece: PieceState | null; scientist: ScientistState | null } {
-  if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) {
-    return { piece: state.mother, scientist: null };
+function findPieceOnSpace(state: GameState, tileId: number, x: number, y: number): PieceOnSpace {
+  if (state.mother.position?.tileId === tileId && state.mother.position.x === x && state.mother.position.y === y) {
+    return { type: "mother", data: state.mother };
   }
-  const baby = state.babies.find((b) => b.tileId === tileId && b.x === x && b.y === y);
-  if (baby) return { piece: baby, scientist: null };
+
+  const baby = Object.values(state.babies).find(
+    (b) => b.position?.tileId === tileId && b.position?.x === x && b.position?.y === y,
+  );
+  if (baby) {
+    return { type: "baby", data: baby };
+  }
 
   const scientist = Object.values(state.scientists).find(
     (s) => s.position?.tileId === tileId && s.position?.x === x && s.position?.y === y,
   );
-  return { piece: null, scientist: scientist ?? null };
+  if (scientist) {
+    return { type: "scientist", data: scientist };
+  }
+
+  return null;
 }
 
 export default Space;

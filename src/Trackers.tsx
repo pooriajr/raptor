@@ -53,8 +53,8 @@ function BabyTrackerPips({ babies, max }: { babies: { id: string }[]; max: numbe
 function Trackers() {
   const { state } = useGame();
 
-  const escapedBabies = state.babies.filter((b) => b.isEscaped);
-  const capturedBabies = state.babies.filter((b) => b.isCaptured);
+  const escapedBabies = Object.values(state.babies).filter((b) => b.isEscaped);
+  const capturedBabies = Object.values(state.babies).filter((b) => b.isCaptured);
 
   return (
     <div className="Trackers">
@@ -66,7 +66,7 @@ function Trackers() {
         </div>
         <div className="tracker-row sleep-tokens">
           <span className="tracker-label">Sleep Tokens</span>
-          <TrackerPips emoji="💉" current={state.motherSleepTokens ?? 0} max={5} />
+          <TrackerPips emoji="💉" current={state.mother.sleepTokens ?? 0} max={5} />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import type { GameState } from "@/types/gameState.ts";
-import { findById, getAllPieces, isSpaceOccupied } from "@/utils/boardUtils.ts";
+import { getAllBoardPositions, isSpaceOccupied } from "@/utils/boardUtils.ts";
 import { getReachableDestinationsOnMotherTile } from "@/utils/pathfinding.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
 import { getNextReserveScientist } from "@/utils/scientistUtils.ts";
@@ -47,13 +47,15 @@ export function handleFrightenScientist(state: GameState, action: { pieceId: str
 }
 
 export function handlePutBabyToSleep(state: GameState, action: { pieceId: string }): GameState {
-  const baby = findById(state.babies, action.pieceId);
-  if (!baby || baby.isAsleep) return state;
+  const baby = state.babies[action.pieceId];
+  if (!baby?.position || baby.isAsleep) return state;
 
   return decrementEffectActions({
     ...state,
-    babies: state.babies.map((b) => (b.id === action.pieceId ? { ...b, isAsleep: true } : b)),
-    asleepThisRound: [...state.asleepThisRound, action.pieceId],
+    babies: {
+      ...state.babies,
+      [action.pieceId]: { ...baby, isAsleep: true, asleepThisRound: true },
+    },
   });
 }
 
@@ -61,16 +63,16 @@ export function handleCallBaby(
   state: GameState,
   action: { babyId: string; tileId: number; x: number; y: number },
 ): GameState {
-  if (!state.mother) return state;
+  if (!state.mother.position) return state;
 
-  const baby = findById(state.babies, action.babyId);
-  if (!baby) return state;
+  const baby = state.babies[action.babyId];
+  if (!baby?.position) return state;
 
   // Validate destination is on mother's tile
-  if (action.tileId !== state.mother.tileId) return state;
+  if (action.tileId !== state.mother.position.tileId) return state;
 
   // Validate the destination is reachable via pathfinding
-  const allPieces = getAllPieces(state);
+  const allPieces = getAllBoardPositions(state);
   const reachable = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
   const isValidDestination = reachable.some(
     (pos) => pos.tileId === action.tileId && pos.x === action.x && pos.y === action.y,
@@ -79,9 +81,10 @@ export function handleCallBaby(
 
   return decrementEffectActions({
     ...state,
-    babies: state.babies.map((b) =>
-      b.id === action.babyId ? { ...b, tileId: action.tileId, x: action.x, y: action.y } : b,
-    ),
+    babies: {
+      ...state.babies,
+      [action.babyId]: { ...baby, position: { tileId: action.tileId, x: action.x, y: action.y } },
+    },
     // Clear actor selection after completing the move
     raptorInteraction: { ...state.raptorInteraction, selectedActorId: null },
   });
@@ -91,9 +94,7 @@ export function handleDisappearance(state: GameState): GameState {
   // Disappearance doesn't consume an action - it's automatic
   return {
     ...state,
-    mother: { ...state.mother, tileId: -1, x: -1, y: -1 },
-    motherDisappeared: true,
-    observationActive: true,
+    mother: { ...state.mother, position: null, disappeared: true, observationActive: true },
   };
 }
 
@@ -106,34 +107,35 @@ export function handleMotherReturn(state: GameState, action: { tileId: number; x
   const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
   if (!space || space.hasMountain || space.isUnusable || space.isExit) return state;
 
-  // Check if space is occupied (excluding mother herself, since she can be repositioned)
-  const isMotherHere =
-    state.mother.tileId === action.tileId && state.mother.x === action.x && state.mother.y === action.y;
-  if (!isMotherHere && isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
+  // Check if space is occupied
+  if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
 
   // Place the mother - phase transition to ROUND_END is handled by ADVANCE_PHASE
   return {
     ...state,
-    mother: { ...state.mother, tileId: action.tileId, x: action.x, y: action.y },
+    mother: { ...state.mother, position: { tileId: action.tileId, x: action.x, y: action.y } },
   };
 }
 
 export function handleWakeBaby(state: GameState, action: { pieceId: string }): GameState {
-  const baby = findById(state.babies, action.pieceId);
-  if (!baby || !baby.isAsleep) return state;
+  const baby = state.babies[action.pieceId];
+  if (!baby?.position || !baby.isAsleep) return state;
 
   return decrementEffectActions({
     ...state,
-    babies: state.babies.map((b) => (b.id === action.pieceId ? { ...b, isAsleep: false } : b)),
+    babies: {
+      ...state.babies,
+      [action.pieceId]: { ...baby, isAsleep: false },
+    },
   });
 }
 
 export function handleRemoveMotherSleepToken(state: GameState): GameState {
-  if (state.motherSleepTokens <= 0) return state;
+  if (state.mother.sleepTokens <= 0) return state;
 
   return decrementEffectActions({
     ...state,
-    motherSleepTokens: state.motherSleepTokens - 1,
+    mother: { ...state.mother, sleepTokens: state.mother.sleepTokens - 1 },
   });
 }
 

@@ -1,9 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { gameReducer, getAllPieces, findById } from "./gameReducer";
-import { createInitialGameState, type GameState, type ScientistState } from "../types/gameState";
-import { countPlacedBabies, countPlacedScientists, isMotherPlaced, getUnplacedBabies } from "../utils/pieceUtils";
+import { gameReducer, getAllBoardPositions } from "./gameReducer";
+import {
+  createInitialGameState,
+  type GameState,
+  type ScientistState,
+  type BabyState,
+  type MotherState,
+} from "../types/gameState";
+import {
+  countPlacedBabies,
+  countPlacedScientists,
+  isMotherPlaced,
+  getUnplacedBabies,
+  getBoardBabies,
+} from "../utils/pieceUtils";
 import { getReserveCount, getBoardScientists } from "../utils/scientistUtils";
 import { raptorCards, scientistCards } from "@/utils/cardUtils";
+
+// Helper to find baby by id in babies Record
+function findBabyById(babies: Record<string, BabyState>, id: string): BabyState | undefined {
+  return babies[id];
+}
 
 // Helper to start game from MAIN_MENU (advances to RAPTOR_SETUP)
 function startGame(initialState: GameState): GameState {
@@ -321,12 +338,12 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       expect(newState.mother).not.toBeNull();
-      expect(newState.mother.type).toBe("mother");
+      expect(newState.mother.position).not.toBeNull();
       expect(isMotherPlaced(newState)).toBe(true);
     });
 
     it("allows mother raptor placement on central square tile 7", () => {
-      const state = createInitialGameState();
+      const state = startGame(createInitialGameState());
       const tile7 = state.tiles.find((t) => t.id === 7)!;
       const space = tile7.spaces.find((s) => !s.hasMountain)!;
 
@@ -338,7 +355,7 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       expect(newState.mother).not.toBeNull();
-      expect(newState.mother!.type).toBe("mother");
+      expect(newState.mother!.position).not.toBeNull();
     });
 
     it("rejects mother raptor placement on non-central square tiles", () => {
@@ -417,8 +434,8 @@ describe("Game Reducer - Setup Rules", () => {
       });
 
       expect(countPlacedBabies(newState)).toBe(1);
-      const placedBaby = newState.babies.find((b) => b.tileId !== -1)!;
-      expect(placedBaby.type).toBe("baby");
+      const placedBaby = Object.values(newState.babies).find((b) => b.position !== null)!;
+      expect(placedBaby).toBeDefined();
     });
 
     it("rejects baby raptor placement on L-tiles", () => {
@@ -591,7 +608,7 @@ describe("Game Reducer - Setup Rules", () => {
       expect(countPlacedBabies(state1)).toBe(1);
 
       // Remove baby (find the placed one)
-      const placedBaby = state1.babies.find((b) => b.tileId !== -1)!;
+      const placedBaby = Object.values(state1.babies).find((b) => b.position !== null)!;
       const state2 = gameReducer(state1, {
         type: "REMOVE_PIECE",
         pieceId: placedBaby.id,
@@ -704,7 +721,7 @@ describe("Game Reducer - Setup Rules", () => {
       expect(state.phase).toBe("SCIENTIST_CARD_SELECTION");
 
       // Try to remove a piece - should be ignored
-      const babyId = state.babies[0].id;
+      const babyId = Object.values(state.babies)[0].id;
       const state2 = gameReducer(state, {
         type: "REMOVE_PIECE",
         pieceId: babyId,
@@ -744,8 +761,12 @@ describe("Game Reducer - Setup Rules", () => {
       // But it will fail due to one-raptor-per-tile rule first
       // Let's just verify the piece is there
       expect(
-        state2.babies.find(
-          (b) => b.tileId === squareTile.id && b.x === squareSpace.coordinate.x && b.y === squareSpace.coordinate.y,
+        Object.values(state2.babies).find(
+          (b) =>
+            b.position &&
+            b.position.tileId === squareTile.id &&
+            b.position.x === squareSpace.coordinate.x &&
+            b.position.y === squareSpace.coordinate.y,
         ),
       ).toBeTruthy();
     });
@@ -1315,7 +1336,7 @@ describe("Game Reducer - Card System", () => {
 
       it("does not frighten non-scientists", () => {
         const state = getToEffectPhaseRaptorLower();
-        const baby = state.babies[0];
+        const baby = Object.values(state.babies)[0];
 
         const newState = gameReducer(state, {
           type: "FRIGHTEN_SCIENTIST",
@@ -1323,7 +1344,7 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Baby unchanged, action remaining unchanged
-        expect(findById(newState.babies, baby.id)!.isAsleep).toBeFalsy();
+        expect(findBabyById(newState.babies, baby.id)!.isAsleep).toBeFalsy();
         expect(newState.effectActionsRemaining).toBe(state.effectActionsRemaining);
       });
 
@@ -1357,7 +1378,7 @@ describe("Game Reducer - Card System", () => {
         expect(state.activeEffectCard?.value).toBe(2);
         expect(state.activeEffectCard?.player).toBe("scientist");
 
-        const baby = state.babies[0];
+        const baby = Object.values(state.babies)[0];
         expect(baby.isAsleep).toBeFalsy();
 
         state = gameReducer(state, {
@@ -1365,7 +1386,7 @@ describe("Game Reducer - Card System", () => {
           pieceId: baby.id,
         });
 
-        const updatedBaby = findById(state.babies, baby.id)!;
+        const updatedBaby = findBabyById(state.babies, baby.id)!;
         expect(updatedBaby.isAsleep).toBe(true);
         // Still in effect phase - can put more babies to sleep
         expect(state.phase).toBe("EFFECT_PHASE");
@@ -1376,7 +1397,7 @@ describe("Game Reducer - Card System", () => {
         const initialRemaining = state.effectActionsRemaining;
         expect(initialRemaining).toBeGreaterThan(0);
 
-        const baby = state.babies[0];
+        const baby = Object.values(state.babies)[0];
         state = gameReducer(state, {
           type: "PUT_BABY_TO_SLEEP",
           pieceId: baby.id,
@@ -1406,7 +1427,7 @@ describe("Game Reducer - Card System", () => {
 
       it("does not put already-asleep babies to sleep", () => {
         let state = getToEffectPhaseScientistLower();
-        const baby = state.babies[0];
+        const baby = Object.values(state.babies)[0];
 
         // Put the baby to sleep
         state = gameReducer(state, {
@@ -1432,17 +1453,19 @@ describe("Game Reducer - Card System", () => {
         expect(state.phase).toBe("EFFECT_PHASE");
 
         const mother = state.mother!;
-        const baby = state.babies.find((b) => b.tileId !== mother.tileId)!;
+        expect(mother.position).not.toBeNull();
+        const motherTileId = mother.position!.tileId;
+        const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
         // Find an empty space on mother's tile
-        const motherTile = state.tiles.find((t) => t.id === mother.tileId)!;
-        const allPieces = getAllPieces(state);
+        const motherTile = state.tiles.find((t) => t.id === motherTileId)!;
+        const allPieces = getAllBoardPositions(state);
         const emptySpace = motherTile.spaces.find(
           (s) =>
             !s.isUnusable &&
             !s.hasMountain &&
             !s.isExit &&
-            !allPieces.some((p) => p.tileId === mother.tileId && p.x === s.coordinate.x && p.y === s.coordinate.y),
+            !allPieces.some((p) => p.tileId === motherTileId && p.x === s.coordinate.x && p.y === s.coordinate.y),
         );
 
         expect(emptySpace).toBeDefined();
@@ -1450,15 +1473,16 @@ describe("Game Reducer - Card System", () => {
         state = gameReducer(state, {
           type: "CALL_BABY",
           babyId: baby.id,
-          tileId: mother.tileId,
+          tileId: motherTileId,
           x: emptySpace!.coordinate.x,
           y: emptySpace!.coordinate.y,
         });
 
-        const movedBaby = findById(state.babies, baby.id)!;
-        expect(movedBaby.tileId).toBe(mother.tileId);
-        expect(movedBaby.x).toBe(emptySpace!.coordinate.x);
-        expect(movedBaby.y).toBe(emptySpace!.coordinate.y);
+        const movedBaby = findBabyById(state.babies, baby.id)!;
+        expect(movedBaby.position).not.toBeNull();
+        expect(movedBaby.position!.tileId).toBe(motherTileId);
+        expect(movedBaby.position!.x).toBe(emptySpace!.coordinate.x);
+        expect(movedBaby.position!.y).toBe(emptySpace!.coordinate.y);
         // Still in effect phase - can call more babies
         expect(state.phase).toBe("EFFECT_PHASE");
       });
@@ -1469,23 +1493,25 @@ describe("Game Reducer - Card System", () => {
         expect(initialRemaining).toBeGreaterThan(0);
 
         const mother = state.mother!;
-        const baby = state.babies.find((b) => b.tileId !== mother.tileId)!;
+        expect(mother.position).not.toBeNull();
+        const motherTileId = mother.position!.tileId;
+        const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
         // Find an empty space on mother's tile
-        const motherTile = state.tiles.find((t) => t.id === mother.tileId)!;
-        const allPieces = getAllPieces(state);
+        const motherTile = state.tiles.find((t) => t.id === motherTileId)!;
+        const allPieces = getAllBoardPositions(state);
         const emptySpace = motherTile.spaces.find(
           (s) =>
             !s.isUnusable &&
             !s.hasMountain &&
             !s.isExit &&
-            !allPieces.some((p) => p.tileId === mother.tileId && p.x === s.coordinate.x && p.y === s.coordinate.y),
+            !allPieces.some((p) => p.tileId === motherTileId && p.x === s.coordinate.x && p.y === s.coordinate.y),
         );
 
         state = gameReducer(state, {
           type: "CALL_BABY",
           babyId: baby.id,
-          tileId: mother.tileId,
+          tileId: motherTileId,
           x: emptySpace!.coordinate.x,
           y: emptySpace!.coordinate.y,
         });
@@ -1496,10 +1522,12 @@ describe("Game Reducer - Card System", () => {
       it("rejects move to wrong tile", () => {
         const state = getToEffectPhaseRaptorLower();
         const mother = state.mother!;
-        const baby = state.babies.find((b) => b.tileId !== mother.tileId)!;
+        expect(mother.position).not.toBeNull();
+        const motherTileId = mother.position!.tileId;
+        const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
         // Try to move to a different tile (not mother's tile)
-        const otherTileId = mother.tileId === 2 ? 3 : 2;
+        const otherTileId = motherTileId === 2 ? 3 : 2;
 
         const newState = gameReducer(state, {
           type: "CALL_BABY",
@@ -1510,8 +1538,9 @@ describe("Game Reducer - Card System", () => {
         });
 
         // Baby should not have moved, action remaining unchanged
-        const unmoved = findById(newState.babies, baby.id)!;
-        expect(unmoved.tileId).toBe(baby.tileId);
+        const unmoved = findBabyById(newState.babies, baby.id)!;
+        expect(unmoved.position).not.toBeNull();
+        expect(unmoved.position!.tileId).toBe(baby.position!.tileId);
         expect(newState.effectActionsRemaining).toBe(state.effectActionsRemaining);
       });
     });
@@ -1591,7 +1620,9 @@ describe("Game Reducer - Card System", () => {
             !s.isUnusable &&
             !s.isExit &&
             (s.coordinate.x !== scientist.position!.x || s.coordinate.y !== scientist.position!.y) &&
-            !getAllPieces(state).some((p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y),
+            !getAllBoardPositions(state).some(
+              (p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y,
+            ),
         );
 
         if (!destSpace) return; // Skip if no valid destination
@@ -1631,7 +1662,9 @@ describe("Game Reducer - Card System", () => {
             !s.isUnusable &&
             !s.isExit &&
             (s.coordinate.x !== scientist.position!.x || s.coordinate.y !== scientist.position!.y) &&
-            !getAllPieces(state).some((p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y),
+            !getAllBoardPositions(state).some(
+              (p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y,
+            ),
         );
 
         if (!destSpace) return;
@@ -1663,7 +1696,9 @@ describe("Game Reducer - Card System", () => {
             !s.isUnusable &&
             !s.isExit &&
             (s.coordinate.x !== scientist.position!.x || s.coordinate.y !== scientist.position!.y) &&
-            !getAllPieces(state).some((p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y),
+            !getAllBoardPositions(state).some(
+              (p) => p.tileId === tile.id && p.x === s.coordinate.x && p.y === s.coordinate.y,
+            ),
         );
 
         if (!destSpace) return;
@@ -1862,13 +1897,25 @@ describe("Game Reducer - Action Phase", () => {
   describe("ACTION_MOVE_BABY", () => {
     it("allows raptor to move a baby when raptor is active", () => {
       let state = getToActionPhaseRaptorActive();
-      const baby = state.babies[0]!;
+      const baby = Object.values(state.babies).find((b) => b.position !== null)!;
+      expect(baby.position).not.toBeNull();
       const originalAP = state.actionPoints;
 
       // Helper to check if space is occupied
       const isOccupied = (tileId: number, x: number, y: number) => {
-        if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
-        if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
+        if (
+          state.mother?.position &&
+          state.mother.position.tileId === tileId &&
+          state.mother.position.x === x &&
+          state.mother.position.y === y
+        )
+          return true;
+        if (
+          Object.values(state.babies).some(
+            (b) => b.position && b.position.tileId === tileId && b.position.x === x && b.position.y === y,
+          )
+        )
+          return true;
         const boardScientists = getBoardScientists(state.scientists);
         if (
           boardScientists.some(
@@ -1880,93 +1927,103 @@ describe("Game Reducer - Action Phase", () => {
       };
 
       // Find an adjacent empty space for the baby
-      const babyTile = state.tiles.find((t) => t.id === baby.tileId)!;
+      const babyTile = state.tiles.find((t) => t.id === baby.position!.tileId)!;
       const adjacentSpace = babyTile.spaces.find(
         (s) =>
           !s.hasMountain &&
           !s.isUnusable &&
           !s.isExit &&
-          (Math.abs(s.coordinate.x - baby.x) === 1) !== (Math.abs(s.coordinate.y - baby.y) === 1) &&
-          (s.coordinate.x === baby.x || s.coordinate.y === baby.y) &&
-          !isOccupied(baby.tileId, s.coordinate.x, s.coordinate.y),
+          (Math.abs(s.coordinate.x - baby.position!.x) === 1) !== (Math.abs(s.coordinate.y - baby.position!.y) === 1) &&
+          (s.coordinate.x === baby.position!.x || s.coordinate.y === baby.position!.y) &&
+          !isOccupied(baby.position!.tileId, s.coordinate.x, s.coordinate.y),
       );
 
       if (adjacentSpace) {
         state = gameReducer(state, {
           type: "ACTION_MOVE_BABY",
           pieceId: baby.id,
-          tileId: baby.tileId,
+          tileId: baby.position!.tileId,
           x: adjacentSpace.coordinate.x,
           y: adjacentSpace.coordinate.y,
         });
 
-        const movedBaby = state.babies.find((b) => b.id === baby.id)!;
-        expect(movedBaby.x).toBe(adjacentSpace.coordinate.x);
-        expect(movedBaby.y).toBe(adjacentSpace.coordinate.y);
+        const movedBaby = findBabyById(state.babies, baby.id)!;
+        expect(movedBaby.position).not.toBeNull();
+        expect(movedBaby.position!.x).toBe(adjacentSpace.coordinate.x);
+        expect(movedBaby.position!.y).toBe(adjacentSpace.coordinate.y);
         expect(state.actionPoints).toBe(originalAP - 1);
       }
     });
 
     it("rejects baby movement when scientist is active", () => {
       let state = getToActionPhaseScientistActive();
-      const baby = state.babies[0]!;
-      const originalX = baby.x;
-      const originalY = baby.y;
+      const baby = Object.values(state.babies).find((b) => b.position !== null)!;
+      expect(baby.position).not.toBeNull();
+      const originalX = baby.position!.x;
+      const originalY = baby.position!.y;
 
       state = gameReducer(state, {
         type: "ACTION_MOVE_BABY",
         pieceId: baby.id,
-        tileId: baby.tileId,
-        x: baby.x + 1,
-        y: baby.y,
+        tileId: baby.position!.tileId,
+        x: baby.position!.x + 1,
+        y: baby.position!.y,
       });
 
-      const sameBaby = state.babies.find((b) => b.id === baby.id)!;
-      expect(sameBaby.x).toBe(originalX);
-      expect(sameBaby.y).toBe(originalY);
+      const sameBaby = findBabyById(state.babies, baby.id)!;
+      expect(sameBaby.position).not.toBeNull();
+      expect(sameBaby.position!.x).toBe(originalX);
+      expect(sameBaby.position!.y).toBe(originalY);
     });
 
     it("rejects baby movement when no action points remain", () => {
       let state = getToActionPhaseRaptorActive();
       state = { ...state, actionPoints: 0 };
 
-      const baby = state.babies[0]!;
-      const originalX = baby.x;
+      const baby = Object.values(state.babies).find((b) => b.position !== null)!;
+      expect(baby.position).not.toBeNull();
+      const originalX = baby.position!.x;
 
       state = gameReducer(state, {
         type: "ACTION_MOVE_BABY",
         pieceId: baby.id,
-        tileId: baby.tileId,
-        x: baby.x + 1,
-        y: baby.y,
+        tileId: baby.position!.tileId,
+        x: baby.position!.x + 1,
+        y: baby.position!.y,
       });
 
-      const sameBaby = state.babies.find((b) => b.id === baby.id)!;
-      expect(sameBaby.x).toBe(originalX);
+      const sameBaby = findBabyById(state.babies, baby.id)!;
+      expect(sameBaby.position).not.toBeNull();
+      expect(sameBaby.position!.x).toBe(originalX);
     });
 
     it("rejects movement of sleeping baby", () => {
       let state = getToActionPhaseRaptorActive();
-      const baby = state.babies[0]!;
+      const baby = Object.values(state.babies).find((b) => b.position !== null)!;
+      expect(baby.position).not.toBeNull();
 
       // Put the baby to sleep
       state = {
         ...state,
-        babies: state.babies.map((b) => (b.id === baby.id ? { ...b, isAsleep: true } : b)),
+        babies: {
+          ...state.babies,
+          [baby.id]: { ...baby, isAsleep: true },
+        },
       };
 
-      const originalX = baby.x;
+      const originalX = baby.position!.x;
 
       state = gameReducer(state, {
         type: "ACTION_MOVE_BABY",
         pieceId: baby.id,
-        tileId: baby.tileId,
-        x: baby.x + 1,
-        y: baby.y,
+        tileId: baby.position!.tileId,
+        x: baby.position!.x + 1,
+        y: baby.position!.y,
       });
 
-      const sameBaby = state.babies.find((b) => b.id === baby.id)!;
-      expect(sameBaby.x).toBe(originalX);
+      const sameBaby = findBabyById(state.babies, baby.id)!;
+      expect(sameBaby.position).not.toBeNull();
+      expect(sameBaby.position!.x).toBe(originalX);
     });
   });
 
@@ -1980,8 +2037,19 @@ describe("Game Reducer - Action Phase", () => {
 
       // Helper to check if space is occupied
       const isOccupied = (tileId: number, x: number, y: number) => {
-        if (state.mother?.tileId === tileId && state.mother.x === x && state.mother.y === y) return true;
-        if (state.babies.some((b) => b.tileId === tileId && b.x === x && b.y === y)) return true;
+        if (
+          state.mother?.position &&
+          state.mother.position.tileId === tileId &&
+          state.mother.position.x === x &&
+          state.mother.position.y === y
+        )
+          return true;
+        if (
+          Object.values(state.babies).some(
+            (b) => b.position && b.position.tileId === tileId && b.position.x === x && b.position.y === y,
+          )
+        )
+          return true;
         const allBoardScientists = getBoardScientists(state.scientists);
         if (
           allBoardScientists.some(
@@ -2181,6 +2249,10 @@ describe("Game Reducer - Action Phase", () => {
       const scientist1 = boardScientists[1];
       if (!scientist0?.position || !scientist1?.position) return;
 
+      // Find a baby to mark as asleep this round
+      const babyIds = Object.keys(state.babies);
+      const babyToSleep = state.babies[babyIds[0]];
+
       state = {
         ...state,
         scientists: {
@@ -2195,8 +2267,17 @@ describe("Game Reducer - Action Phase", () => {
             isFrightened: true,
           },
         },
-        asleepThisRound: ["baby-0"],
-        motherPaidWoundCost: true,
+        babies: {
+          ...state.babies,
+          [babyToSleep.id]: {
+            ...babyToSleep,
+            asleepThisRound: true,
+          },
+        },
+        mother: {
+          ...state.mother,
+          paidWoundCost: true,
+        },
       };
 
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
@@ -2211,8 +2292,10 @@ describe("Game Reducer - Action Phase", () => {
       if (updatedScientist1.position) {
         expect(updatedScientist1.frightenedThisRound).toBe(false);
       }
-      expect(state.asleepThisRound).toEqual([]);
-      expect(state.motherPaidWoundCost).toBe(false);
+      // Check baby asleepThisRound is reset
+      expect(state.babies[babyToSleep.id].asleepThisRound).toBe(false);
+      // Check mother paidWoundCost is reset
+      expect(state.mother.paidWoundCost).toBe(false);
     });
 
     it("shuffles discard into deck when deck is empty", () => {
@@ -2264,21 +2347,39 @@ describe("Win Conditions", () => {
         updatedScientists[id] = s; // Keep as reserve
       }
     });
+
+    // Place babies on square tiles using new Record structure
+    const babyTileIds = [1, 3, 6, 7, 8];
+    const updatedBabies: Record<string, BabyState> = {};
+    Object.entries(state.babies).forEach(([id, b], i) => {
+      updatedBabies[id] = {
+        ...b,
+        position: i < 5 ? { tileId: babyTileIds[i], x: 1, y: 1 } : null,
+        isAsleep: false,
+        isEscaped: false,
+        isCaptured: false,
+        asleepThisRound: false,
+      };
+    });
+
+    // Set up mother with new MotherState structure
+    const updatedMother: MotherState = {
+      ...state.mother,
+      position: { tileId: 2, x: 1, y: 1 },
+      sleepTokens: 0,
+      paidWoundCost: false,
+      disappeared: false,
+      observationActive: false,
+    };
+
     // Set up basic pieces
     state = {
       ...state,
       phase: "ACTION_PHASE",
       activePlayer,
       actionPoints: 8,
-      // Place mother on tile 2
-      mother: { ...state.mother, tileId: 2, x: 1, y: 1 },
-      // Place babies on square tiles
-      babies: state.babies.map((b, i) => ({
-        ...b,
-        tileId: i < 5 ? [1, 3, 6, 7, 8][i] : -1,
-        x: 1,
-        y: 1,
-      })),
+      mother: updatedMother,
+      babies: updatedBabies,
       scientists: updatedScientists,
     };
     return state;
@@ -2289,13 +2390,14 @@ describe("Win Conditions", () => {
       let state = createActionPhaseState("raptor");
 
       // Mark 2 babies as already escaped
-      state = {
-        ...state,
-        babies: state.babies.map((b, i) => (i < 2 ? { ...b, tileId: -1, x: -1, y: -1, isEscaped: true } : b)),
-      };
+      const babyIds = Object.keys(state.babies);
+      const updatedBabies: Record<string, BabyState> = { ...state.babies };
+      updatedBabies[babyIds[0]] = { ...updatedBabies[babyIds[0]], position: null, isEscaped: true };
+      updatedBabies[babyIds[1]] = { ...updatedBabies[babyIds[1]], position: null, isEscaped: true };
+      state = { ...state, babies: updatedBabies };
 
       // Find a baby on the board
-      const babyOnBoard = state.babies.find((b) => b.tileId !== -1 && !b.isAsleep);
+      const babyOnBoard = Object.values(state.babies).find((b) => b.position !== null && !b.isAsleep);
       expect(babyOnBoard).toBeDefined();
 
       // Find an L-tile with exit space
@@ -2316,11 +2418,13 @@ describe("Win Conditions", () => {
       // Place baby adjacent to exit
       state = {
         ...state,
-        babies: state.babies.map((b) =>
-          b.id === babyOnBoard!.id
-            ? { ...b, tileId: lTile.id, x: adjacentSpace.coordinate.x, y: adjacentSpace.coordinate.y }
-            : b,
-        ),
+        babies: {
+          ...state.babies,
+          [babyOnBoard!.id]: {
+            ...babyOnBoard!,
+            position: { tileId: lTile.id, x: adjacentSpace.coordinate.x, y: adjacentSpace.coordinate.y },
+          },
+        },
       };
 
       // Move baby to exit
@@ -2367,7 +2471,7 @@ describe("Win Conditions", () => {
       state = {
         ...state,
         scientists: updatedScientists,
-        mother: { ...state.mother, tileId: 2, x: 1, y: 1 },
+        mother: { ...state.mother, position: { tileId: 2, x: 1, y: 1 } },
       };
 
       state = gameReducer(state, {
@@ -2386,7 +2490,10 @@ describe("Win Conditions", () => {
       let state = createActionPhaseState("scientist");
 
       // Give mother 4 sleep tokens
-      state = { ...state, motherSleepTokens: 4 };
+      state = {
+        ...state,
+        mother: { ...state.mother, sleepTokens: 4 },
+      };
 
       // Place scientist and mother adjacent on same tile for clear LOS
       // Scientist at (1,1), mother at (1,2) - adjacent, no obstructions
@@ -2394,10 +2501,15 @@ describe("Win Conditions", () => {
       const firstScientist = boardScientists[0]!;
 
       // Clear any babies from tile 2 to avoid blocking LOS
-      state = {
-        ...state,
-        babies: state.babies.map((b) => (b.tileId === 2 ? { ...b, tileId: 1, x: 0, y: 0 } : b)),
-      };
+      const updatedBabies: Record<string, BabyState> = {};
+      Object.entries(state.babies).forEach(([id, b]) => {
+        if (b.position && b.position.tileId === 2) {
+          updatedBabies[id] = { ...b, position: { tileId: 1, x: 0, y: 0 } };
+        } else {
+          updatedBabies[id] = b;
+        }
+      });
+      state = { ...state, babies: updatedBabies };
 
       state = {
         ...state,
@@ -2411,7 +2523,7 @@ describe("Win Conditions", () => {
             frightenedThisRound: false,
           },
         },
-        mother: { ...state.mother, tileId: 2, x: 1, y: 2 },
+        mother: { ...state.mother, position: { tileId: 2, x: 1, y: 2 } },
       };
 
       state = gameReducer(state, {
@@ -2430,13 +2542,14 @@ describe("Win Conditions", () => {
       let state = createActionPhaseState("scientist");
 
       // Mark 2 babies as already captured
-      state = {
-        ...state,
-        babies: state.babies.map((b, i) => (i < 2 ? { ...b, tileId: -1, x: -1, y: -1, isCaptured: true } : b)),
-      };
+      const babyIds = Object.keys(state.babies);
+      const updatedBabies: Record<string, BabyState> = { ...state.babies };
+      updatedBabies[babyIds[0]] = { ...updatedBabies[babyIds[0]], position: null, isCaptured: true };
+      updatedBabies[babyIds[1]] = { ...updatedBabies[babyIds[1]], position: null, isCaptured: true };
+      state = { ...state, babies: updatedBabies };
 
       // Find a baby on the board and make it asleep
-      const babyOnBoard = state.babies.find((b) => b.tileId !== -1);
+      const babyOnBoard = Object.values(state.babies).find((b) => b.position !== null);
       expect(babyOnBoard).toBeDefined();
 
       // Place baby and scientist adjacent on same tile
@@ -2445,9 +2558,14 @@ describe("Win Conditions", () => {
 
       state = {
         ...state,
-        babies: state.babies.map((b) =>
-          b.id === babyOnBoard!.id ? { ...b, tileId: 2, x: 1, y: 2, isAsleep: true } : b,
-        ),
+        babies: {
+          ...state.babies,
+          [babyOnBoard!.id]: {
+            ...babyOnBoard!,
+            position: { tileId: 2, x: 1, y: 2 },
+            isAsleep: true,
+          },
+        },
         scientists: {
           ...state.scientists,
           [firstScientist.id]: {
@@ -2489,8 +2607,8 @@ describe("Win Conditions", () => {
       expect(state.phase).toBe("MAIN_MENU");
       expect(state.winner).toBeNull();
       expect(state.winCondition).toBeNull();
-      expect(state.motherSleepTokens).toBe(0);
-      expect(state.babies.every((b) => b.tileId === -1)).toBe(true);
+      expect(state.mother.sleepTokens).toBe(0);
+      expect(Object.values(state.babies).every((b) => b.position === null)).toBe(true);
     });
   });
 });

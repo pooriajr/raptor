@@ -1,5 +1,5 @@
 import type { Tile } from "../types/board.ts";
-import type { PieceState, FireToken } from "../types/gameState.ts";
+import type { BoardPosition, FireToken, BabyState, MotherState } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 
 interface Position {
@@ -11,7 +11,7 @@ interface Position {
 /**
  * Check if a position is blocked (has mountain, fire, or piece)
  */
-function isBlocked(tiles: Tile[], pieces: PieceState[], tileId: number, x: number, y: number): boolean {
+function isBlocked(tiles: Tile[], pieces: BoardPosition[], tileId: number, x: number, y: number): boolean {
   const tile = tiles.find((t) => t.id === tileId);
   if (!tile) return true;
 
@@ -29,7 +29,7 @@ function isBlocked(tiles: Tile[], pieces: PieceState[], tileId: number, x: numbe
 /**
  * Check if a position is a valid destination (exists, not blocked, not an exit)
  */
-function isValidDestination(tiles: Tile[], pieces: PieceState[], tileId: number, x: number, y: number): boolean {
+function isValidDestination(tiles: Tile[], pieces: BoardPosition[], tileId: number, x: number, y: number): boolean {
   const tile = tiles.find((t) => t.id === tileId);
   if (!tile) return false;
 
@@ -57,7 +57,7 @@ export type { Position };
  */
 export function findReachablePositions(
   tiles: Tile[],
-  pieces: PieceState[],
+  pieces: BoardPosition[],
   start: Position,
   targets: Position[],
 ): Position[] {
@@ -70,7 +70,7 @@ export function findReachablePositions(
  */
 export function findReachablePositionsWithPaths(
   tiles: Tile[],
-  pieces: PieceState[],
+  pieces: BoardPosition[],
   start: Position,
   targets: Position[],
 ): PathResult[] {
@@ -158,12 +158,14 @@ export function findReachablePositionsWithPaths(
  */
 export function canBabyReachMotherTile(
   tiles: Tile[],
-  pieces: PieceState[],
-  baby: PieceState,
-  mother: PieceState,
+  pieces: BoardPosition[],
+  baby: BabyState,
+  mother: MotherState,
 ): boolean {
+  if (!baby.position || !mother.position) return false;
+
   // Find all valid destination spaces on mother's tile
-  const motherTile = tiles.find((t) => t.id === mother.tileId);
+  const motherTile = tiles.find((t) => t.id === mother.position!.tileId);
   if (!motherTile) return false;
 
   // Filter pieces to exclude the baby we're checking (it can move from its spot)
@@ -183,7 +185,11 @@ export function canBabyReachMotherTile(
   if (destinations.length === 0) return false;
 
   // Check if baby can reach any of these destinations
-  const start: Position = { tileId: baby.tileId, x: baby.x, y: baby.y };
+  const start: Position = {
+    tileId: baby.position.tileId,
+    x: baby.position.x,
+    y: baby.position.y,
+  };
   const reachable = findReachablePositions(tiles, otherPieces, start, destinations);
 
   return reachable.length > 0;
@@ -194,9 +200,9 @@ export function canBabyReachMotherTile(
  */
 export function getReachableDestinationsOnMotherTile(
   tiles: Tile[],
-  pieces: PieceState[],
-  baby: PieceState,
-  mother: PieceState,
+  pieces: BoardPosition[],
+  baby: BabyState,
+  mother: MotherState,
 ): Position[] {
   return getReachableDestinationsOnMotherTileWithPaths(tiles, pieces, baby, mother).map((r) => r.position);
 }
@@ -207,11 +213,13 @@ export function getReachableDestinationsOnMotherTile(
  */
 export function getReachableDestinationsOnMotherTileWithPaths(
   tiles: Tile[],
-  pieces: PieceState[],
-  baby: PieceState,
-  mother: PieceState,
+  pieces: BoardPosition[],
+  baby: BabyState,
+  mother: MotherState,
 ): PathResult[] {
-  const motherTile = tiles.find((t) => t.id === mother.tileId);
+  if (!baby.position || !mother.position) return [];
+
+  const motherTile = tiles.find((t) => t.id === mother.position!.tileId);
   if (!motherTile) return [];
 
   // Filter pieces to exclude the baby we're moving
@@ -228,7 +236,11 @@ export function getReachableDestinationsOnMotherTileWithPaths(
     }
   }
 
-  const start: Position = { tileId: baby.tileId, x: baby.x, y: baby.y };
+  const start: Position = {
+    tileId: baby.position.tileId,
+    x: baby.position.x,
+    y: baby.position.y,
+  };
   return findReachablePositionsWithPaths(tiles, otherPieces, start, destinations);
 }
 
@@ -247,9 +259,10 @@ export interface JeepDestination {
  */
 export function getJeepDestinationsWithPaths(
   tiles: Tile[],
-  pieces: PieceState[],
+  pieces: BoardPosition[],
   _fireTokens: FireToken[],
-  scientist: PieceState,
+  scientistId: string,
+  scientistPos: { tileId: number; x: number; y: number },
   pendingJeepMoves: Array<{
     scientistId: string;
     toTileId: number;
@@ -261,30 +274,23 @@ export function getJeepDestinationsWithPaths(
 
   // Build a map of effective piece positions considering pending jeep moves
   // Scientists with pending moves are at their final pending destination, not original position
-  const effectivePiecePositions: Array<{
-    id: string;
-    tileId: number;
-    x: number;
-    y: number;
-  }> = pieces.map((p) => {
-    if (p.type === "scientist") {
-      // Find the last pending move for this scientist
-      const movesForThis = pendingJeepMoves.filter((m) => m.scientistId === p.id);
-      if (movesForThis.length > 0) {
-        const lastMove = movesForThis[movesForThis.length - 1];
-        return {
-          id: p.id,
-          tileId: lastMove.toTileId,
-          x: lastMove.toX,
-          y: lastMove.toY,
-        };
-      }
+  const effectivePiecePositions: BoardPosition[] = pieces.map((p) => {
+    // Find the last pending move for this piece
+    const movesForThis = pendingJeepMoves.filter((m) => m.scientistId === p.id);
+    if (movesForThis.length > 0) {
+      const lastMove = movesForThis[movesForThis.length - 1];
+      return {
+        id: p.id,
+        tileId: lastMove.toTileId,
+        x: lastMove.toX,
+        y: lastMove.toY,
+      };
     }
-    return { id: p.id, tileId: p.tileId, x: p.x, y: p.y };
+    return p;
   });
 
   // Convert scientist position to global coordinates
-  const startGlobal = localToGlobal(scientist.tileId, scientist.x, scientist.y);
+  const startGlobal = localToGlobal(scientistPos.tileId, scientistPos.x, scientistPos.y);
 
   // Four orthogonal directions
   const directions = [
@@ -318,7 +324,7 @@ export function getJeepDestinationsWithPaths(
       // Stop if another piece is there (not the scientist itself)
       // Use effective positions that account for pending jeep moves
       const isOccupied = effectivePiecePositions.some(
-        (p) => p.id !== scientist.id && p.tileId === local.tileId && p.x === local.localX && p.y === local.localY,
+        (p) => p.id !== scientistId && p.tileId === local.tileId && p.x === local.localX && p.y === local.localY,
       );
       if (isOccupied) break;
 

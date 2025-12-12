@@ -1,4 +1,4 @@
-import type { GameState, GamePhase, Player, ScientistState } from "@/types/gameState.ts";
+import type { GameState, GamePhase, Player, ScientistState, BabyState, MotherState } from "@/types/gameState.ts";
 import { createInitialInteractionState } from "@/types/gameState.ts";
 import { saveGame } from "@/utils/saveLoad.ts";
 import { getEffectLimit } from "@/utils/effectUtils.ts";
@@ -6,6 +6,7 @@ import { drawToHand, discardPlayedCard, calculateRoundResolution, shuffleDiscard
 import { isRaptorSetupComplete } from "@/utils/boardUtils.ts";
 import { countPlacedScientists } from "@/utils/pieceUtils.ts";
 import { CARDS } from "@/data/cards.ts";
+
 // Reset per-round flags on all board scientists
 function resetScientistRoundFlags(scientists: Record<string, ScientistState>): Record<string, ScientistState> {
   const result: Record<string, ScientistState> = {};
@@ -17,6 +18,24 @@ function resetScientistRoundFlags(scientists: Record<string, ScientistState>): R
     }
   }
   return result;
+}
+
+// Reset per-round flags on all babies
+function resetBabyRoundFlags(babies: Record<string, BabyState>): Record<string, BabyState> {
+  const result: Record<string, BabyState> = {};
+  for (const [id, baby] of Object.entries(babies)) {
+    result[id] = { ...baby, asleepThisRound: false };
+  }
+  return result;
+}
+
+// Reset per-round flags on mother
+function resetMotherRoundFlags(mother: MotherState): MotherState {
+  return {
+    ...mother,
+    paidWoundCost: false,
+    disappeared: false,
+  };
 }
 
 export type PhaseAction = { type: "ADVANCE_PHASE" };
@@ -95,7 +114,7 @@ function getNextPhase(state: GameState): GamePhase | null {
 
     case "ACTION_PHASE":
       // If mother disappeared, she needs to return first
-      if (state.motherDisappeared) {
+      if (state.mother.disappeared) {
         return "MOTHER_RETURN";
       }
       return "ROUND_END";
@@ -251,8 +270,7 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
       if (newState.activeEffectCard?.player === "raptor" && newState.activeEffectCard?.effectType === "disappearance") {
         newState = {
           ...newState,
-          mother: { ...newState.mother, tileId: -1, x: 0, y: 0 },
-          motherDisappeared: true,
+          mother: { ...newState.mother, position: null, disappeared: true },
         };
       }
       break;
@@ -270,11 +288,10 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
         ...newState,
         scientistCards: drawToHand(newState.scientistCards),
         raptorCards: drawToHand(newState.raptorCards),
-        // Reset scientist per-round flags (hasUsedAggressiveAction, frightenedThisRound)
+        // Reset per-round flags
         scientists: resetScientistRoundFlags(newState.scientists),
-        asleepThisRound: [],
-        motherPaidWoundCost: false,
-        motherDisappeared: false,
+        babies: resetBabyRoundFlags(newState.babies),
+        mother: resetMotherRoundFlags(newState.mother),
       };
       break;
     }

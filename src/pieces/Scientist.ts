@@ -1,6 +1,6 @@
 import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
-import type { PieceState, FireToken } from "../types/gameState.ts";
+import type { BoardPosition, FireToken } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 
 export class Scientist extends Piece {
@@ -16,7 +16,7 @@ export class Scientist extends Piece {
 
   getValidMoves(
     tiles: Tile[],
-    pieces: PieceState[],
+    pieces: BoardPosition[],
     _fireTokens?: FireToken[],
   ): Array<{ tileId: number; x: number; y: number }> {
     if (this.jeepMode) {
@@ -48,7 +48,7 @@ export class Scientist extends Piece {
   }
 
   // Jeep mode: move in straight lines like mother raptor
-  private getJeepMoves(tiles: Tile[], pieces: PieceState[]): Array<{ tileId: number; x: number; y: number }> {
+  private getJeepMoves(tiles: Tile[], pieces: BoardPosition[]): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
 
     const globalPos = localToGlobal(this.tileId, this.localX, this.localY);

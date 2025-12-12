@@ -1,6 +1,6 @@
 import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
-import type { PieceState, FireToken } from "../types/gameState.ts";
+import type { BoardPosition, FireToken } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 
 export class BabyRaptor extends Piece {
@@ -10,7 +10,7 @@ export class BabyRaptor extends Piece {
 
   getValidMoves(
     tiles: Tile[],
-    _pieces: PieceState[],
+    _pieces: BoardPosition[],
     _fireTokens?: FireToken[],
   ): Array<{ tileId: number; x: number; y: number }> {
     const moves: Array<{ tileId: number; x: number; y: number }> = [];
