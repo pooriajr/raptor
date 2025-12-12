@@ -3,6 +3,7 @@ import { useReducer } from "react";
 
 import GameLayout from "./GameLayout.tsx";
 import { GameContext } from "./state/GameContext.tsx";
+import { RevealProvider } from "./RevealContext.tsx";
 import { gameReducer } from "./state/gameReducer.ts";
 import { createInitialGameState } from "./types/gameState.ts";
 
@@ -11,7 +12,9 @@ function App() {
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>
-      <GameLayout />
+      <RevealProvider>
+        <GameLayout />
+      </RevealProvider>
     </GameContext.Provider>
   );
 }

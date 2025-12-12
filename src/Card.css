@@ -43,6 +43,10 @@
 }
 
 /* Raptor card colors */
+.Card.raptor .card-face {
+  border-color: #5a7a52;
+}
+
 .Card.raptor .card-front {
   background: linear-gradient(145deg, #2d5a27, #1a3518);
   color: #90ee90;
@@ -53,6 +57,10 @@
 }
 
 /* Scientist card colors */
+.Card.scientist .card-face {
+  border-color: #a08060;
+}
+
 .Card.scientist .card-front {
   background: linear-gradient(145deg, #8a5a1a, #5a3810);
   color: #ffb347;
@@ -76,12 +84,18 @@
   margin: 6px 0;
   filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   line-height: 1;
   flex: 1;
   padding-top: 20px;
+}
+
+.card-icon .icon {
+  display: inline-block;
 }
 
 .card-effect {

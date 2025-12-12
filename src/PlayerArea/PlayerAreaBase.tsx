@@ -1,4 +1,3 @@
-import { LayoutGroup } from "framer-motion";
 import CardDeck from "./CardDeck";
 import Hand from "./Hand";
 import DiscardPile from "./DiscardPile";
@@ -70,7 +69,7 @@ function PlayerAreaBase({
   })();
 
   return (
-    <LayoutGroup id={`${player}-cards`}>
+    <>
       <div className={`player-area ${player}-area`}>
         <div className="player-area-left">
           <CardDeck deck={cards.deck} />
@@ -94,7 +93,7 @@ function PlayerAreaBase({
           <DoneButton player={player} />
         </div>
       </div>
-    </LayoutGroup>
+    </>
   );
 }
 

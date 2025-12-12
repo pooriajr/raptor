@@ -109,14 +109,11 @@ function Card({
       <div className="card-face card-front">
         <div className="card-value">{value}</div>
         <div className="card-icon">
-          {effectCount <= 2 ? (
-            icon.repeat(Math.max(1, effectCount))
-          ) : (
-            <>
-              <div>{icon.repeat(2)}</div>
-              <div>{icon.repeat(effectCount - 2)}</div>
-            </>
-          )}
+          {Array.from({ length: Math.max(1, effectCount) }, (_, i) => (
+            <span key={i} className="icon">
+              {icon}
+            </span>
+          ))}
         </div>
         <div className="card-effect">{name}</div>
       </div>

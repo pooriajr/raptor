@@ -27,6 +27,8 @@ function Hand({ player }: HandProps) {
     (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
     (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
 
+  const isCardReveal = state.phase === "CARD_REVEAL";
+
   // Privacy screen state - resets when entering card selection phase
   const [privacyDismissed, setPrivacyDismissed] = useState(false);
 
@@ -60,6 +62,12 @@ function Hand({ player }: HandProps) {
       <div className="hand-cards">
         {handCards.map((card, index) => {
           const isSelected = card.id === selectedCardId;
+
+          // During CARD_REVEAL, don't render the selected card - it's in the reveal
+          if (isCardReveal && isSelected) {
+            return null;
+          }
+
           const isDimmed = hasSelection && !isSelected;
           const cardFaceDown = faceDown || (faceDownUnselected && !isSelected);
 

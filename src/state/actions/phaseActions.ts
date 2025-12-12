@@ -198,7 +198,6 @@ function runExitEffects(state: GameState, exitingPhase: GamePhase): GameState {
     }
     newState = {
       ...newState,
-      effectActionsRemaining: 0,
       undoSnapshot: null,
     };
   }

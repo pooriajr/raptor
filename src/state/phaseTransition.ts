@@ -54,7 +54,6 @@ export function transitionToPhase(state: GameState, phase: GamePhase): GameState
   if (state.phase === "EFFECT_PHASE" && phase !== "EFFECT_PHASE") {
     newState = {
       ...newState,
-      effectActionsRemaining: 0,
       undoSnapshot: null,
     };
   }

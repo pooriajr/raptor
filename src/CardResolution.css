@@ -5,10 +5,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(145deg, #252525, #1a1a1a);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 1001;
 }
 
 .CardResolution .half {

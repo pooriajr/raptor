@@ -1,11 +1,30 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
+import { useReveal } from "./RevealContext.tsx";
 import "./CardResolution.css";
 
 function CardResolution() {
   const { state } = useGame();
+  const { stage: revealStage, effectPlayer } = useReveal();
 
   const { activeEffectCard, actionPoints, effectActionsRemaining } = state;
+
+  const isCardReveal = state.phase === "CARD_REVEAL";
+  const isRoundEnd = state.phase === "ROUND_END";
+
+  // During CARD_REVEAL, control visibility based on reveal stage
+  const isShowingEffect = revealStage === "show-effect" || revealStage === "show-ap" || revealStage === "complete";
+  const isShowingAP = revealStage === "show-ap" || revealStage === "complete";
+
+  // Hide if there's no effect or action points to display
+  if (!activeEffectCard && actionPoints === 0) {
+    return null;
+  }
+
+  // During CARD_REVEAL, hide until reveal reaches the appropriate stage
+  if (isCardReveal && !isShowingEffect) {
+    return null;
+  }
 
   // Show resolution when we have an active effect card or action points
   const showResolution = activeEffectCard !== null || actionPoints > 0;
@@ -16,8 +35,6 @@ function CardResolution() {
   let scientistActive = false;
   let raptorDone = false;
   let scientistDone = false;
-
-  const isRoundEnd = state.phase === "ROUND_END";
 
   if (showResolution) {
     if (activeEffectCard) {
@@ -79,14 +96,35 @@ function CardResolution() {
     }
   }
 
-  const raptorClassName = `half raptor${raptorActive ? " active" : ""}${raptorDone ? " done" : ""}`;
-  const scientistClassName = `half scientist${scientistActive ? " active" : ""}${scientistDone ? " done" : ""}`;
+  // During CARD_REVEAL, don't dim either side
+  const raptorClassName = `half raptor${raptorActive ? " active" : ""}${!isCardReveal && raptorDone ? " done" : ""}`;
+  const scientistClassName = `half scientist${scientistActive ? " active" : ""}${!isCardReveal && scientistDone ? " done" : ""}`;
+
+  // During reveal, control which half is visible based on stage
+  // Effect player's half shows first (show-effect), then AP player's half (show-ap)
+  const raptorGetsEffect = effectPlayer === "raptor";
+  const showRaptorHalf = isCardReveal ? (raptorGetsEffect ? isShowingEffect : isShowingAP) : true;
+  const showScientistHalf = isCardReveal ? (raptorGetsEffect ? isShowingAP : isShowingEffect) : true;
 
   return (
     <div className="CardResolution">
-      <div className={raptorClassName}>{raptorContent}</div>
+      <motion.div
+        className={raptorClassName}
+        initial={isCardReveal ? { opacity: 0, scale: 0.8 } : false}
+        animate={{ opacity: showRaptorHalf ? 1 : 0, scale: showRaptorHalf ? 1 : 0.8 }}
+        transition={{ duration: 0.3 }}
+      >
+        {raptorContent}
+      </motion.div>
       <div className="divider" />
-      <div className={scientistClassName}>{scientistContent}</div>
+      <motion.div
+        className={scientistClassName}
+        initial={isCardReveal ? { opacity: 0, scale: 0.8 } : false}
+        animate={{ opacity: showScientistHalf ? 1 : 0, scale: showScientistHalf ? 1 : 0.8 }}
+        transition={{ duration: 0.3 }}
+      >
+        {scientistContent}
+      </motion.div>
     </div>
   );
 }

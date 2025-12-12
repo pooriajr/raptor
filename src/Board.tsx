@@ -1,6 +1,6 @@
 import "./Board.css";
 import Tile from "./Tile.tsx";
-import { LayoutGroup } from "framer-motion";
+
 import DevPanel from "./DevPanel.tsx";
 import RoundEndTimer from "./RoundEndTimer.tsx";
 import { useGame } from "./state/GameContext.tsx";
@@ -19,13 +19,11 @@ function Board() {
     <div className="board-container">
       <DevPanel />
       {state.phase === "ROUND_END" && <RoundEndTimer />}
-      <LayoutGroup>
-        <div className="Board">
-          {state.tiles.map((tile) => (
-            <Tile key={tile.id} tile={tile} />
-          ))}
-        </div>
-      </LayoutGroup>
+      <div className="Board">
+        {state.tiles.map((tile) => (
+          <Tile key={tile.id} tile={tile} />
+        ))}
+      </div>
     </div>
   );
 }

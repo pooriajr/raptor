@@ -66,14 +66,24 @@
   }
 }
 
-.card-wrapper:nth-child(1) {
+/* Fan effect for 3 cards */
+.hand-cards:has(.card-wrapper:nth-child(3)) .card-wrapper:nth-child(1) {
   animation: fan-left 0.3s ease 0.2s forwards;
 }
 
-.card-wrapper:nth-child(2) {
+.hand-cards:has(.card-wrapper:nth-child(3)) .card-wrapper:nth-child(2) {
   animation: fan-middle 0.3s ease 0.3s forwards;
 }
 
-.card-wrapper:nth-child(3) {
+.hand-cards:has(.card-wrapper:nth-child(3)) .card-wrapper:nth-child(3) {
   animation: fan-right 0.3s ease 0.4s forwards;
+}
+
+/* Fan effect for 2 cards */
+.hand-cards:not(:has(.card-wrapper:nth-child(3))) .card-wrapper:nth-child(1) {
+  animation: fan-left 0.3s ease 0.2s forwards;
+}
+
+.hand-cards:not(:has(.card-wrapper:nth-child(3))) .card-wrapper:nth-child(2) {
+  animation: fan-right 0.3s ease 0.3s forwards;
 }
