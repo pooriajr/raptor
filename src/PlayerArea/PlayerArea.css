@@ -123,6 +123,52 @@
   transition: opacity 0.3s ease;
 }
 
+/* Animated gradient border for active player */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.game-layout.active-raptor .raptor-area {
+  border-bottom: none;
+  position: relative;
+}
+
+.game-layout.active-raptor .raptor-area::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: -1;
+  background: linear-gradient(90deg, #2d5a27 0%, #2d5a27 40%, #90ee90 50%, #2d5a27 60%, #2d5a27 100%);
+  background-size: 200% 100%;
+  animation: gradient-flow 2s linear infinite;
+}
+
+.game-layout.active-scientist .scientist-area {
+  border-top: none;
+  position: relative;
+}
+
+.game-layout.active-scientist .scientist-area::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: -1;
+  background: linear-gradient(90deg, #5a3810 0%, #5a3810 40%, #ffb347 50%, #5a3810 60%, #5a3810 100%);
+  background-size: 200% 100%;
+  animation: gradient-flow 2s linear infinite;
+}
+
 /* Dim inactive player area */
 .game-layout.active-scientist .raptor-area {
   opacity: 0.6;
