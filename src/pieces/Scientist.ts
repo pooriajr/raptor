@@ -36,6 +36,13 @@ export class Scientist extends Piece {
     for (const adjPos of adjacentPositions) {
       const localPos = globalToLocal(tiles, adjPos.globalX, adjPos.globalY);
       if (localPos) {
+        // Scientists can't move onto exit spaces
+        const targetTile = tiles.find((t) => t.id === localPos.tileId);
+        const targetSpace = targetTile?.spaces.find(
+          (s) => s.coordinate.x === localPos.localX && s.coordinate.y === localPos.localY,
+        );
+        if (targetSpace?.isExit) continue;
+
         moves.push({
           tileId: localPos.tileId,
           x: localPos.localX,
@@ -78,8 +85,8 @@ export class Scientist extends Piece {
         );
         if (!targetSpace) break;
 
-        // Stop if mountain
-        if (targetSpace.hasMountain) break;
+        // Stop if mountain or exit (scientists can't enter exits)
+        if (targetSpace.hasMountain || targetSpace.isExit) break;
 
         // Stop if another piece is there
         const isOccupied = pieces.some(

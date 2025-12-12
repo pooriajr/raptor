@@ -39,10 +39,14 @@ function Space({ space }: SpaceProps) {
 
   const spacePosition = { tileId, x: space.coordinate.x, y: space.coordinate.y };
 
+  // Determine exit direction for triangle shape
+  const exitDirection = space.isExit ? (tileId === 0 || tileId === 5 ? "left" : "right") : undefined;
+
   return (
     <div
       className="space"
       data-exit={space.isExit}
+      data-exit-direction={exitDirection}
       data-mountain={space.hasMountain}
       data-unusable={space.isUnusable}
       data-style={style}
@@ -83,9 +87,9 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId, mother, spa
     return <span className="mountain">⛰️</span>;
   }
 
-  // Priority 2: Exit
+  // Priority 2: Exit - just render empty (triangle shape is via CSS)
   if (space.isExit) {
-    return <span className="exit">🚪</span>;
+    return null;
   }
 
   // Priority 3: Piece (non-mother)

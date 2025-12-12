@@ -51,27 +51,42 @@ export type Tile = SquareTile | LTile;
 // Pattern represents which spaces have mountains (x,y coordinates)
 type MountainPattern = Array<{ x: number; y: number }>;
 
+// Rotate a pattern 90° clockwise: (x, y) -> (2-y, x) for a 3x3 grid
+function rotatePattern90(pattern: MountainPattern): MountainPattern {
+  return pattern.map(({ x, y }) => ({ x: 2 - y, y: x }));
+}
+
+// Rotate a pattern by a random number of 90° turns (0, 1, 2, or 3)
+function randomlyRotatePattern(pattern: MountainPattern): MountainPattern {
+  const rotations = Math.floor(Math.random() * 4);
+  let result = pattern;
+  for (let i = 0; i < rotations; i++) {
+    result = rotatePattern90(result);
+  }
+  return result;
+}
+
 const MOUNTAIN_PATTERNS: MountainPattern[] = [
-  // Pattern 0: No mountains
-  [],
-  // Pattern 1: Center mountain (1 mountain)
+  // Pattern A: 1 mountain in the middle
   [{ x: 1, y: 1 }],
-  // Pattern 2: Corner mountain (1 mountain)
+  // Pattern B: 1 mountain in a corner
   [{ x: 0, y: 0 }],
-  // Pattern 3: Two opposite corners (2 mountains)
+  // Pattern C: 1 mountain on center of an edge
+  [{ x: 1, y: 0 }],
+  // Pattern D: 2 mountains on opposite corners
   [
     { x: 0, y: 0 },
     { x: 2, y: 2 },
   ],
-  // Pattern 4: Two adjacent corners (2 mountains)
+  // Pattern E: 1 mountain on [0,1], 1 on [2,0]
   [
-    { x: 0, y: 0 },
+    { x: 0, y: 1 },
     { x: 2, y: 0 },
   ],
-  // Pattern 5: Center and corner (2 mountains)
+  // Pattern F: 1 mountain on [0,1], 1 on [1,1]
   [
+    { x: 0, y: 1 },
     { x: 1, y: 1 },
-    { x: 2, y: 0 },
   ],
 ];
 
@@ -108,8 +123,10 @@ export function createBoard(): Tile[] {
   const rightTop = leftExitAtTop ? "bottom" : "top";
   const rightBottom = leftExitAtTop ? "top" : "bottom";
 
-  // Shuffle mountain patterns and assign to the 6 square tiles
-  const shuffledPatterns = [...MOUNTAIN_PATTERNS].sort(() => Math.random() - 0.5);
+  // Shuffle mountain patterns, randomly rotate each, and assign to the 6 square tiles
+  const shuffledPatterns = [...MOUNTAIN_PATTERNS]
+    .sort(() => Math.random() - 0.5)
+    .map((pattern) => randomlyRotatePattern(pattern));
 
   return [
     createLShapedTile(0, "left", leftExitAtTop ? "top" : "bottom"),

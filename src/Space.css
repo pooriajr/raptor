@@ -11,11 +11,19 @@
   font-size: 18px;
 }
 
-/* Exit spaces (half-spaces) */
+/* Exit spaces (triangle shape pointing outward) */
 .space[data-exit="true"] {
-  background-color: #8b7355;
-  border-color: #6b5335;
-  opacity: 0.8;
+  background-color: #fffdf2;
+}
+
+/* Left-side exits: triangle pointing left */
+.space[data-exit-direction="left"] {
+  clip-path: polygon(100% 0%, 100% 100%, 0% 50%);
+}
+
+/* Right-side exits: triangle pointing right */
+.space[data-exit-direction="right"] {
+  clip-path: polygon(0% 0%, 0% 100%, 100% 50%);
 }
 
 /* Spaces with mountains */

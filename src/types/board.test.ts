@@ -314,18 +314,18 @@ describe("Board Generation", () => {
         return count + tile.spaces.filter((s) => s.hasMountain).length;
       }, 0);
 
-      // Should have 0+1+1+2+2+2 = 8 mountains total
-      expect(totalMountains).toBe(8);
+      // Should have 1+1+1+2+2+2 = 9 mountains total
+      expect(totalMountains).toBe(9);
     });
 
-    it("has correct mountain distribution: one tile with 0, two with 1, three with 2", () => {
+    it("has correct mountain distribution: three tiles with 1, three with 2", () => {
       const tiles = createBoard();
       const squareTiles = tiles.filter((t) => t.shape === "square");
 
       const mountainCounts = squareTiles.map((tile) => tile.spaces.filter((s) => s.hasMountain).length);
       mountainCounts.sort();
 
-      expect(mountainCounts).toEqual([0, 1, 1, 2, 2, 2]);
+      expect(mountainCounts).toEqual([1, 1, 1, 2, 2, 2]);
     });
 
     it("L-tiles never have mountains", () => {

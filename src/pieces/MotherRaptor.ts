@@ -49,8 +49,8 @@ export class MotherRaptor extends Piece {
         );
         if (!targetSpace) break;
 
-        // Stop if mountain
-        if (targetSpace.hasMountain) break;
+        // Stop if mountain or exit (mother can't enter exits)
+        if (targetSpace.hasMountain || targetSpace.isExit) break;
 
         // Stop if another piece is there
         const isOccupied = pieces.some(
