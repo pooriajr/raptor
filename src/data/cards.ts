@@ -67,7 +67,7 @@ export const CARDS: Record<CardId, CardInfo> = {
     name: "Disappearance/Observation",
     icon: "👁️",
     description: "Remove mother from board temporarily. See opponent's next card before choosing yours.",
-    effectCount: 0,
+    effectCount: 1,
     shufflesDeck: false,
   },
   raptor_3_fear: {
@@ -111,7 +111,7 @@ export const CARDS: Record<CardId, CardInfo> = {
     name: "Disappearance/Observation",
     icon: "👁️",
     description: "Remove mother from board temporarily. See opponent's next card before choosing yours.",
-    effectCount: 0,
+    effectCount: 1,
     shufflesDeck: false,
   },
   raptor_7_recovery: {

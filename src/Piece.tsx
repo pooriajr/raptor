@@ -1,6 +1,6 @@
 import "./Piece.css";
 import { motion } from "framer-motion";
-import type { BabyState, MotherState } from "./types/gameState.ts";
+import type { BabyState } from "./types/gameState.ts";
 import type { PieceType } from "./utils/pieceUtils.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
 
@@ -34,11 +34,6 @@ function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
 // Helper to create props from BabyState
 export function BabyPiece({ baby, isSelected }: { baby: BabyState; isSelected: boolean }) {
   return <Piece id={baby.id} type="baby" isAsleep={baby.isAsleep} isSelected={isSelected} />;
-}
-
-// Helper to create props from MotherState
-export function MotherPiece({ mother, isSelected }: { mother: MotherState; isSelected: boolean }) {
-  return <Piece id={mother.id} type="mother" isSelected={isSelected} />;
 }
 
 export default Piece;

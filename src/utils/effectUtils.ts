@@ -32,7 +32,7 @@ export function getEffectInstruction(state: GameState): string {
   } else if (effectType === "mothers_call") {
     return `Click a baby raptor, then a destination on mother's tile (${used}/${limit})`;
   } else if (effectType === "disappearance") {
-    return "Mother disappears from the board";
+    return "Click the mother to make her disappear";
   } else if (effectType === "recovery") {
     return `Click sleeping babies to wake up, or remove mother's sleep tokens (${used}/${limit})`;
   } else if (effectType === "reinforcements") {

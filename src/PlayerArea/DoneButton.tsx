@@ -56,7 +56,7 @@ function DoneButton({ player }: DoneButtonProps) {
     }
     if (isMotherReturn) {
       // Only enabled if mother has been placed back on the board
-      return state.mother.tileId === -1;
+      return state.mother.position === null;
     }
     // Not this player's turn
     return true;

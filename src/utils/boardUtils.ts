@@ -1,12 +1,6 @@
 import type { GameState, BoardPosition } from "../types/gameState.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
-import {
-  isMotherPlaced,
-  getBoardBabies,
-  countPlacedBabies,
-  motherToBoardPosition,
-  boardBabiesToBoardPositions,
-} from "./pieceUtils.ts";
+import { isMotherPlaced, countPlacedBabies, motherToBoardPosition, boardBabiesToBoardPositions } from "./pieceUtils.ts";
 import { boardScientistsToBoardPositions } from "./scientistUtils.ts";
 
 // Helper to find an item by id in an array

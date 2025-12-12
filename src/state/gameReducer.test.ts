@@ -7,15 +7,10 @@ import {
   type BabyState,
   type MotherState,
 } from "../types/gameState";
-import {
-  countPlacedBabies,
-  countPlacedScientists,
-  isMotherPlaced,
-  getUnplacedBabies,
-  getBoardBabies,
-} from "../utils/pieceUtils";
+import { countPlacedBabies, countPlacedScientists, isMotherPlaced, getUnplacedBabies } from "../utils/pieceUtils";
 import { getReserveCount, getBoardScientists } from "../utils/scientistUtils";
 import { raptorCards, scientistCards } from "@/utils/cardUtils";
+import { getReachableDestinationsOnMotherTile } from "../utils/pathfinding";
 
 // Helper to find baby by id in babies Record
 function findBabyById(babies: Record<string, BabyState>, id: string): BabyState | undefined {
@@ -1497,23 +1492,18 @@ describe("Game Reducer - Card System", () => {
         const motherTileId = mother.position!.tileId;
         const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
-        // Find an empty space on mother's tile
-        const motherTile = state.tiles.find((t) => t.id === motherTileId)!;
+        // Use pathfinding to find a valid reachable destination on mother's tile
         const allPieces = getAllBoardPositions(state);
-        const emptySpace = motherTile.spaces.find(
-          (s) =>
-            !s.isUnusable &&
-            !s.hasMountain &&
-            !s.isExit &&
-            !allPieces.some((p) => p.tileId === motherTileId && p.x === s.coordinate.x && p.y === s.coordinate.y),
-        );
+        const reachableDestinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
+        expect(reachableDestinations.length).toBeGreaterThan(0);
+        const destination = reachableDestinations[0];
 
         state = gameReducer(state, {
           type: "CALL_BABY",
           babyId: baby.id,
-          tileId: motherTileId,
-          x: emptySpace!.coordinate.x,
-          y: emptySpace!.coordinate.y,
+          tileId: destination.tileId,
+          x: destination.x,
+          y: destination.y,
         });
 
         expect(state.effectActionsRemaining).toBe(initialRemaining - 1);

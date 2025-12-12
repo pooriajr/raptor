@@ -6,7 +6,8 @@ import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
 import { parseSpaceId } from "./types/spaceActions.ts";
 import { buildSpaceActions } from "./utils/buildSpaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
-import { BabyPiece, MotherPiece } from "./Piece.tsx";
+import { BabyPiece } from "./Piece.tsx";
+import MotherPiece from "./MotherPiece.tsx";
 import ScientistPiece from "./ScientistPiece.tsx";
 
 interface SpaceProps {
@@ -22,7 +23,7 @@ function Space({ space }: SpaceProps) {
   // Parse space.id to get tileId for piece lookup
   const { tileId } = parseSpaceId(space.id);
 
-  // Find piece on this space
+  // Find piece on this space (excluding mother - she handles her own rendering)
   const pieceOnSpace = findPieceOnSpace(state, tileId, space.coordinate.x, space.coordinate.y);
 
   // Get interaction state for current player
@@ -36,6 +37,8 @@ function Space({ space }: SpaceProps) {
     }
   };
 
+  const spacePosition = { tileId, x: space.coordinate.x, y: space.coordinate.y };
+
   return (
     <div
       className="space"
@@ -45,7 +48,14 @@ function Space({ space }: SpaceProps) {
       data-style={style}
       onClick={handleClick}
     >
-      <SpaceContent space={space} pieceOnSpace={pieceOnSpace} style={style} selectedActorId={selectedActorId} />
+      <SpaceContent
+        space={space}
+        pieceOnSpace={pieceOnSpace}
+        style={style}
+        selectedActorId={selectedActorId}
+        mother={state.mother}
+        spacePosition={spacePosition}
+      />
     </div>
   );
 }
@@ -63,9 +73,11 @@ interface SpaceContentProps {
   pieceOnSpace: PieceOnSpace;
   style?: SpaceStyle;
   selectedActorId: string | null;
+  mother: MotherState;
+  spacePosition: { tileId: number; x: number; y: number };
 }
 
-function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceContentProps) {
+function SpaceContent({ space, pieceOnSpace, style, selectedActorId, mother, spacePosition }: SpaceContentProps) {
   // Priority 1: Mountain
   if (space.hasMountain) {
     return <span className="mountain">⛰️</span>;
@@ -76,25 +88,37 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId }: SpaceCont
     return <span className="exit">🚪</span>;
   }
 
-  // Priority 3: Piece
-  if (pieceOnSpace) {
+  // Priority 3: Piece (non-mother)
+  if (pieceOnSpace && pieceOnSpace.type !== "mother") {
     const isSelected = selectedActorId === pieceOnSpace.data.id;
     switch (pieceOnSpace.type) {
       case "scientist":
         return <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} />;
       case "baby":
         return <BabyPiece baby={pieceOnSpace.data} isSelected={isSelected} />;
-      case "mother":
-        return <MotherPiece mother={pieceOnSpace.data} isSelected={isSelected} />;
     }
   }
+
+  // Mother - handles her own AnimatePresence for exit animation
+  const isMotherSelected = selectedActorId === mother.id;
+  const motherElement = <MotherPiece mother={mother} isSelected={isMotherSelected} spacePosition={spacePosition} />;
+
+  // If mother is here or was here (for exit animation), render her
+  if (pieceOnSpace?.type === "mother") {
+    return motherElement;
+  }
+
+  // Always render MotherPiece - it will return null if not relevant to this space
+  // This allows it to handle exit animations when mother disappears
+  const motherMaybeHere = motherElement;
 
   // Priority 4: Fire token
   if (style === "fire") {
     return <span className="fire-token">🔥</span>;
   }
 
-  return null;
+  // Return mother element (which may be null if she's not here and wasn't here)
+  return motherMaybeHere;
 }
 
 // Helper to find piece on a specific space

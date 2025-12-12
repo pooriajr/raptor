@@ -266,13 +266,7 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
     case "EFFECT_PHASE": {
       // Save snapshot for undo
       newState = saveUndoSnapshot(newState);
-      // Auto-disappearance for raptor disappearance effect
-      if (newState.activeEffectCard?.player === "raptor" && newState.activeEffectCard?.effectType === "disappearance") {
-        newState = {
-          ...newState,
-          mother: { ...newState.mother, position: null, disappeared: true },
-        };
-      }
+      // Note: Disappearance is now triggered by clicking on mother, not automatic
       break;
     }
 

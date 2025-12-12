@@ -1,4 +1,4 @@
-import type { GameState, BoardPosition, BabyState, ScientistState, MotherState } from "../types/gameState";
+import type { GameState } from "../types/gameState";
 import type { GameAction } from "../state/gameReducer";
 import {
   createSpaceId,
@@ -10,12 +10,12 @@ import {
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates";
 import { getReachableDestinationsOnMotherTile, getJeepDestinationsWithPaths } from "./pathfinding";
 import { getCurrentEffectType } from "./effectUtils";
-import { isMotherPlaced, getBoardBabies } from "./pieceUtils";
+import { isMotherPlaced } from "./pieceUtils";
 import { MotherRaptor } from "../pieces/MotherRaptor";
 import { BabyRaptor } from "../pieces/BabyRaptor";
 import { Scientist } from "../pieces/Scientist";
 import { hasLineOfSight } from "./lineOfSight";
-import { getBoardScientists, scientistToBoardPosition, getReserveCount } from "./scientistUtils";
+import { getReserveCount } from "./scientistUtils";
 import { getAllBoardPositions } from "./boardUtils";
 
 // Helper to check if a space is occupied
@@ -365,6 +365,16 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
         const action: GameAction = { type: "PUT_BABY_TO_SLEEP", pieceId: baby.id };
         set(createSpaceId(baby.position.tileId, baby.position.x, baby.position.y), "selectable", action);
       }
+    }
+
+    // Disappearance: highlight mother to trigger disappearance
+    if (effectType === "disappearance" && state.mother.position && !state.mother.disappeared) {
+      const action: GameAction = { type: "DISAPPEARANCE" };
+      set(
+        createSpaceId(state.mother.position.tileId, state.mother.position.x, state.mother.position.y),
+        "selectable",
+        action,
+      );
     }
 
     // Recovery: highlight sleeping babies that can be woken

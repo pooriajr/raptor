@@ -34,7 +34,9 @@ function DevPanel() {
 
       for (const tile of tilesForBabies) {
         if (babiesPlaced >= 5) break;
-        const hasRaptor = state.mother?.tileId === tile.id || state.babies.some((b) => b.tileId === tile.id);
+        const hasRaptor =
+          state.mother.position?.tileId === tile.id ||
+          Object.values(state.babies).some((b) => b.position?.tileId === tile.id);
         if (hasRaptor) continue;
 
         const space = tile.spaces.find((s) => !s.hasMountain)!;
@@ -54,9 +56,7 @@ function DevPanel() {
 
       for (const tile of lTiles) {
         if (scientistsPlaced >= 4) break;
-        const hasScientist = Object.values(state.scientists).some(
-          (s) => s.status.type === "board" && s.status.tileId === tile.id,
-        );
+        const hasScientist = Object.values(state.scientists).some((s) => s.position?.tileId === tile.id);
         if (hasScientist) continue;
 
         const space = tile.spaces.find((s) => !s.isExit && !s.isUnusable)!;
