@@ -62,10 +62,11 @@
   transition: filter 0.8s ease;
 }
 
-/* Escaped babies - green */
+/* Escaped babies - dark green */
 .tracker-row.escaped .tracker-pip {
-  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #2d5a27) drop-shadow(-1px 0 0 #2d5a27)
-    drop-shadow(0 1px 0 #2d5a27) drop-shadow(0 -1px 0 #2d5a27);
+  filter: brightness(0) drop-shadow(1px 0 0 #2d5a27) drop-shadow(-1px 0 0 #2d5a27) drop-shadow(0 1px 0 #2d5a27)
+    drop-shadow(0 -1px 0 #2d5a27);
+  opacity: 0.5;
 }
 
 .tracker-row.escaped .tracker-pip-slot.has-baby .tracker-pip.empty {
@@ -73,10 +74,11 @@
     drop-shadow(0 1px 0 #8bc34a) drop-shadow(0 -1px 0 #8bc34a);
 }
 
-/* Sleep tokens - red */
+/* Sleep tokens - dark red */
 .tracker-row.sleep-tokens .tracker-pip {
-  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #5a2020) drop-shadow(-1px 0 0 #5a2020)
-    drop-shadow(0 1px 0 #5a2020) drop-shadow(0 -1px 0 #5a2020);
+  filter: brightness(0) drop-shadow(1px 0 0 #5a2020) drop-shadow(-1px 0 0 #5a2020) drop-shadow(0 1px 0 #5a2020)
+    drop-shadow(0 -1px 0 #5a2020);
+  opacity: 0.5;
 }
 
 .tracker-row.sleep-tokens .tracker-pip-slot.has-pip .tracker-pip.empty {
@@ -84,10 +86,11 @@
     drop-shadow(0 1px 0 #ff4444) drop-shadow(0 -1px 0 #ff4444);
 }
 
-/* Captured babies - orange */
+/* Captured babies - dark orange */
 .tracker-row.captured .tracker-pip {
-  filter: grayscale(1) contrast(0) brightness(0) drop-shadow(1px 0 0 #6b4a20) drop-shadow(-1px 0 0 #6b4a20)
-    drop-shadow(0 1px 0 #6b4a20) drop-shadow(0 -1px 0 #6b4a20);
+  filter: brightness(0) drop-shadow(1px 0 0 #6b4a20) drop-shadow(-1px 0 0 #6b4a20) drop-shadow(0 1px 0 #6b4a20)
+    drop-shadow(0 -1px 0 #6b4a20);
+  opacity: 0.5;
 }
 
 .tracker-row.captured .tracker-pip-slot.has-baby .tracker-pip.empty {

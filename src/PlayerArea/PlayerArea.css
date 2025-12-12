@@ -126,10 +126,10 @@
 /* Animated gradient border for active player */
 @keyframes gradient-flow {
   0% {
-    background-position: 0% 50%;
+    background-position: 200% 50%;
   }
   100% {
-    background-position: 200% 50%;
+    background-position: 0% 50%;
   }
 }
 
@@ -146,7 +146,7 @@
   right: 0;
   height: 2px;
   z-index: -1;
-  background: linear-gradient(90deg, #2d5a27 0%, #2d5a27 40%, #90ee90 50%, #2d5a27 60%, #2d5a27 100%);
+  background: linear-gradient(90deg, #2d5a27 0%, #2d5a27 30%, #90ee90 50%, #2d5a27 70%, #2d5a27 100%);
   background-size: 200% 100%;
   animation: gradient-flow 2s linear infinite;
 }
@@ -164,7 +164,7 @@
   right: 0;
   height: 2px;
   z-index: -1;
-  background: linear-gradient(90deg, #5a3810 0%, #5a3810 40%, #ffb347 50%, #5a3810 60%, #5a3810 100%);
+  background: linear-gradient(90deg, #5a3810 0%, #5a3810 30%, #ffb347 50%, #5a3810 70%, #5a3810 100%);
   background-size: 200% 100%;
   animation: gradient-flow 2s linear infinite;
 }

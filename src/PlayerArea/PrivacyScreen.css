@@ -1,24 +1,30 @@
 .privacy-screen {
   position: absolute;
-  top: 0px;
-  left: -20px;
-  right: -20px;
-  bottom: 20px;
+  left: 50%;
+  margin-left: -300px;
+  width: 600px;
+  height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
   cursor: pointer;
   z-index: 10;
-  border-radius: 20px;
 }
 
 .privacy-screen.raptor {
-  background: rgba(20, 35, 20, 0.92);
+  bottom: 100%;
+  margin-bottom: -265px;
+  background: rgba(20, 35, 20, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 300px 300px;
 }
 
 .privacy-screen.scientist {
-  background: rgba(45, 25, 10, 0.92);
+  top: 100%;
+  margin-top: -265px;
+  background: rgba(45, 25, 10, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 300px 300px 0 0;
 }
 
 .privacy-content {

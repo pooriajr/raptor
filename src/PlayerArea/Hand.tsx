@@ -85,8 +85,8 @@ function Hand({ player }: HandProps) {
             </div>
           );
         })}
-        <PrivacyScreen player={player} visible={showPrivacyScreen} onDismiss={() => setPrivacyDismissed(true)} />
       </div>
+      <PrivacyScreen player={player} visible={showPrivacyScreen} onDismiss={() => setPrivacyDismissed(true)} />
     </div>
   );
 }
