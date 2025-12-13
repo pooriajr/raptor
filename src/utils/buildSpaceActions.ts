@@ -85,6 +85,7 @@ interface ActionTargets {
   hostileTargets: ActionTarget[];
   selectables: ActionTarget[];
   friendlyFirePositions: FireTarget[];
+  disabledPositions: Array<{ tileId: number; x: number; y: number; tooltip: string }>;
 }
 
 // Helper to get position info for a piece
@@ -137,6 +138,7 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
     hostileTargets: [],
     selectables: [],
     friendlyFirePositions: [],
+    disabledPositions: [],
   };
 
   if (state.phase !== "ACTION_PHASE" || !selectedActorId || state.actionPoints <= 0) return result;
@@ -200,15 +202,23 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
         });
       } else if (adj.type === "baby") {
         const baby = state.babies[adj.id];
-        if (baby?.isAsleep && !baby.asleepThisRound) {
-          result.selectables.push({
-            pieceId: adj.id,
+        if (!baby?.isAsleep) continue;
+        if (baby.asleepThisRound) {
+          result.disabledPositions.push({
             tileId: adj.tileId,
             x: adj.x,
             y: adj.y,
-            action: { type: "ACTION_MOTHER_WAKE_BABY", targetId: adj.id },
+            tooltip: "Can't wake up a baby raptor the same round it was put to sleep by Sleeping Gas",
           });
+          continue;
         }
+        result.selectables.push({
+          pieceId: adj.id,
+          tileId: adj.tileId,
+          x: adj.x,
+          y: adj.y,
+          action: { type: "ACTION_MOTHER_WAKE_BABY", targetId: adj.id },
+        });
       }
     }
     for (const fire of state.fireTokens) {
@@ -224,16 +234,16 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
     }
   }
 
-  // Check if this scientist can use aggressive actions
   const scientistState = state.scientists[selectedPiece.id];
-  const canUseAggressive =
+  const isScientistActor =
     selectedPiece.type === "scientist" &&
     state.activePlayer === "scientist" &&
-    scientistState?.position &&
-    !scientistState.isFrightened &&
-    !scientistState.hasUsedAggressiveAction;
+    !!scientistState?.position &&
+    !scientistState.isFrightened;
 
-  if (canUseAggressive) {
+  const hasAggressiveLockout = isScientistActor && scientistState.hasUsedAggressiveAction;
+
+  if (isScientistActor && !hasAggressiveLockout) {
     for (const adj of adjacentPieces) {
       if (adj.type === "baby") {
         const baby = state.babies[adj.id];
@@ -253,6 +263,26 @@ function getActionTargets(state: GameState, selectedActorId: string | null): Act
         action: { type: "ACTION_SCIENTIST_SHOOT_MOTHER", scientistId: selectedActorId },
       });
     }
+  } else if (hasAggressiveLockout) {
+    for (const adj of adjacentPieces) {
+      if (adj.type === "baby") {
+        result.disabledPositions.push({
+          tileId: adj.tileId,
+          x: adj.x,
+          y: adj.y,
+          tooltip: "This scientist already used an aggressive action this round",
+        });
+      }
+    }
+    const mother = state.mother;
+    if (mother.position && hasLineOfSight(state, scientistState, mother)) {
+      result.disabledPositions.push({
+        tileId: mother.position.tileId,
+        x: mother.position.x,
+        y: mother.position.y,
+        tooltip: "This scientist already used an aggressive action this round",
+      });
+    }
   }
 
   return result;
@@ -263,11 +293,12 @@ function getValidMoves(
   state: GameState,
   pieceInfo: PieceInfo,
   selectedActorId: string,
+  options?: { ignoreMotherWoundCost?: boolean },
 ): Array<{ tileId: number; x: number; y: number }> {
   if (state.phase !== "ACTION_PHASE" || state.actionPoints <= 0) return [];
   if (pieceInfo.type === "mother") {
     const woundCost = state.mother.paidWoundCost ? 0 : state.mother.sleepTokens;
-    if (state.actionPoints < woundCost + 1) return [];
+    if (!options?.ignoreMotherWoundCost && state.actionPoints < woundCost + 1) return [];
   }
   const allPieces = getAllBoardPositions(state);
   const pieceInstance = createPieceFromPosition(
@@ -299,8 +330,12 @@ function getValidMoves(
 export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   const h = new Map<SpaceId, SpaceAction<GameAction>>();
 
-  const set = (spaceId: SpaceId, style: SpaceStyle, action?: GameAction) => {
+  const set = (spaceId: SpaceId, style: SpaceStyle, action?: GameAction, tooltip?: string) => {
     if (!h.has(spaceId)) h.set(spaceId, { style, action });
+    const existing = h.get(spaceId);
+    if (existing && tooltip) {
+      existing.tooltip = tooltip;
+    }
   };
 
   // Get selected actor from current player's interaction state
@@ -323,6 +358,9 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   }
   for (const fire of actionTargets.friendlyFirePositions) {
     set(createSpaceId(fire.tileId, fire.x, fire.y), "selectable", fire.action);
+  }
+  for (const disabled of actionTargets.disabledPositions) {
+    set(createSpaceId(disabled.tileId, disabled.x, disabled.y), "disabled", undefined, disabled.tooltip);
   }
 
   // Effect phase highlights
@@ -594,6 +632,13 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
               "selectable",
               action,
             );
+          } else if (state.actionPoints > 0 && scientist.frightenedThisRound) {
+            set(
+              createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y),
+              "disabled",
+              undefined,
+              "Can't stand up a scientist the same round they were frightened by Fear",
+            );
           }
           continue;
         }
@@ -615,17 +660,28 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   // Valid moves (action phase) - destinations for selected piece
   const activePiece = selectedActorId ? getPieceInfo(state, selectedActorId) : null;
   if (activePiece && selectedActorId && state.phase === "ACTION_PHASE") {
-    const selectables = getValidMoves(state, activePiece, selectedActorId);
-    for (const move of selectables) {
+    const woundCost = activePiece.type === "mother" && !state.mother.paidWoundCost ? state.mother.sleepTokens : 0;
+    const cannotAffordMotherMove =
+      activePiece.type === "mother" && state.actionPoints > 0 && state.actionPoints < woundCost + 1;
+
+    const moves = cannotAffordMotherMove
+      ? getValidMoves(state, activePiece, selectedActorId, { ignoreMotherWoundCost: true })
+      : getValidMoves(state, activePiece, selectedActorId);
+
+    for (const move of moves) {
+      if (cannotAffordMotherMove) {
+        set(
+          createSpaceId(move.tileId, move.x, move.y),
+          "disabled",
+          undefined,
+          `Not enough action points: moving the mother costs ${woundCost + 1} AP (${woundCost} from sleep tokens + 1 move)`,
+        );
+        continue;
+      }
+
       let action: GameAction | undefined;
       if (activePiece.type === "baby") {
-        action = {
-          type: "ACTION_MOVE_BABY",
-          pieceId: selectedActorId,
-          tileId: move.tileId,
-          x: move.x,
-          y: move.y,
-        };
+        action = { type: "ACTION_MOVE_BABY", pieceId: selectedActorId, tileId: move.tileId, x: move.x, y: move.y };
       } else if (activePiece.type === "scientist") {
         action = {
           type: "ACTION_MOVE_SCIENTIST",
@@ -635,13 +691,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           y: move.y,
         };
       } else if (activePiece.type === "mother") {
-        action = {
-          type: "ACTION_MOVE_MOTHER",
-          pieceId: selectedActorId,
-          tileId: move.tileId,
-          x: move.x,
-          y: move.y,
-        };
+        action = { type: "ACTION_MOVE_MOTHER", pieceId: selectedActorId, tileId: move.tileId, x: move.x, y: move.y };
       }
       set(createSpaceId(move.tileId, move.x, move.y), "selectable", action);
     }

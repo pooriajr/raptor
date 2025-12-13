@@ -50,6 +50,7 @@ function Space({ space, spaceActions }: SpaceProps) {
       data-unusable={space.isUnusable}
       data-style={style}
       onClick={handleClick}
+      title={spaceAction?.tooltip}
     >
       <SpaceContent
         space={space}

@@ -3,6 +3,7 @@ export type SpaceStyle =
   | "selectable" // Any clickable/interactive space (blue)
   | "selected" // Currently selected piece (yellow)
   | "hostileTarget" // Enemy pieces that can be attacked (red)
+  | "disabled" // Normally valid, but currently not allowed (gray)
   | "fire"; // Existing fire token (orange)
 
 // SpaceId is a unique identifier for a space: "tileId-x-y"
@@ -23,6 +24,7 @@ export function parseSpaceId(spaceId: SpaceId): { tileId: number; x: number; y: 
 export interface SpaceAction<TAction = unknown> {
   style: SpaceStyle;
   action?: TAction;
+  tooltip?: string;
 }
 
 // Map from SpaceId to its action - each space has at most one action
