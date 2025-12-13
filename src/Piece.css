@@ -17,12 +17,25 @@
 
 /* Piece status indicators */
 .piece.asleep {
-  opacity: 0.6;
-  filter: grayscale(50%);
+  filter: saturate(0.75) brightness(0.95);
+  transform-origin: 50% 85%;
+  animation: asleep-rock 2.4s ease-in-out infinite;
 }
 
 .piece.frightened {
   animation: shake 0.5s ease-in-out infinite;
+}
+
+/* Snoring bubble */
+.piece.asleep::after {
+  content: "💤";
+  position: absolute;
+  top: -18px;
+  right: -12px;
+  font-size: 18px;
+  opacity: 0;
+  pointer-events: none;
+  animation: asleep-snore 2.4s ease-in-out infinite;
 }
 
 @keyframes shake {
@@ -35,6 +48,36 @@
   }
   75% {
     transform: translateX(2px);
+  }
+}
+
+@keyframes asleep-rock {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(2deg);
+  }
+}
+
+@keyframes asleep-snore {
+  0%,
+  25% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.85);
+  }
+  40% {
+    opacity: 0.95;
+    transform: translate(1px, -6px) scale(1);
+  }
+  70% {
+    opacity: 0;
+    transform: translate(6px, -16px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(6px, -16px) scale(1.1);
   }
 }
 
