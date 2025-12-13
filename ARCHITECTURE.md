@@ -62,43 +62,58 @@ type GamePhase =
   | "EFFECT_PHASE"
   | "ACTION_PHASE"
   | "MOTHER_RETURN"
-  | "ROUND_END";
+  | "ROUND_END"
+  | "GAME_OVER";
 
 type Player = "raptor" | "scientist";
 
-interface PieceState {
-  id: string;
-  type: "mother" | "baby" | "scientist";
-  tileId: number; // -1 means off-board
-  x: number;
-  y: number;
-  isAsleep?: boolean; // babies
-  isFrightened?: boolean; // scientists
-  isEscaped?: boolean; // babies that escaped
-  isCaptured?: boolean; // babies that were captured
+type Position = { tileId: number; x: number; y: number };
+
+interface MotherState {
+  id: "mother";
+  position: Position | null;
+  sleepTokens: number;
+  paidWoundCost: boolean;
+  disappeared: boolean;
+  observationActive: boolean;
+}
+
+interface BabyState {
+  id: string; // "baby-0"..."baby-4"
+  position: Position | null;
+  isAsleep: boolean;
+  isEscaped: boolean;
+  isCaptured: boolean;
+  asleepThisRound: boolean;
+}
+
+interface ScientistState {
+  id: string; // "scientist-0"..."scientist-9"
+  position: Position | null;
+  isDead: boolean;
+  isFrightened: boolean;
+  hasUsedAggressiveAction: boolean;
+  frightenedThisRound: boolean;
 }
 
 interface GameState {
   phase: GamePhase;
   tiles: Tile[];
-  mother: PieceState;
-  babies: PieceState[];
-  scientists: PieceState[];
-  scientistReserve: number;
+  mother: MotherState;
+  babies: Record<string, BabyState>;
+  scientists: Record<string, ScientistState>;
   fireTokens: FireToken[];
   raptorCards: CardState;
   scientistCards: CardState;
   activeEffectCard: CardInfo | null;
   actionPoints: number;
   activePlayer: Player | null;
+  winner: Player | null;
+  winCondition: WinCondition | null;
   effectActionsRemaining: number;
-  motherSleepTokens: number;
-  motherDisappeared: boolean;
-  observationActive: boolean;
   raptorInteraction: InteractionState;
   scientistInteraction: InteractionState;
   undoSnapshot: GameState | null; // for undo in effect/action phases
-  // ... round tracking fields
 }
 ```
 
@@ -119,6 +134,7 @@ function gameReducer(state, action) {
 ```
 
 Handlers are organized in `src/state/actions/` by domain (setup, cards, effects, actionPhase, etc.).
+Phase transitions are handled by the single `ADVANCE_PHASE` action in `src/state/actions/phaseActions.ts`.
 
 ### Data vs Logic Separation
 
@@ -132,7 +148,7 @@ Existing piece classes (MotherRaptor, BabyRaptor, Scientist) can be used as logi
 
 Compute rather than store:
 
-- Captured baby count: `babies.filter(b => b.isCaptured).length`
-- Escaped baby count: `babies.filter(b => b.isEscaped).length`
+- Captured baby count: `Object.values(babies).filter(b => b.isCaptured).length`
+- Escaped baby count: `Object.values(babies).filter(b => b.isEscaped).length`
 - Effect player: `activeEffectCard?.player`
 - Action player: opposite of effect player

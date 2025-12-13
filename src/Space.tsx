@@ -4,7 +4,6 @@ import type { Space as SpaceType } from "./types/board.ts";
 import type { GameState, ScientistState, BabyState, MotherState } from "./types/gameState.ts";
 import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
 import { parseSpaceId } from "./types/spaceActions.ts";
-import { buildSpaceActions } from "./utils/buildSpaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
 import { BabyPiece } from "./Piece.tsx";
 import MotherPiece from "./MotherPiece.tsx";
@@ -12,11 +11,11 @@ import ScientistPiece from "./ScientistPiece.tsx";
 
 interface SpaceProps {
   space: SpaceType;
+  spaceActions: SpaceActions<GameAction>;
 }
 
-function Space({ space }: SpaceProps) {
+function Space({ space, spaceActions }: SpaceProps) {
   const { state, dispatch } = useGame();
-  const spaceActions: SpaceActions<GameAction> = buildSpaceActions(state);
   const spaceAction = spaceActions.get(space.id);
   const style = spaceAction?.style;
 
@@ -52,17 +51,6 @@ function Space({ space }: SpaceProps) {
       data-style={style}
       onClick={handleClick}
     >
-      {/* SVG clip-path definitions for exit arrow shapes */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <clipPath id="exit-arrow-right" clipPathUnits="objectBoundingBox">
-            <path d="M0.12,0 L0.65,0 L1,0.5 L0.65,1 L0.12,1 Q0,1 0,0.88 L0,0.12 Q0,0 0.12,0" />
-          </clipPath>
-          <clipPath id="exit-arrow-left" clipPathUnits="objectBoundingBox">
-            <path d="M0.88,0 L0.35,0 L0,0.5 L0.35,1 L0.88,1 Q1,1 1,0.88 L1,0.12 Q1,0 0.88,0" />
-          </clipPath>
-        </defs>
-      </svg>
       <SpaceContent
         space={space}
         pieceOnSpace={pieceOnSpace}

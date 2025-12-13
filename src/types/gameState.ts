@@ -62,6 +62,7 @@ export interface BabyState {
 export interface MotherState {
   id: string;
   position: { tileId: number; x: number; y: number } | null;
+  lastPosition: { tileId: number; x: number; y: number } | null;
   sleepTokens: number;
   paidWoundCost: boolean; // Resets each round
   disappeared: boolean; // Resets each round
@@ -88,6 +89,8 @@ export interface InteractionState {
   // Card selection
   selectedCard: CardId | null;
   isNewDraw: boolean;
+  // Privacy screen (pass-and-play)
+  privacyDismissed: boolean;
   // Actor selection (used for both action phase and effect phase)
   selectedActorId: string | null;
 }
@@ -97,6 +100,7 @@ export function createInitialInteractionState(): InteractionState {
   return {
     selectedCard: null,
     isNewDraw: false,
+    privacyDismissed: false,
     selectedActorId: null,
   };
 }
@@ -141,6 +145,7 @@ export function createInitialMother(): MotherState {
   return {
     id: "mother",
     position: null,
+    lastPosition: null,
     sleepTokens: 0,
     paidWoundCost: false,
     disappeared: false,
