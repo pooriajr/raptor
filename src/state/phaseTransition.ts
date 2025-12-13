@@ -42,6 +42,14 @@ export function transitionToPhase(state: GameState, phase: GamePhase): GameState
     };
   }
 
+  // Clear observation when card reveal starts (both cards will be shown anyway)
+  if (phase === "CARD_REVEAL" && newState.mother.observationActive) {
+    newState = {
+      ...newState,
+      mother: { ...newState.mother, observationActive: false },
+    };
+  }
+
   // Save snapshot when entering effect phase
   if (phase === "EFFECT_PHASE") {
     newState = {

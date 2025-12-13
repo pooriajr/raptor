@@ -403,6 +403,23 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
           };
           set(createSpaceId(dest.tileId, dest.x, dest.y), "selectable", action);
         }
+        // Allow clicking on selected baby to deselect, or other babies to switch
+        for (const baby of Object.values(state.babies)) {
+          if (!baby.position) continue;
+          const babyDestinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
+          if (babyDestinations.length === 0) continue;
+          const isSelected = baby.id === selectedActorId;
+          const action: GameAction = {
+            type: "SELECT_ACTOR",
+            player: "raptor",
+            pieceId: isSelected ? null : baby.id,
+          };
+          set(
+            createSpaceId(baby.position.tileId, baby.position.x, baby.position.y),
+            isSelected ? "selected" : "selectable",
+            action,
+          );
+        }
       } else {
         // Step 1: Highlight babies that can be called (have reachable destinations)
         for (const baby of Object.values(state.babies)) {
@@ -511,6 +528,21 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
             path: dest.path,
           };
           set(createSpaceId(dest.tileId, dest.x, dest.y), "selectable", action);
+        }
+        // Allow clicking on selected scientist to deselect, or other scientists to switch
+        for (const scientist of Object.values(state.scientists)) {
+          if (!scientist.position || scientist.isFrightened) continue;
+          const isSelected = scientist.id === selectedActorId;
+          const action: GameAction = {
+            type: "SELECT_ACTOR",
+            player: "scientist",
+            pieceId: isSelected ? null : scientist.id,
+          };
+          set(
+            createSpaceId(scientist.position.tileId, scientist.position.x, scientist.position.y),
+            isSelected ? "selected" : "selectable",
+            action,
+          );
         }
       } else {
         // Step 1: Highlight scientists that can use jeep (have reachable destinations)

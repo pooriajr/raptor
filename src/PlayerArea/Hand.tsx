@@ -27,6 +27,10 @@ function Hand({ player }: HandProps) {
     (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
     (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
 
+  // Observation: raptor can see scientist's selected card during raptor's card selection
+  const observationRevealsCard =
+    player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" && state.mother.observationActive;
+
   const isCardReveal = state.phase === "CARD_REVEAL";
 
   // Privacy screen state - resets when entering card selection phase
@@ -69,7 +73,9 @@ function Hand({ player }: HandProps) {
           }
 
           const isDimmed = hasSelection && !isSelected;
-          const cardFaceDown = faceDown || (faceDownUnselected && !isSelected);
+          // During observation, show the selected card face-up
+          const revealedByObservation = observationRevealsCard && isSelected;
+          const cardFaceDown = revealedByObservation ? false : faceDown || (faceDownUnselected && !isSelected);
 
           return (
             <div key={card.id} className="card-wrapper">
