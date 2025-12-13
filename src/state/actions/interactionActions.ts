@@ -1,4 +1,5 @@
 import type { GameState, Player, InteractionState } from "@/types/gameState.ts";
+import { createInitialInteractionState } from "@/types/gameState.ts";
 import type { CardId } from "@/data/cards.ts";
 
 // Action types for UI/interaction state
@@ -6,6 +7,7 @@ export type InteractionAction =
   // Card selection
   | { type: "SELECT_CARD"; player: Player; card: CardId | null }
   | { type: "SET_NEW_DRAW"; player: Player; isNewDraw: boolean }
+  | { type: "DISMISS_PRIVACY"; player: Player }
   // Actor selection (action phase and effect phase)
   | { type: "SELECT_ACTOR"; player: Player; pieceId: string | null }
   // Reset
@@ -27,19 +29,16 @@ function updateInteraction(state: GameState, player: Player, updates: Partial<In
   }
 }
 
-// Initial interaction state
-const initialInteractionState: InteractionState = {
-  selectedCard: null,
-  isNewDraw: false,
-  selectedActorId: null,
-};
-
 export function handleSelectCard(state: GameState, action: { player: Player; card: CardId | null }): GameState {
   return updateInteraction(state, action.player, { selectedCard: action.card });
 }
 
 export function handleSetNewDraw(state: GameState, action: { player: Player; isNewDraw: boolean }): GameState {
   return updateInteraction(state, action.player, { isNewDraw: action.isNewDraw });
+}
+
+export function handleDismissPrivacy(state: GameState, action: { player: Player }): GameState {
+  return updateInteraction(state, action.player, { privacyDismissed: true });
 }
 
 export function handleSelectActor(state: GameState, action: { player: Player; pieceId: string | null }): GameState {
@@ -49,14 +48,14 @@ export function handleSelectActor(state: GameState, action: { player: Player; pi
 }
 
 export function handleResetInteraction(state: GameState, action: { player: Player }): GameState {
-  return updateInteraction(state, action.player, initialInteractionState);
+  return updateInteraction(state, action.player, createInitialInteractionState());
 }
 
 export function handleResetAllInteractions(state: GameState): GameState {
   return {
     ...state,
-    raptorInteraction: { ...initialInteractionState },
-    scientistInteraction: { ...initialInteractionState },
+    raptorInteraction: createInitialInteractionState(),
+    scientistInteraction: createInitialInteractionState(),
   };
 }
 
@@ -64,6 +63,7 @@ export function handleResetAllInteractions(state: GameState): GameState {
 export const interactionHandlers = {
   SELECT_CARD: handleSelectCard,
   SET_NEW_DRAW: handleSetNewDraw,
+  DISMISS_PRIVACY: handleDismissPrivacy,
   SELECT_ACTOR: handleSelectActor,
   RESET_INTERACTION: handleResetInteraction,
   RESET_ALL_INTERACTIONS: handleResetAllInteractions,

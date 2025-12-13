@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useGame } from "../state/GameContext";
 import { countPlacedScientists } from "../utils/pieceUtils";
 import { getEffectPlayer } from "../utils/effectUtils";
@@ -32,10 +32,10 @@ function DoneButton({ player }: DoneButtonProps) {
 
   // === Handler ===
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     // Advance the phase - selectedCard stays in interaction state until card reveal
     dispatch({ type: "ADVANCE_PHASE" });
-  };
+  }, [dispatch]);
 
   // Determine if this is the active player's done button
   const isActivePlayer =
@@ -75,7 +75,7 @@ function DoneButton({ player }: DoneButtonProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isActivePlayer, disabled]);
+  }, [disabled, handleClick, isActivePlayer]);
 
   const className = `done-button ${player} ${disabled ? "done-button--disabled" : "done-button--ready"}`;
 

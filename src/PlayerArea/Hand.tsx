@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import Card from "../Card";
 import PrivacyScreen from "./PrivacyScreen";
 import { useGame } from "../state/GameContext";
@@ -33,17 +32,7 @@ function Hand({ player }: HandProps) {
 
   const isCardReveal = state.phase === "CARD_REVEAL";
 
-  // Privacy screen state - resets when entering card selection phase
-  const [privacyDismissed, setPrivacyDismissed] = useState(false);
-
-  // Reset privacy screen when this player's card selection phase starts
-  useEffect(() => {
-    if (isThisPlayerSelecting) {
-      setPrivacyDismissed(false);
-    }
-  }, [isThisPlayerSelecting]);
-
-  const showPrivacyScreen = isThisPlayerSelecting && !privacyDismissed;
+  const showPrivacyScreen = isThisPlayerSelecting && !interaction.privacyDismissed;
 
   const faceDown = isOpponentSelecting || showPrivacyScreen;
   const faceDownUnselected = !isThisPlayerSelecting || showPrivacyScreen;
@@ -92,7 +81,11 @@ function Hand({ player }: HandProps) {
           );
         })}
       </div>
-      <PrivacyScreen player={player} visible={showPrivacyScreen} onDismiss={() => setPrivacyDismissed(true)} />
+      <PrivacyScreen
+        player={player}
+        visible={showPrivacyScreen}
+        onDismiss={() => dispatch({ type: "DISMISS_PRIVACY", player })}
+      />
     </div>
   );
 }

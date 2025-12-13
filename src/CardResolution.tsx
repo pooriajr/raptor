@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import { useReveal } from "./RevealContext.tsx";
+import { useReveal } from "./revealContext.ts";
 import "./CardResolution.css";
 
 function CardResolution() {

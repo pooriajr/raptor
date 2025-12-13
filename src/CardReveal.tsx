@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Card from "./Card";
 import { useGame } from "./state/GameContext";
-import { useReveal } from "./RevealContext";
+import { useReveal } from "./revealContext";
 import { CARDS } from "@/data/cards.ts";
 import "./CardReveal.css";
 

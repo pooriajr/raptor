@@ -94,7 +94,13 @@ export function handleDisappearance(state: GameState): GameState {
   // Disappearance doesn't consume an action - it's automatic
   return {
     ...state,
-    mother: { ...state.mother, position: null, disappeared: true, observationActive: true },
+    mother: {
+      ...state.mother,
+      lastPosition: state.mother.position ?? state.mother.lastPosition,
+      position: null,
+      disappeared: true,
+      observationActive: true,
+    },
   };
 }
 
@@ -113,7 +119,7 @@ export function handleMotherReturn(state: GameState, action: { tileId: number; x
   // Place the mother - phase transition to ROUND_END is handled by ADVANCE_PHASE
   return {
     ...state,
-    mother: { ...state.mother, position: { tileId: action.tileId, x: action.x, y: action.y } },
+    mother: { ...state.mother, position: { tileId: action.tileId, x: action.x, y: action.y }, lastPosition: null },
   };
 }
 

@@ -163,14 +163,14 @@ npm run preview
 
 - **gameReducer.ts**: Main reducer, dispatches to action handlers
 - **GameContext.tsx**: React Context and `useGame()` hook for accessing state/dispatch
-- **phaseTransition.ts**: Handles phase changes and snapshot management
+- **phase.ts**: Helpers for phase/active-player derivation
 - **actions/**: Action handlers organized by domain:
   - `setupActions.ts` - Piece placement during setup
   - `cardActions.ts` - Card selection and reveal
   - `effectActions.ts` - Effect phase actions (fear, sleeping gas, etc.)
   - `actionPhaseActions.ts` - Action phase actions (movement, attacks)
-  - `roundActions.ts` - Round end logic
   - `interactionActions.ts` - UI state (selected actor, card selection)
+  - `phaseActions.ts` - Phase transitions (`ADVANCE_PHASE`) and round resets
   - `devActions.ts` - Development/debug actions
 
 ### Types (`src/types/`)

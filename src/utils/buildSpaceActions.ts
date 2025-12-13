@@ -16,26 +16,7 @@ import { BabyRaptor } from "../pieces/BabyRaptor";
 import { Scientist } from "../pieces/Scientist";
 import { hasLineOfSight } from "./lineOfSight";
 import { getReserveCount } from "./scientistUtils";
-import { getAllBoardPositions } from "./boardUtils";
-
-// Helper to check if a space is occupied
-function isSpaceOccupied(state: GameState, tileId: number, x: number, y: number): boolean {
-  if (state.mother.position?.tileId === tileId && state.mother.position.x === x && state.mother.position.y === y)
-    return true;
-  if (
-    Object.values(state.babies).some((b) => b.position?.tileId === tileId && b.position?.x === x && b.position?.y === y)
-  )
-    return true;
-  return Object.values(state.scientists).some(
-    (s) => s.position?.tileId === tileId && s.position?.x === x && s.position?.y === y,
-  );
-}
-
-// Helper to check if tile has raptors
-function tileHasRaptor(state: GameState, tileId: number): boolean {
-  if (state.mother.position?.tileId === tileId) return true;
-  return Object.values(state.babies).some((b) => b.position?.tileId === tileId);
-}
+import { getAllBoardPositions, isSpaceOccupied, tileHasRaptor } from "./boardUtils";
 
 // Piece type for createPieceFromState
 type PieceType = "mother" | "baby" | "scientist";

@@ -1,19 +1,10 @@
 import type { GameState, CardState, Player } from "@/types/gameState.ts";
 import type { CardInfo } from "@/data/cards.ts";
 import { CARDS } from "@/data/cards.ts";
+import { shuffleCards } from "@/utils/cardUtils.ts";
 
 // Action types for card phase
 export type CardAction = { type: "DRAW_CARDS"; player: "raptor" | "scientist" };
-
-// Fisher-Yates shuffle
-function shuffleArray<T>(array: T[]): T[] {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
 
 /**
  * Draw cards from deck to hand until hand has 3 cards.
@@ -34,7 +25,7 @@ export function drawToHand(cardState: CardState): CardState {
 
   // If deck is empty but we have discard, shuffle discard into deck
   if (deck.length === 0 && discard.length > 0) {
-    deck = shuffleArray(discard);
+    deck = shuffleCards(discard);
     discard = [];
   }
 
@@ -131,7 +122,7 @@ export function shuffleDiscardIntoDeck(cardState: CardState): CardState {
   }
 
   // Combine deck and discard, then shuffle
-  const newDeck = shuffleArray([...deck, ...discard]);
+  const newDeck = shuffleCards([...deck, ...discard]);
 
   return {
     deck: newDeck,

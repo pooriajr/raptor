@@ -1,5 +1,4 @@
 import "./Piece.css";
-import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MotherState } from "./types/gameState.ts";
 
@@ -15,23 +14,14 @@ function MotherPiece({ mother, isSelected, spacePosition }: MotherPieceProps) {
     mother.position?.x === spacePosition.x &&
     mother.position?.y === spacePosition.y;
 
-  // Track if mother was on this space (for exit animation)
-  const motherWasHere = useRef(false);
-  const [showAnimatePresence, setShowAnimatePresence] = useState(false);
+  const shouldKeepMountedForExit =
+    mother.disappeared &&
+    mother.position === null &&
+    mother.lastPosition?.tileId === spacePosition.tileId &&
+    mother.lastPosition?.x === spacePosition.x &&
+    mother.lastPosition?.y === spacePosition.y;
 
-  useEffect(() => {
-    if (motherIsHere) {
-      motherWasHere.current = true;
-      setShowAnimatePresence(true);
-    } else if (motherWasHere.current && mother.disappeared) {
-      // Mother just disappeared - keep AnimatePresence mounted for exit animation
-    } else if (!mother.disappeared) {
-      motherWasHere.current = false;
-      setShowAnimatePresence(false);
-    }
-  }, [motherIsHere, mother.disappeared]);
-
-  if (!showAnimatePresence) return null;
+  if (!motherIsHere && !shouldKeepMountedForExit) return null;
 
   return (
     <AnimatePresence>

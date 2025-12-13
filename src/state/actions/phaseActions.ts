@@ -1,4 +1,4 @@
-import type { GameState, GamePhase, Player, ScientistState, BabyState, MotherState } from "@/types/gameState.ts";
+import type { GameState, GamePhase, ScientistState, BabyState, MotherState } from "@/types/gameState.ts";
 import { createInitialInteractionState } from "@/types/gameState.ts";
 import { saveGame } from "@/utils/saveLoad.ts";
 import { getEffectLimit } from "@/utils/effectUtils.ts";
@@ -6,6 +6,7 @@ import { drawToHand, discardPlayedCard, calculateRoundResolution, shuffleDiscard
 import { isRaptorSetupComplete } from "@/utils/boardUtils.ts";
 import { countPlacedScientists } from "@/utils/pieceUtils.ts";
 import { CARDS } from "@/data/cards.ts";
+import { getActivePlayerForPhase } from "@/state/phase.ts";
 
 // Reset per-round flags on all board scientists
 function resetScientistRoundFlags(scientists: Record<string, ScientistState>): Record<string, ScientistState> {
@@ -35,6 +36,7 @@ function resetMotherRoundFlags(mother: MotherState): MotherState {
     ...mother,
     paidWoundCost: false,
     disappeared: false,
+    lastPosition: null,
   };
 }
 
@@ -133,24 +135,6 @@ function getNextPhase(state: GameState): GamePhase | null {
 /**
  * Get the active player for a given phase.
  */
-function getActivePlayerForPhase(state: GameState, phase: GamePhase): Player | null {
-  if (phase.startsWith("RAPTOR")) return "raptor";
-  if (phase.startsWith("SCIENTIST")) return "scientist";
-  if (phase === "EFFECT_PHASE") {
-    // Lower card gets the effect
-    return state.activeEffectCard?.player ?? null;
-  }
-  if (phase === "ACTION_PHASE") {
-    // Higher card gets action points (opposite of effect player)
-    const effectPlayer = state.activeEffectCard?.player;
-    return effectPlayer === "raptor" ? "scientist" : effectPlayer === "scientist" ? "raptor" : null;
-  }
-  if (phase === "MOTHER_RETURN") {
-    return "raptor";
-  }
-  return state.activePlayer;
-}
-
 /**
  * Set phase and active player.
  */
@@ -250,7 +234,29 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
       };
       break;
 
+    case "SCIENTIST_CARD_SELECTION":
+      newState = {
+        ...newState,
+        scientistInteraction: { ...newState.scientistInteraction, privacyDismissed: false },
+      };
+      break;
+
+    case "RAPTOR_CARD_SELECTION":
+      newState = {
+        ...newState,
+        raptorInteraction: { ...newState.raptorInteraction, privacyDismissed: false },
+      };
+      break;
+
     case "CARD_REVEAL": {
+      // Clear observation when card reveal starts (both cards will be shown anyway)
+      if (newState.mother.observationActive) {
+        newState = {
+          ...newState,
+          mother: { ...newState.mother, observationActive: false },
+        };
+      }
+
       // Calculate round resolution: activeEffectCard (lower card), actionPoints (difference), effectActionsRemaining
       const resolution = calculateRoundResolution(newState);
       newState = {
