@@ -4,8 +4,8 @@
   display: inline-block;
   position: relative;
   z-index: 10;
-  cursor: pointer;
   user-select: none;
+  pointer-events: none;
 }
 
 /* Mother raptor - bigger and scarier, overflows the tile */
@@ -40,7 +40,7 @@
 
 .status-icon {
   position: absolute;
-  font-size: 16px;
+  font-size: 30px;
   top: -8px;
   right: -8px;
 }

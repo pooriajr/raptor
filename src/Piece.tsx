@@ -26,7 +26,7 @@ function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
       }}
     >
       {getPieceEmoji(type)}
-      {isAsleep && <span className="status-icon">💤</span>}
+      {isAsleep && <span className="status-icon">😴</span>}
     </motion.span>
   );
 }
