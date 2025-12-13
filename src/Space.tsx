@@ -1,4 +1,6 @@
 import "./Space.css";
+import "./Tooltip.css";
+import { useState } from "react";
 import { useGame } from "./state/GameContext.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
 import type { GameState, ScientistState, BabyState, MotherState } from "./types/gameState.ts";
@@ -16,6 +18,7 @@ interface SpaceProps {
 
 function Space({ space, spaceActions }: SpaceProps) {
   const { state, dispatch } = useGame();
+  const [showTooltip, setShowTooltip] = useState(false);
   const spaceAction = spaceActions.get(space.id);
   const style = spaceAction?.style;
 
@@ -50,8 +53,17 @@ function Space({ space, spaceActions }: SpaceProps) {
       data-unusable={space.isUnusable}
       data-style={style}
       onClick={handleClick}
-      title={spaceAction?.tooltip}
+      onMouseEnter={() => {
+        if (spaceAction?.tooltip) setShowTooltip(true);
+      }}
+      onMouseLeave={() => setShowTooltip(false)}
     >
+      {showTooltip && spaceAction?.tooltip && (
+        <div className="card-tooltip tooltip-above">
+          <div className="tooltip-title">Not allowed</div>
+          <div className="tooltip-description">{spaceAction.tooltip}</div>
+        </div>
+      )}
       <SpaceContent
         space={space}
         pieceOnSpace={pieceOnSpace}

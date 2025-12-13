@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import "./Card.css";
+import "./Tooltip.css";
 import type { CardInfo } from "@/data/cards.ts";
 
 interface CardProps {
