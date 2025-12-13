@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import "./RoundEndTimer.css";
+import { playSfx } from "./audio/sfx.ts";
 
 const COUNTDOWN_SECONDS = 3;
 const TICK_MS = 800;
@@ -9,6 +10,7 @@ const TICK_MS = 800;
 function RoundEndTimer() {
   const { dispatch } = useGame();
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+  const didStartRef = useRef(false);
 
   const skip = useCallback(() => {
     dispatch({ type: "ADVANCE_PHASE" });
@@ -20,6 +22,14 @@ function RoundEndTimer() {
     const timer = setTimeout(action, TICK_MS);
     return () => clearTimeout(timer);
   }, [secondsLeft, dispatch]);
+
+  useEffect(() => {
+    if (!didStartRef.current) {
+      didStartRef.current = true;
+      return;
+    }
+    playSfx("anim_round_end_tick");
+  }, [secondsLeft]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

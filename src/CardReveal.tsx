@@ -5,6 +5,7 @@ import { useGame } from "./state/GameContext";
 import { useReveal } from "./revealContext";
 import { CARDS } from "@/data/cards.ts";
 import "./CardReveal.css";
+import { playSfx } from "./audio/sfx.ts";
 
 type AnimationStage = "flying-in" | "pausing" | "show-effect" | "show-action-points" | "flying-out" | "complete";
 
@@ -102,6 +103,23 @@ function CardReveal() {
 
     return () => timers.forEach(clearTimeout);
   }, [stage, scientistCard, raptorCard, isTied, setRevealStage, dispatch]);
+
+  useEffect(() => {
+    switch (stage) {
+      case "flying-in":
+        playSfx("anim_card_reveal_in");
+        break;
+      case "show-effect":
+        playSfx("anim_card_reveal_effect");
+        break;
+      case "show-action-points":
+        playSfx("anim_card_reveal_ap");
+        break;
+      case "flying-out":
+        playSfx("anim_card_reveal_out");
+        break;
+    }
+  }, [stage]);
 
   if (!scientistCard || !raptorCard) {
     return null;
