@@ -1452,32 +1452,25 @@ describe("Game Reducer - Card System", () => {
         const motherTileId = mother.position!.tileId;
         const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
-        // Find an empty space on mother's tile
-        const motherTile = state.tiles.find((t) => t.id === motherTileId)!;
+        // Use pathfinding to find a valid reachable destination on mother's tile
         const allPieces = getAllBoardPositions(state);
-        const emptySpace = motherTile.spaces.find(
-          (s) =>
-            !s.isUnusable &&
-            !s.hasMountain &&
-            !s.isExit &&
-            !allPieces.some((p) => p.tileId === motherTileId && p.x === s.coordinate.x && p.y === s.coordinate.y),
-        );
-
-        expect(emptySpace).toBeDefined();
+        const reachableDestinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
+        expect(reachableDestinations.length).toBeGreaterThan(0);
+        const destination = reachableDestinations[0];
 
         state = gameReducer(state, {
           type: "CALL_BABY",
           babyId: baby.id,
-          tileId: motherTileId,
-          x: emptySpace!.coordinate.x,
-          y: emptySpace!.coordinate.y,
+          tileId: destination.tileId,
+          x: destination.x,
+          y: destination.y,
         });
 
         const movedBaby = findBabyById(state.babies, baby.id)!;
         expect(movedBaby.position).not.toBeNull();
-        expect(movedBaby.position!.tileId).toBe(motherTileId);
-        expect(movedBaby.position!.x).toBe(emptySpace!.coordinate.x);
-        expect(movedBaby.position!.y).toBe(emptySpace!.coordinate.y);
+        expect(movedBaby.position!.tileId).toBe(destination.tileId);
+        expect(movedBaby.position!.x).toBe(destination.x);
+        expect(movedBaby.position!.y).toBe(destination.y);
         // Still in effect phase - can call more babies
         expect(state.phase).toBe("EFFECT_PHASE");
       });
