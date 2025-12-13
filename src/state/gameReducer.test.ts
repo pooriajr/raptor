@@ -1450,27 +1450,44 @@ describe("Game Reducer - Card System", () => {
         const mother = state.mother!;
         expect(mother.position).not.toBeNull();
         const motherTileId = mother.position!.tileId;
-        const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
-        // Use pathfinding to find a valid reachable destination on mother's tile
         const allPieces = getAllBoardPositions(state);
-        const reachableDestinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
-        expect(reachableDestinations.length).toBeGreaterThan(0);
-        const destination = reachableDestinations[0];
+        const babiesNotOnMotherTile = Object.values(state.babies).filter(
+          (b) => b.position && b.position.tileId !== motherTileId,
+        );
+
+        let babyToMove: BabyState | undefined;
+        let destination: { tileId: number; x: number; y: number } | undefined;
+        for (const candidate of babiesNotOnMotherTile) {
+          const reachableDestinations = getReachableDestinationsOnMotherTile(
+            state.tiles,
+            allPieces,
+            candidate,
+            state.mother,
+          );
+          if (reachableDestinations.length > 0) {
+            babyToMove = candidate;
+            destination = reachableDestinations[0];
+            break;
+          }
+        }
+
+        expect(babyToMove).toBeDefined();
+        expect(destination).toBeDefined();
 
         state = gameReducer(state, {
           type: "CALL_BABY",
-          babyId: baby.id,
-          tileId: destination.tileId,
-          x: destination.x,
-          y: destination.y,
+          babyId: babyToMove!.id,
+          tileId: destination!.tileId,
+          x: destination!.x,
+          y: destination!.y,
         });
 
-        const movedBaby = findBabyById(state.babies, baby.id)!;
+        const movedBaby = findBabyById(state.babies, babyToMove!.id)!;
         expect(movedBaby.position).not.toBeNull();
-        expect(movedBaby.position!.tileId).toBe(destination.tileId);
-        expect(movedBaby.position!.x).toBe(destination.x);
-        expect(movedBaby.position!.y).toBe(destination.y);
+        expect(movedBaby.position!.tileId).toBe(destination!.tileId);
+        expect(movedBaby.position!.x).toBe(destination!.x);
+        expect(movedBaby.position!.y).toBe(destination!.y);
         // Still in effect phase - can call more babies
         expect(state.phase).toBe("EFFECT_PHASE");
       });
@@ -1483,20 +1500,37 @@ describe("Game Reducer - Card System", () => {
         const mother = state.mother!;
         expect(mother.position).not.toBeNull();
         const motherTileId = mother.position!.tileId;
-        const baby = Object.values(state.babies).find((b) => b.position && b.position.tileId !== motherTileId)!;
 
-        // Use pathfinding to find a valid reachable destination on mother's tile
         const allPieces = getAllBoardPositions(state);
-        const reachableDestinations = getReachableDestinationsOnMotherTile(state.tiles, allPieces, baby, state.mother);
-        expect(reachableDestinations.length).toBeGreaterThan(0);
-        const destination = reachableDestinations[0];
+        const babiesNotOnMotherTile = Object.values(state.babies).filter(
+          (b) => b.position && b.position.tileId !== motherTileId,
+        );
+
+        let babyToMove: BabyState | undefined;
+        let destination: { tileId: number; x: number; y: number } | undefined;
+        for (const candidate of babiesNotOnMotherTile) {
+          const reachableDestinations = getReachableDestinationsOnMotherTile(
+            state.tiles,
+            allPieces,
+            candidate,
+            state.mother,
+          );
+          if (reachableDestinations.length > 0) {
+            babyToMove = candidate;
+            destination = reachableDestinations[0];
+            break;
+          }
+        }
+
+        expect(babyToMove).toBeDefined();
+        expect(destination).toBeDefined();
 
         state = gameReducer(state, {
           type: "CALL_BABY",
-          babyId: baby.id,
-          tileId: destination.tileId,
-          x: destination.x,
-          y: destination.y,
+          babyId: babyToMove!.id,
+          tileId: destination!.tileId,
+          x: destination!.x,
+          y: destination!.y,
         });
 
         expect(state.effectActionsRemaining).toBe(initialRemaining - 1);
