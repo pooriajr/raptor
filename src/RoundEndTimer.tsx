@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import "./RoundEndTimer.css";
@@ -10,12 +10,27 @@ function RoundEndTimer() {
   const { dispatch } = useGame();
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
 
+  const skip = useCallback(() => {
+    dispatch({ type: "ADVANCE_PHASE" });
+  }, [dispatch]);
+
   useEffect(() => {
     const action = secondsLeft > 1 ? () => setSecondsLeft(secondsLeft - 1) : () => dispatch({ type: "ADVANCE_PHASE" });
 
     const timer = setTimeout(action, TICK_MS);
     return () => clearTimeout(timer);
   }, [secondsLeft, dispatch]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        skip();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [skip]);
 
   return (
     <div className="RoundEndTimer">

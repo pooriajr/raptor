@@ -15,12 +15,10 @@
 
 .tracker-section.raptor {
   background: linear-gradient(135deg, #2d5a27 0%, #1a3518 100%);
-  border: 2px solid #3d6a37;
 }
 
 .tracker-section.scientist {
   background: linear-gradient(135deg, #8a5a1a 0%, #5a3810 100%);
-  border: 2px solid #e68a11;
 }
 
 .tracker-header {
@@ -28,10 +26,17 @@
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: #fff;
   text-align: center;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tracker-section.raptor .tracker-header {
+  color: #b8e6b0;
+}
+
+.tracker-section.scientist .tracker-header {
+  color: #f0d4a8;
 }
 
 .tracker-row {
@@ -43,9 +48,16 @@
 
 .tracker-label {
   font-size: 0.9rem;
-  color: #aaa;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.tracker-section.raptor .tracker-label {
+  color: #8bc090;
+}
+
+.tracker-section.scientist .tracker-label {
+  color: #d4b080;
 }
 
 .tracker-pips {

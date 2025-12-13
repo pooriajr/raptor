@@ -109,6 +109,7 @@
   font-size: 1.1rem;
   color: #ddd;
   text-align: right;
+  max-width: 320px;
 }
 
 .raptor-area {

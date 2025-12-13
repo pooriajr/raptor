@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Card from "./Card";
 import { useGame } from "./state/GameContext";
@@ -12,6 +12,22 @@ function CardReveal() {
   const { state, dispatch } = useGame();
   const { setStage: setRevealStage, setEffectPlayer } = useReveal();
   const [stage, setStage] = useState<AnimationStage>("flying-in");
+
+  const skip = useCallback(() => {
+    setRevealStage("hidden");
+    dispatch({ type: "ADVANCE_PHASE" });
+  }, [setRevealStage, dispatch]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        skip();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [skip]);
 
   // Get the selected cards
   const scientistCardId = state.scientistInteraction.selectedCard;
