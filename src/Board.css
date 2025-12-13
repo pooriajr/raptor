@@ -9,9 +9,9 @@
   display: grid;
   /* 5 columns: L-tile + 3 square tiles + L-tile */
   /* 2 rows: top row and bottom row */
-  grid-template-columns: 150px repeat(3, 200px) 150px;
-  grid-template-rows: repeat(2, 200px);
-  gap: 2px;
+  grid-template-columns: auto auto auto auto auto;
+  grid-template-rows: auto auto;
+  gap: 1px;
   padding: 20px;
   width: fit-content;
 

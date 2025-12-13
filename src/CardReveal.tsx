@@ -46,15 +46,15 @@ function CardReveal() {
     switch (stage) {
       case "flying-in":
         setRevealStage("cards-center");
-        scheduleStage("pausing", 800);
+        scheduleStage("pausing", 400);
         break;
 
       case "pausing":
-        // Cards are in the center, pause for 1 second
+        // Cards are in the center, pause briefly
         if (isTied) {
           scheduleStage("flying-out", 1000);
         } else {
-          scheduleStage("show-effect", 1000);
+          scheduleStage("show-effect", 500);
         }
         break;
 
@@ -62,20 +62,20 @@ function CardReveal() {
         // Smaller card (winner) grows, bigger card dims
         // Effect half of CardResolution becomes visible
         setRevealStage("show-effect");
-        scheduleStage("show-action-points", 1200);
+        scheduleStage("show-action-points", 1000);
         break;
 
       case "show-action-points":
         // Bigger card (loser) grows, smaller card dims
         // AP half of CardResolution becomes visible
         setRevealStage("show-ap");
-        scheduleStage("flying-out", 1200);
+        scheduleStage("flying-out", 1000);
         break;
 
       case "flying-out":
         // Both cards return to normal and fly to discard
         setRevealStage("complete");
-        scheduleStage("complete", 1000);
+        scheduleStage("complete", 400);
         break;
 
       case "complete":

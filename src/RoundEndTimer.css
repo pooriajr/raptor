@@ -20,6 +20,7 @@
 }
 
 .RoundEndTimer .countdown {
+  font-family: var(--font-display);
   font-size: 3rem;
   font-weight: bold;
   color: #7cb7ff;

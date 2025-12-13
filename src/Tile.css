@@ -1,9 +1,19 @@
 .Tile {
-  background-color: #e1e5ce;
-  padding: 8px;
   position: relative;
-  border-radius: 4px;
+  border-radius: 16px;
   transition: box-shadow 0.2s ease;
+}
+
+/* Square tiles get background color */
+.Tile[data-shape="square"] {
+  background-color: rgba(160, 155, 145, 0.5);
+  padding: 8px;
+}
+
+/* L-shaped tiles have transparent background */
+.Tile[data-shape="L"] {
+  background-color: transparent;
+  padding: 0;
 }
 
 /* Grid of spaces within each tile */
@@ -14,15 +24,40 @@
 
 /* Square tiles have 3×3 grid of spaces */
 .Tile[data-shape="square"] .spaces-grid {
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  height: 100%;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: repeat(3, auto);
 }
 
-/* L-shaped tiles are always a 3×2 grid */
-/* One column has the vertical L part, the other has 1 exit + 2 unusable spaces */
-.Tile[data-shape="L"] .spaces-grid {
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  height: 100%;
+/* L-tile layout: two columns side by side */
+.l-tile-layout {
+  display: flex;
+  gap: 6px;
+}
+
+/* Main column: 3 spaces tall with background */
+.l-tile-main-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: rgba(160, 155, 145, 0.5);
+  padding: 8px;
+  border-radius: 16px;
+}
+
+/* Exit column: single space positioned at top or bottom */
+.l-tile-exit-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Position exit at top */
+.Tile[data-shape="L"][data-exit-position="top"] .l-tile-exit-column {
+  justify-content: flex-start;
+  padding-top: 8px;
+}
+
+/* Position exit at bottom */
+.Tile[data-shape="L"][data-exit-position="bottom"] .l-tile-exit-column {
+  justify-content: flex-end;
+  padding-bottom: 8px;
 }

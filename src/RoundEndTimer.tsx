@@ -19,7 +19,7 @@ function RoundEndTimer() {
 
   return (
     <div className="RoundEndTimer">
-      <div className="title">Round End</div>
+      <div className="title">New Round in...</div>
       <motion.div
         className="countdown"
         key={secondsLeft}
@@ -29,7 +29,6 @@ function RoundEndTimer() {
       >
         {secondsLeft}
       </motion.div>
-      <div className="subtitle">Next round starting...</div>
     </div>
   );
 }

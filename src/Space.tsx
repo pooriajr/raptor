@@ -52,6 +52,17 @@ function Space({ space }: SpaceProps) {
       data-style={style}
       onClick={handleClick}
     >
+      {/* SVG clip-path definitions for exit arrow shapes */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <clipPath id="exit-arrow-right" clipPathUnits="objectBoundingBox">
+            <path d="M0.12,0 L0.65,0 L1,0.5 L0.65,1 L0.12,1 Q0,1 0,0.88 L0,0.12 Q0,0 0.12,0" />
+          </clipPath>
+          <clipPath id="exit-arrow-left" clipPathUnits="objectBoundingBox">
+            <path d="M0.88,0 L0.35,0 L0,0.5 L0.35,1 L0.88,1 Q1,1 1,0.88 L1,0.12 Q1,0 0.88,0" />
+          </clipPath>
+        </defs>
+      </svg>
       <SpaceContent
         space={space}
         pieceOnSpace={pieceOnSpace}
@@ -87,7 +98,7 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId, mother, spa
     return <span className="mountain">⛰️</span>;
   }
 
-  // Priority 2: Exit - just render empty (triangle shape is via CSS)
+  // Priority 2: Exit - empty (shape is via CSS clip-path)
   if (space.isExit) {
     return null;
   }

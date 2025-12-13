@@ -80,11 +80,11 @@ function Card({
                 ease: "easeOut",
               },
               layout: {
-                duration: 0.3,
+                duration: 0.15,
                 delay: layoutDelay,
                 type: "spring",
-                stiffness: 300,
-                damping: 30,
+                stiffness: 500,
+                damping: 35,
               },
             }
           : {
@@ -93,11 +93,11 @@ function Card({
               type: "tween",
               ease: "easeOut",
               layout: {
-                duration: 0.3,
+                duration: 0.15,
                 delay: layoutDelay,
                 type: "spring",
-                stiffness: 300,
-                damping: 30,
+                stiffness: 500,
+                damping: 35,
               },
             }
       }
