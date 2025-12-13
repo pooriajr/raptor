@@ -249,6 +249,14 @@ function runEntryEffects(state: GameState, enteringPhase: GamePhase): GameState 
       break;
 
     case "CARD_REVEAL": {
+      // Clear observation when card reveal starts (both cards will be shown anyway)
+      if (newState.mother.observationActive) {
+        newState = {
+          ...newState,
+          mother: { ...newState.mother, observationActive: false },
+        };
+      }
+
       // Calculate round resolution: activeEffectCard (lower card), actionPoints (difference), effectActionsRemaining
       const resolution = calculateRoundResolution(newState);
       newState = {
