@@ -21,7 +21,17 @@ function PieceDisplay({ emoji, label, size = "large" }: { emoji: string; label: 
   );
 }
 
-function CardDisplay({ value, player, name, icon }: { value: number; player: "raptor" | "scientist"; name: string; icon: string }) {
+function CardDisplay({
+  value,
+  player,
+  name,
+  icon,
+}: {
+  value: number;
+  player: "raptor" | "scientist";
+  name: string;
+  icon: string;
+}) {
   return (
     <div className={`tutorial-card ${player}`}>
       <div className="tutorial-card-value">{value}</div>
@@ -45,7 +55,13 @@ function ActionPointsDisplay({ low, high }: { low: number; high: number }) {
   );
 }
 
-function SpaceDisplay({ type, children }: { type: "normal" | "mountain" | "fire" | "exit"; children?: React.ReactNode }) {
+function SpaceDisplay({
+  type,
+  children,
+}: {
+  type: "normal" | "mountain" | "fire" | "exit";
+  children?: React.ReactNode;
+}) {
   return (
     <div className={`tutorial-space ${type}`}>
       {type === "mountain" && <span>⛰️</span>}
@@ -60,7 +76,15 @@ function MiniBoard({ children }: { children: React.ReactNode }) {
   return <div className="tutorial-mini-board">{children}</div>;
 }
 
-function WinCondition({ player, condition, icon }: { player: "raptor" | "scientist"; condition: string; icon: string }) {
+function WinCondition({
+  player,
+  condition,
+  icon,
+}: {
+  player: "raptor" | "scientist";
+  condition: string;
+  icon: string;
+}) {
   return (
     <div className={`tutorial-win-condition ${player}`}>
       <span className="win-icon">{icon}</span>
@@ -69,7 +93,17 @@ function WinCondition({ player, condition, icon }: { player: "raptor" | "scienti
   );
 }
 
-function TrackerDisplay({ emoji, filled, total, label }: { emoji: string; filled: number; total: number; label: string }) {
+function TrackerDisplay({
+  emoji,
+  filled,
+  total,
+  label,
+}: {
+  emoji: string;
+  filled: number;
+  total: number;
+  label: string;
+}) {
   return (
     <div className="tutorial-tracker">
       <span className="tracker-label">{label}</span>
@@ -89,9 +123,7 @@ const slides: TutorialSlide[] = [
     title: "Welcome to Raptor",
     content: (
       <div className="slide-content intro">
-        <p className="intro-text">
-          An asymmetric two-player game of survival and capture.
-        </p>
+        <p className="intro-text">An asymmetric two-player game of survival and capture.</p>
         <div className="intro-matchup">
           <div className="intro-side raptor">
             <span className="intro-emoji">🦖</span>
@@ -114,18 +146,43 @@ const slides: TutorialSlide[] = [
       <div className="slide-content pieces">
         <div className="pieces-section raptor">
           <h3>Raptor Team</h3>
-          <div className="pieces-row">
+          <div className="pieces-row mother-row">
             <PieceDisplay emoji="🦖" label="Mother Raptor" />
-            <PieceDisplay emoji="🦎" label="Baby Raptor" size="medium" />
           </div>
-          <p>1 Mother protects 5 Babies</p>
+          <div className="pieces-row babies-row">
+            <PieceDisplay emoji="🦎" label="" size="medium" />
+            <PieceDisplay emoji="🦎" label="" size="medium" />
+            <PieceDisplay emoji="🦎" label="" size="medium" />
+            <PieceDisplay emoji="🦎" label="" size="medium" />
+            <PieceDisplay emoji="🦎" label="" size="medium" />
+          </div>
+          <p className="pieces-count">1 Mother + 5 Baby Raptors</p>
         </div>
         <div className="pieces-section scientist">
           <h3>Scientist Team</h3>
-          <div className="pieces-row">
-            <PieceDisplay emoji="🧑‍🔬" label="Scientist" />
+          <div className="pieces-row scientists-row">
+            <div className="scientists-on-board">
+              <div className="scientist-group">
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+              </div>
+              <span className="group-label">On Board</span>
+            </div>
+            <div className="scientists-reserve">
+              <div className="scientist-group">
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
+              </div>
+              <span className="group-label">In Reserve</span>
+            </div>
           </div>
-          <p>4 on board, 6 in reserve (10 total)</p>
+          <p className="pieces-count">4 start on board + 6 in reserve = 10 total</p>
         </div>
       </div>
     ),
@@ -182,8 +239,12 @@ const slides: TutorialSlide[] = [
           </div>
         </div>
         <div className="board-legend">
-          <p><strong>6 Square tiles</strong> — Main playing area with rocks ⛰️</p>
-          <p><strong>4 L-shaped tiles</strong> — Exits for baby raptors to escape</p>
+          <p>
+            <strong>6 Square tiles</strong> — Main playing area with rocks ⛰️
+          </p>
+          <p>
+            <strong>4 L-shaped tiles</strong> — Exits for baby raptors to escape
+          </p>
         </div>
       </div>
     ),
@@ -231,8 +292,12 @@ const slides: TutorialSlide[] = [
               <span className="vs">vs</span>
               <CardDisplay value={7} player="scientist" name="Fire" icon="🔥" />
             </div>
-            <p><strong>Lower card:</strong> Uses special effect (Fear 😱)</p>
-            <p><strong>Higher card:</strong> Gets action points (7 − 3 = 4 AP)</p>
+            <p>
+              <strong>Lower card:</strong> Uses special effect (Fear 😱)
+            </p>
+            <p>
+              <strong>Higher card:</strong> Gets action points (7 − 3 = 4 AP)
+            </p>
           </div>
         </div>
       </div>
@@ -442,19 +507,30 @@ const slides: TutorialSlide[] = [
         <div className="rule-section">
           <h3>🔥 Fire</h3>
           <MiniBoard>
-            <SpaceDisplay type="normal"><span>🧑‍🔬</span></SpaceDisplay>
+            <SpaceDisplay type="normal">
+              <span>🧑‍🔬</span>
+            </SpaceDisplay>
             <SpaceDisplay type="fire" />
             <SpaceDisplay type="fire" />
-            <SpaceDisplay type="normal"><span>🦖</span></SpaceDisplay>
+            <SpaceDisplay type="normal">
+              <span>🦖</span>
+            </SpaceDisplay>
           </MiniBoard>
-          <p>Blocks mother and babies. Scientists can walk through. Mother can extinguish adjacent fires (removes connected group).</p>
+          <p>
+            Blocks mother and babies. Scientists can walk through. Mother can extinguish adjacent fires (removes
+            connected group).
+          </p>
         </div>
         <div className="rule-section">
           <h3>⛰️ Mountains</h3>
           <MiniBoard>
-            <SpaceDisplay type="normal"><span>🦎</span></SpaceDisplay>
+            <SpaceDisplay type="normal">
+              <span>🦎</span>
+            </SpaceDisplay>
             <SpaceDisplay type="mountain" />
-            <SpaceDisplay type="normal"><span>🧑‍🔬</span></SpaceDisplay>
+            <SpaceDisplay type="normal">
+              <span>🧑‍🔬</span>
+            </SpaceDisplay>
           </MiniBoard>
           <p>Block all movement and line of sight for shooting.</p>
         </div>
@@ -468,14 +544,18 @@ const slides: TutorialSlide[] = [
         <div className="status-section">
           <h3>😴 Sleeping Baby</h3>
           <div className="status-display">
-            <span className="status-piece">🦎<span className="status-icon">😴</span></span>
+            <span className="status-piece">
+              🦎<span className="status-icon">😴</span>
+            </span>
           </div>
           <p>Cannot move. Can be captured by adjacent scientist. Mother or Recovery card can wake them.</p>
         </div>
         <div className="status-section">
           <h3>😨 Frightened Scientist</h3>
           <div className="status-display">
-            <span className="status-piece">🧑‍🔬<span className="status-icon">😨</span></span>
+            <span className="status-piece">
+              🧑‍🔬<span className="status-icon">😨</span>
+            </span>
           </div>
           <p>Cannot move or act. Another scientist can stand them up. Does NOT block shots!</p>
         </div>
@@ -548,7 +628,9 @@ function Tutorial({ onClose }: TutorialProps) {
   return (
     <div className="Tutorial">
       <div className="tutorial-container">
-        <button className="tutorial-close" onClick={onClose}>✕</button>
+        <button className="tutorial-close" onClick={onClose}>
+          ✕
+        </button>
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -565,11 +647,7 @@ function Tutorial({ onClose }: TutorialProps) {
         </AnimatePresence>
 
         <div className="tutorial-navigation">
-          <button
-            className="nav-button prev"
-            onClick={prevSlide}
-            disabled={isFirstSlide}
-          >
+          <button className="nav-button prev" onClick={prevSlide} disabled={isFirstSlide}>
             ← Previous
           </button>
 

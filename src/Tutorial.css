@@ -266,6 +266,56 @@
   margin: 1rem 0;
 }
 
+.pieces-row.mother-row {
+  margin-bottom: 0.5rem;
+}
+
+.pieces-row.babies-row {
+  gap: 0.75rem;
+  margin-top: 0;
+}
+
+.pieces-row.scientists-row {
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.scientists-on-board,
+.scientists-reserve {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scientist-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.scientists-reserve .scientist-group {
+  max-width: 200px;
+}
+
+.scientists-reserve .tutorial-piece-emoji {
+  opacity: 0.5;
+}
+
+.group-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pieces-count {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.5rem;
+}
+
 /* Win conditions */
 .slide-content.win-conditions {
   display: grid;
