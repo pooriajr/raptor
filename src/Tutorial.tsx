@@ -41,41 +41,6 @@ function CardDisplay({
   );
 }
 
-function ActionPointsDisplay({ low, high }: { low: number; high: number }) {
-  return (
-    <div className="tutorial-action-points">
-      <div className="ap-calculation">
-        <span className="ap-high">{high}</span>
-        <span className="ap-minus">−</span>
-        <span className="ap-low">{low}</span>
-        <span className="ap-equals">=</span>
-        <span className="ap-result">{high - low} Action Points</span>
-      </div>
-    </div>
-  );
-}
-
-function SpaceDisplay({
-  type,
-  children,
-}: {
-  type: "normal" | "mountain" | "fire" | "exit";
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className={`tutorial-space ${type}`}>
-      {type === "mountain" && <span>⛰️</span>}
-      {type === "fire" && <span>🔥</span>}
-      {type === "exit" && <span className="exit-arrow">→</span>}
-      {children}
-    </div>
-  );
-}
-
-function MiniBoard({ children }: { children: React.ReactNode }) {
-  return <div className="tutorial-mini-board">{children}</div>;
-}
-
 // Full game board miniature for tutorial
 function GameBoardMini() {
   // Simplified board representation matching actual game layout
@@ -430,76 +395,40 @@ const slides: TutorialSlide[] = [
     ),
   },
   {
-    title: "Card Selection",
+    title: "How Rounds Work",
     content: (
-      <div className="slide-content card-selection">
-        <p className="selection-intro">Each round, both players secretly select a card from their hand of 3.</p>
-        <div className="card-hands">
-          <div className="hand raptor">
-            <CardDisplay value={3} player="raptor" name="Fear" icon="😱" />
-            <CardDisplay value={5} player="raptor" name="Recovery" icon="💚" />
-            <CardDisplay value={8} player="raptor" name="Fear" icon="😱" />
-          </div>
-          <div className="hand scientist">
-            <CardDisplay value={2} player="scientist" name="Reinforcements" icon="🧑‍🔬" />
-            <CardDisplay value={5} player="scientist" name="Fire" icon="🔥" />
-            <CardDisplay value={7} player="scientist" name="Fire" icon="🔥" />
+      <div className="slide-content how-rounds-work">
+        <div className="round-step">
+          <div className="step-number">1</div>
+          <div className="step-content">
+            <h4>Select Cards</h4>
+            <p>Both players secretly choose a card from their hand of 3 (numbered 1-9).</p>
           </div>
         </div>
-        <p className="selection-note">Both players have cards numbered 1-9 with unique effects.</p>
-      </div>
-    ),
-  },
-  {
-    title: "Card Resolution",
-    content: (
-      <div className="slide-content card-resolution">
-        <p>When cards are revealed, compare the values:</p>
-        <div className="resolution-cases">
-          <div className="resolution-case tie">
-            <h4>If cards match</h4>
-            <div className="case-example">
-              <CardDisplay value={5} player="raptor" name="Recovery" icon="💚" />
-              <span className="vs">=</span>
-              <CardDisplay value={5} player="scientist" name="Fire" icon="🔥" />
-            </div>
-            <p>Round ends immediately — no effects!</p>
-          </div>
-          <div className="resolution-case different">
-            <h4>If cards differ</h4>
-            <div className="case-example">
+        <div className="round-step">
+          <div className="step-number">2</div>
+          <div className="step-content">
+            <h4>Reveal & Compare</h4>
+            <div className="compare-example">
               <CardDisplay value={3} player="raptor" name="Fear" icon="😱" />
               <span className="vs">vs</span>
               <CardDisplay value={7} player="scientist" name="Fire" icon="🔥" />
             </div>
+          </div>
+        </div>
+        <div className="round-step">
+          <div className="step-number">3</div>
+          <div className="step-content">
+            <h4>Resolve</h4>
             <p>
-              <strong>Lower card:</strong> Uses special effect (Fear 😱)
+              <strong>If tied:</strong> Round ends — no effects!
             </p>
             <p>
-              <strong>Higher card:</strong> Gets action points (7 − 3 = 4 AP)
+              <strong>If different:</strong> Lower card uses its effect. Higher card gets action points (difference
+              between values).
             </p>
           </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    title: "Action Points",
-    content: (
-      <div className="slide-content action-points">
-        <p>The player with the higher card gets action points equal to the difference.</p>
-        <div className="ap-examples">
-          <div className="ap-example">
-            <div className="ap-cards">
-              <CardDisplay value={2} player="raptor" name="Disappear" icon="👁️" />
-              <CardDisplay value={8} player="scientist" name="Jeep" icon="🚙" />
-            </div>
-            <ActionPointsDisplay low={2} high={8} />
-            <p>Raptor uses Disappearance effect</p>
-            <p>Scientist gets 6 action points to spend</p>
-          </div>
-        </div>
-        <p className="ap-note">Each action costs 1 point. Spend them wisely!</p>
       </div>
     ),
   },
@@ -575,52 +504,52 @@ const slides: TutorialSlide[] = [
   {
     title: "Raptor Card Effects",
     content: (
-      <div className="slide-content card-effects raptor">
-        <div className="effects-list">
-          <div className="effect-row">
-            <CardDisplay value={1} player="raptor" name="Mother's Call" icon="📣" />
-            <span className="effect-desc">Move 1 baby to mother (shuffles deck)</span>
+      <div className="slide-content card-effects raptor compact">
+        <div className="effects-grid">
+          <div className="effect-item">
+            <span className="effect-value">1</span>
+            <span className="effect-icon">📣</span>
+            <span className="effect-text">Move 1 baby to mother (shuffles deck)</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={2} player="raptor" name="Disappearance" icon="👁️" />
-            <span className="effect-desc">Mother vanishes, see opponent's next card</span>
+          <div className="effect-item">
+            <span className="effect-value">2</span>
+            <span className="effect-icon">👁️</span>
+            <span className="effect-text">Mother vanishes, see opponent's next card</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={3} player="raptor" name="Fear" icon="😱" />
-            <span className="effect-desc">Frighten 1 scientist (can't act until stood up)</span>
+          <div className="effect-item">
+            <span className="effect-value">3</span>
+            <span className="effect-icon">😱</span>
+            <span className="effect-text">Frighten 1 scientist</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={4} player="raptor" name="Mother's Call" icon="📣" />
-            <span className="effect-desc">Move up to 2 babies to mother</span>
+          <div className="effect-item">
+            <span className="effect-value">4</span>
+            <span className="effect-icon">📣</span>
+            <span className="effect-text">Move up to 2 babies to mother</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={5} player="raptor" name="Recovery" icon="💚" />
-            <span className="effect-desc">Remove sleep tokens / wake babies (×2)</span>
+          <div className="effect-item">
+            <span className="effect-value">5</span>
+            <span className="effect-icon">💚</span>
+            <span className="effect-text">Remove sleep tokens / wake babies (×2)</span>
           </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "Raptor Card Effects (cont.)",
-    content: (
-      <div className="slide-content card-effects raptor">
-        <div className="effects-list">
-          <div className="effect-row">
-            <CardDisplay value={6} player="raptor" name="Disappearance" icon="👁️" />
-            <span className="effect-desc">Mother vanishes, see opponent's next card</span>
+          <div className="effect-item">
+            <span className="effect-value">6</span>
+            <span className="effect-icon">👁️</span>
+            <span className="effect-text">Mother vanishes, see opponent's next card</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={7} player="raptor" name="Recovery" icon="💚" />
-            <span className="effect-desc">Remove sleep tokens / wake babies (×3)</span>
+          <div className="effect-item">
+            <span className="effect-value">7</span>
+            <span className="effect-icon">💚</span>
+            <span className="effect-text">Remove sleep tokens / wake babies (×3)</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={8} player="raptor" name="Fear" icon="😱" />
-            <span className="effect-desc">Frighten up to 2 scientists</span>
+          <div className="effect-item">
+            <span className="effect-value">8</span>
+            <span className="effect-icon">😱</span>
+            <span className="effect-text">Frighten up to 2 scientists</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={9} player="raptor" name="No Effect" icon="⭕" />
-            <span className="effect-desc">High value = more action points if you win!</span>
+          <div className="effect-item">
+            <span className="effect-value">9</span>
+            <span className="effect-icon">⭕</span>
+            <span className="effect-text">No effect (but high value = more AP!)</span>
           </div>
         </div>
       </div>
@@ -629,120 +558,97 @@ const slides: TutorialSlide[] = [
   {
     title: "Scientist Card Effects",
     content: (
-      <div className="slide-content card-effects scientist">
-        <div className="effects-list">
-          <div className="effect-row">
-            <CardDisplay value={1} player="scientist" name="Sleeping Gas" icon="💨" />
-            <span className="effect-desc">Put 1 baby to sleep (shuffles deck)</span>
+      <div className="slide-content card-effects scientist compact">
+        <div className="effects-grid">
+          <div className="effect-item">
+            <span className="effect-value">1</span>
+            <span className="effect-icon">💨</span>
+            <span className="effect-text">Put 1 baby to sleep (shuffles deck)</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={2} player="scientist" name="Reinforcements" icon="🧑‍🔬" />
-            <span className="effect-desc">Place 1-2 scientists from reserve</span>
+          <div className="effect-item">
+            <span className="effect-value">2</span>
+            <span className="effect-icon">🧑‍🔬</span>
+            <span className="effect-text">Place 1-2 scientists from reserve</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={3} player="scientist" name="Jeep" icon="🚙" />
-            <span className="effect-desc">2 straight-line moves, extinguishes fire</span>
+          <div className="effect-item">
+            <span className="effect-value">3</span>
+            <span className="effect-icon">🚙</span>
+            <span className="effect-text">2 straight-line moves, extinguishes fire</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={4} player="scientist" name="Sleeping Gas" icon="💨" />
-            <span className="effect-desc">Put up to 2 babies to sleep</span>
+          <div className="effect-item">
+            <span className="effect-value">4</span>
+            <span className="effect-icon">💨</span>
+            <span className="effect-text">Put up to 2 babies to sleep</span>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={5} player="scientist" name="Fire" icon="🔥" />
-            <span className="effect-desc">Place 2 fire tokens (blocks raptors)</span>
+          <div className="effect-item">
+            <span className="effect-value">5</span>
+            <span className="effect-icon">🔥</span>
+            <span className="effect-text">Place 2 fire tokens (blocks raptors)</span>
+          </div>
+          <div className="effect-item">
+            <span className="effect-value">6</span>
+            <span className="effect-icon">🧑‍🔬</span>
+            <span className="effect-text">Place 1-2 scientists from reserve</span>
+          </div>
+          <div className="effect-item">
+            <span className="effect-value">7</span>
+            <span className="effect-icon">🔥</span>
+            <span className="effect-text">Place 3 fire tokens (blocks raptors)</span>
+          </div>
+          <div className="effect-item">
+            <span className="effect-value">8</span>
+            <span className="effect-icon">🚙</span>
+            <span className="effect-text">4 straight-line moves, extinguishes fire</span>
+          </div>
+          <div className="effect-item">
+            <span className="effect-value">9</span>
+            <span className="effect-icon">⭕</span>
+            <span className="effect-text">No effect (but high value = more AP!)</span>
           </div>
         </div>
       </div>
     ),
   },
   {
-    title: "Scientist Card Effects (cont.)",
+    title: "Special Rules & Status",
     content: (
-      <div className="slide-content card-effects scientist">
-        <div className="effects-list">
-          <div className="effect-row">
-            <CardDisplay value={6} player="scientist" name="Reinforcements" icon="🧑‍🔬" />
-            <span className="effect-desc">Place 1-2 scientists from reserve</span>
+      <div className="slide-content special-and-status">
+        <div className="rules-row">
+          <div className="rule-box">
+            <h4>🔥 Fire</h4>
+            <p>Blocks raptors. Scientists walk through. Mother can extinguish.</p>
           </div>
-          <div className="effect-row">
-            <CardDisplay value={7} player="scientist" name="Fire" icon="🔥" />
-            <span className="effect-desc">Place 3 fire tokens (blocks raptors)</span>
-          </div>
-          <div className="effect-row">
-            <CardDisplay value={8} player="scientist" name="Jeep" icon="🚙" />
-            <span className="effect-desc">4 straight-line moves, extinguishes fire</span>
-          </div>
-          <div className="effect-row">
-            <CardDisplay value={9} player="scientist" name="No Effect" icon="⭕" />
-            <span className="effect-desc">High value = more action points if you win!</span>
+          <div className="rule-box">
+            <h4>⛰️ Mountains</h4>
+            <p>Block all movement and shooting line of sight.</p>
           </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    title: "Special Rules",
-    content: (
-      <div className="slide-content special-rules">
-        <div className="rule-section">
-          <h3>🔥 Fire</h3>
-          <MiniBoard>
-            <SpaceDisplay type="normal">
-              <span>🧑‍🔬</span>
-            </SpaceDisplay>
-            <SpaceDisplay type="fire" />
-            <SpaceDisplay type="fire" />
-            <SpaceDisplay type="normal">
-              <span>🦖</span>
-            </SpaceDisplay>
-          </MiniBoard>
-          <p>
-            Blocks mother and babies. Scientists can walk through. Mother can extinguish adjacent fires (removes
-            connected group).
-          </p>
-        </div>
-        <div className="rule-section">
-          <h3>⛰️ Mountains</h3>
-          <MiniBoard>
-            <SpaceDisplay type="normal">
-              <span>🦎</span>
-            </SpaceDisplay>
-            <SpaceDisplay type="mountain" />
-            <SpaceDisplay type="normal">
-              <span>🧑‍🔬</span>
-            </SpaceDisplay>
-          </MiniBoard>
-          <p>Block all movement and line of sight for shooting.</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "Status Effects",
-    content: (
-      <div className="slide-content status-effects">
-        <div className="status-section">
-          <h3>😴 Sleeping Baby</h3>
-          <div className="status-display">
-            <span className="status-piece">
-              🦎<span className="status-icon">😴</span>
+        <div className="status-row">
+          <div className="status-box">
+            <span className="status-piece-small">
+              🦎<span className="status-icon-small">😴</span>
             </span>
+            <div>
+              <strong>Sleeping Baby</strong>
+              <p>Can't move. Can be captured. Wake with mother or Recovery.</p>
+            </div>
           </div>
-          <p>Cannot move. Can be captured by adjacent scientist. Mother or Recovery card can wake them.</p>
-        </div>
-        <div className="status-section">
-          <h3>😨 Frightened Scientist</h3>
-          <div className="status-display">
-            <span className="status-piece">
-              🧑‍🔬<span className="status-icon">😨</span>
+          <div className="status-box">
+            <span className="status-piece-small">
+              🧑‍🔬<span className="status-icon-small">😨</span>
             </span>
+            <div>
+              <strong>Frightened Scientist</strong>
+              <p>Can't act. Another scientist can stand them up.</p>
+            </div>
           </div>
-          <p>Cannot move or act. Another scientist can stand them up. Does NOT block shots!</p>
-        </div>
-        <div className="status-section">
-          <h3>💉 Mother's Sleep Tokens</h3>
-          <TrackerDisplay emoji="💉" filled={3} total={5} label="" />
-          <p>Each shot adds 1 token. At 5 tokens, scientists win! Mother must spend AP = tokens before moving.</p>
+          <div className="status-box">
+            <TrackerDisplay emoji="💉" filled={3} total={5} label="" />
+            <div>
+              <strong>Sleep Tokens</strong>
+              <p>5 tokens = scientists win! Costs AP to move.</p>
+            </div>
+          </div>
         </div>
       </div>
     ),

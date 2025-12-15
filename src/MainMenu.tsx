@@ -29,7 +29,7 @@ function MainMenu() {
     <div className="MainMenu">
       <div className="menu-content">
         <h1 className="menu-title">Raptor</h1>
-        <p className="menu-subtitle">A game of survival and capture</p>
+        <p className="menu-subtitle">An asymmetrical game of tactics and trickery for 2 players</p>
         <div className="menu-buttons">
           <button className="menu-button new-game" onClick={handleNewGame}>
             New Game
