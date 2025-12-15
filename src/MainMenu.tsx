@@ -1,9 +1,12 @@
+import { useState } from "react";
 import "./MainMenu.css";
 import { useGame } from "./state/GameContext";
 import { hasSavedGame, loadGame } from "./utils/saveLoad";
+import Tutorial from "./Tutorial";
 
 function MainMenu() {
   const { dispatch } = useGame();
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const handleNewGame = () => {
     dispatch({ type: "ADVANCE_PHASE" });
@@ -17,6 +20,10 @@ function MainMenu() {
   };
 
   const savedGameExists = hasSavedGame();
+
+  if (showTutorial) {
+    return <Tutorial onClose={() => setShowTutorial(false)} />;
+  }
 
   return (
     <div className="MainMenu">
@@ -32,6 +39,9 @@ function MainMenu() {
               Continue
             </button>
           )}
+          <button className="menu-button how-to-play" onClick={() => setShowTutorial(true)}>
+            How to Play
+          </button>
         </div>
       </div>
     </div>

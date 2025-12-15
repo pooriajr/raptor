@@ -60,6 +60,11 @@
   color: #fff;
 }
 
+.menu-button.how-to-play {
+  background: linear-gradient(145deg, #6a4a8a, #4a2a6a);
+  color: #fff;
+}
+
 .menu-button:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
