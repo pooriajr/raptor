@@ -76,6 +76,208 @@ function MiniBoard({ children }: { children: React.ReactNode }) {
   return <div className="tutorial-mini-board">{children}</div>;
 }
 
+// Full game board miniature for tutorial
+function GameBoardMini() {
+  // Simplified board representation matching actual game layout
+  // 2 rows, each with: L-tile (left), 3 square tiles, L-tile (right)
+  return (
+    <div className="tutorial-game-board">
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <clipPath id="tutorial-exit-right" clipPathUnits="objectBoundingBox">
+            <path d="M0.12,0 L0.65,0 L1,0.5 L0.65,1 L0.12,1 Q0,1 0,0.88 L0,0.12 Q0,0 0.12,0" />
+          </clipPath>
+          <clipPath id="tutorial-exit-left" clipPathUnits="objectBoundingBox">
+            <path d="M0.88,0 L0.35,0 L0,0.5 L0.35,1 L0.88,1 Q1,1 1,0.88 L1,0.12 Q1,0 0.88,0" />
+          </clipPath>
+        </defs>
+      </svg>
+
+      {/* Row 1 */}
+      <div className="board-mini-row">
+        {/* L-tile left (exit top) */}
+        <div className="mini-tile l-tile left">
+          <div className="mini-l-exit-col">
+            <div className="mini-space exit left" />
+            <div className="mini-space-placeholder" />
+            <div className="mini-space-placeholder" />
+          </div>
+          <div className="mini-l-main-col">
+            <div className="mini-space">
+              <span>🧑‍🔬</span>
+            </div>
+            <div className="mini-space" />
+            <div className="mini-space" />
+          </div>
+        </div>
+
+        {/* Square tile 1 */}
+        <div className="mini-tile square">
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space">
+            <span>🦎</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+        </div>
+
+        {/* Square tile 2 (center-left, where mother can start) */}
+        <div className="mini-tile square">
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space">
+            <span>🦎</span>
+          </div>
+          <div className="mini-space">
+            <span>🦖</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+        </div>
+
+        {/* Square tile 3 */}
+        <div className="mini-tile square">
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space">
+            <span>🦎</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+        </div>
+
+        {/* L-tile right (exit top) */}
+        <div className="mini-tile l-tile right">
+          <div className="mini-l-main-col">
+            <div className="mini-space">
+              <span>🧑‍🔬</span>
+            </div>
+            <div className="mini-space" />
+            <div className="mini-space" />
+          </div>
+          <div className="mini-l-exit-col">
+            <div className="mini-space exit right" />
+            <div className="mini-space-placeholder" />
+            <div className="mini-space-placeholder" />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2 */}
+      <div className="board-mini-row">
+        {/* L-tile left (exit bottom) */}
+        <div className="mini-tile l-tile left">
+          <div className="mini-l-exit-col">
+            <div className="mini-space-placeholder" />
+            <div className="mini-space-placeholder" />
+            <div className="mini-space exit left" />
+          </div>
+          <div className="mini-l-main-col">
+            <div className="mini-space" />
+            <div className="mini-space" />
+            <div className="mini-space">
+              <span>🧑‍🔬</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Square tile 4 */}
+        <div className="mini-tile square">
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space">
+            <span>🦎</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+        </div>
+
+        {/* Square tile 5 */}
+        <div className="mini-tile square">
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+        </div>
+
+        {/* Square tile 6 */}
+        <div className="mini-tile square">
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+          <div className="mini-space">
+            <span>🦎</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="mini-space" />
+          <div className="mini-space" />
+        </div>
+
+        {/* L-tile right (exit bottom) */}
+        <div className="mini-tile l-tile right">
+          <div className="mini-l-main-col">
+            <div className="mini-space" />
+            <div className="mini-space" />
+            <div className="mini-space">
+              <span>🧑‍🔬</span>
+            </div>
+          </div>
+          <div className="mini-l-exit-col">
+            <div className="mini-space-placeholder" />
+            <div className="mini-space-placeholder" />
+            <div className="mini-space exit right" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WinCondition({
   player,
   condition,
@@ -208,42 +410,20 @@ const slides: TutorialSlide[] = [
     title: "The Board",
     content: (
       <div className="slide-content board-overview">
-        <div className="board-diagram">
-          <div className="board-row">
-            <div className="board-tile l-tile left">
-              <span className="tile-label">Exit</span>
-            </div>
-            <div className="board-tile square-tile">
-              <span className="tile-content">🦎</span>
-            </div>
-            <div className="board-tile square-tile">
-              <span className="tile-content">🦖</span>
-            </div>
-            <div className="board-tile l-tile right">
-              <span className="tile-label">Exit</span>
-            </div>
-          </div>
-          <div className="board-row">
-            <div className="board-tile l-tile left">
-              <span className="tile-label">Exit</span>
-            </div>
-            <div className="board-tile square-tile">
-              <span className="tile-content">🦎</span>
-            </div>
-            <div className="board-tile square-tile">
-              <span className="tile-content">🦎</span>
-            </div>
-            <div className="board-tile l-tile right">
-              <span className="tile-label">Exit</span>
-            </div>
-          </div>
-        </div>
+        <GameBoardMini />
         <div className="board-legend">
-          <p>
-            <strong>6 Square tiles</strong> — Main playing area with rocks ⛰️
-          </p>
-          <p>
-            <strong>4 L-shaped tiles</strong> — Exits for baby raptors to escape
+          <div className="legend-items">
+            <div className="legend-item">
+              <span className="legend-icon">⛰️</span>
+              <span>Mountains block movement</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon exit-icon">▶</span>
+              <span>Exits for baby raptors to escape</span>
+            </div>
+          </div>
+          <p className="board-setup-note">
+            Scientists start on L-tiles. Mother starts in a central tile. Babies spread across square tiles.
           </p>
         </div>
       </div>

@@ -355,66 +355,125 @@
   font-size: 0.95rem;
 }
 
-/* Board overview */
-.board-diagram {
+/* Board overview - Mini game board */
+.tutorial-game-board {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: center;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
+  transform: perspective(800px) rotateX(10deg);
 }
 
-.board-row {
+.board-mini-row {
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
 
-.board-tile {
+.mini-tile {
+  border-radius: 6px;
+}
+
+.mini-tile.square {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding: 3px;
+  background: rgba(160, 155, 145, 0.5);
+}
+
+.mini-tile.l-tile {
+  display: flex;
+  gap: 2px;
+}
+
+.mini-l-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(160, 155, 145, 0.5);
+  border-radius: 6px;
+}
+
+.mini-l-exit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px 0;
+}
+
+.mini-space {
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  font-size: 14px;
 }
 
-.board-tile.square-tile {
-  width: 80px;
-  height: 80px;
+.mini-space.mountain {
+  background: rgba(50, 49, 41, 0.7);
 }
 
-.board-tile.l-tile {
-  width: 50px;
-  height: 80px;
-  background: rgba(100, 150, 100, 0.2);
+.mini-space.mountain span {
+  font-size: 12px;
+  filter: saturate(0.8) brightness(0.9);
 }
 
-.board-tile.l-tile.left {
-  border-radius: 4px 0 0 4px;
+.mini-space.exit {
+  background: rgba(200, 195, 185, 0.4);
 }
 
-.board-tile.l-tile.right {
-  border-radius: 0 4px 4px 0;
+.mini-space.exit.right {
+  clip-path: url(#tutorial-exit-right);
 }
 
-.tile-label {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
+.mini-space.exit.left {
+  clip-path: url(#tutorial-exit-left);
 }
 
-.tile-content {
-  font-size: 2rem;
+.mini-space-placeholder {
+  width: 24px;
+  height: 24px;
+  visibility: hidden;
 }
 
 .board-legend {
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.board-legend p {
-  margin: 0.3rem 0;
+.legend-items {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.legend-icon {
+  font-size: 1.2rem;
+}
+
+.legend-icon.exit-icon {
+  color: rgba(200, 195, 185, 0.8);
+  font-size: 1rem;
+}
+
+.board-setup-note {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.5rem;
 }
 
 /* Card display */
