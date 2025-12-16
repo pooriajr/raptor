@@ -51,6 +51,10 @@
   padding-right: 0.5rem;
 }
 
+.tutorial-slide:has(.board-overview-full) {
+  overflow: visible;
+}
+
 .tutorial-title {
   font-family: var(--font-display);
   font-size: 2rem;
@@ -520,6 +524,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+  overflow: visible;
 }
 
 .board-hover-hint {
@@ -624,7 +629,7 @@
   border-radius: 6px;
   font-size: 0.95rem;
   width: max-content;
-  max-width: 180px;
+  max-width: 200px;
   text-align: center;
   pointer-events: none;
   z-index: 1000;
@@ -636,7 +641,7 @@
 .space-tooltip::after {
   content: "";
   position: absolute;
-  border: 6px solid transparent;
+  border: 8px solid transparent;
 }
 
 .space-tooltip.top {

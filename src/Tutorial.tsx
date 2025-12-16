@@ -209,16 +209,12 @@ function GameBoardFull() {
           </TooltipSpace>
           <TooltipSpace
             className="full-space"
-            tooltip="Scientists work together to capture babies. This one is in trouble."
+            tooltip="Scientists work together to capture babies"
             tooltipPosition="bottom"
           >
             <span>🧑‍🔬</span>
           </TooltipSpace>
-          <TooltipSpace
-            className="full-space"
-            tooltip="Mother speeds around the board, killing scientists and saving babies"
-            tooltipPosition="top"
-          >
+          <TooltipSpace className="full-space" tooltip="Mother kills scientists and saves babies" tooltipPosition="top">
             <span className="mother-piece">🦖</span>
           </TooltipSpace>
           <div className="full-space" />
@@ -375,7 +371,7 @@ const slides: TutorialSlide[] = [
   },
 
   {
-    title: "The Board",
+    title: "Game Elements",
     content: (
       <div className="slide-content board-overview-full">
         <GameBoardFull />
