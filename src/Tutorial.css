@@ -13,8 +13,8 @@
 
 .tutorial-container {
   position: relative;
-  width: 90%;
-  max-width: 900px;
+  width: 95%;
+  max-width: 1200px;
   height: 85vh;
   background: rgba(30, 30, 50, 0.95);
   border-radius: 16px;
@@ -513,125 +513,231 @@
   font-size: 0.95rem;
 }
 
-/* Board overview - Mini game board */
-.tutorial-game-board {
+/* Board overview - Full size game board */
+.slide-content.board-overview-full {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   align-items: center;
-  margin: 0.5rem 0;
-  transform: perspective(800px) rotateX(10deg);
+  justify-content: center;
+  height: 100%;
 }
 
-.board-mini-row {
+.board-hover-hint {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
+.tutorial-game-board-full {
   display: flex;
-  gap: 2px;
+  flex-direction: column;
+  gap: 1px;
+  align-items: center;
+  transform: perspective(1200px) rotateX(15deg);
 }
 
-.mini-tile {
-  border-radius: 6px;
+.board-full-row {
+  display: flex;
+  gap: 1px;
 }
 
-.mini-tile.square {
+.full-tile {
+  border-radius: 16px;
+}
+
+.full-tile.square {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  padding: 3px;
+  gap: 6px;
+  padding: 8px;
   background: rgba(160, 155, 145, 0.5);
 }
 
-.mini-tile.l-tile {
+.full-tile.l-tile {
   display: flex;
-  gap: 2px;
+  gap: 6px;
 }
 
-.mini-l-main-col {
+.full-l-main-col {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 3px;
+  gap: 6px;
+  padding: 8px;
   background: rgba(160, 155, 145, 0.5);
-  border-radius: 6px;
+  border-radius: 16px;
 }
 
-.mini-l-exit-col {
+.full-l-exit-col {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 3px 0;
+  gap: 6px;
 }
 
-.mini-space {
-  width: 24px;
-  height: 24px;
+.full-tile.l-tile.left .full-l-exit-col {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.full-tile.l-tile.right .full-l-exit-col {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Position exit at top for row 1 L-tiles */
+.board-full-row:first-child .full-tile.l-tile .full-l-exit-col {
+  justify-content: flex-start;
+  padding-top: 8px;
+}
+
+/* Position exit at bottom for row 2 L-tiles */
+.board-full-row:last-child .full-tile.l-tile .full-l-exit-col {
+  justify-content: flex-end;
+  padding-bottom: 8px;
+}
+
+.full-space {
+  width: 56px;
+  height: 56px;
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+  border: 1px solid rgba(200, 195, 185, 0.1);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 48px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
 }
 
-.mini-space.mountain {
-  background: rgba(50, 49, 41, 0.7);
+.full-space.has-tooltip {
+  z-index: 10;
 }
 
-.mini-space.mountain span {
-  font-size: 12px;
-  filter: saturate(0.8) brightness(0.9);
-}
-
-.mini-space.exit {
-  background: rgba(200, 195, 185, 0.4);
-}
-
-.mini-space.exit.right {
-  clip-path: url(#tutorial-exit-right);
-}
-
-.mini-space.exit.left {
-  clip-path: url(#tutorial-exit-left);
-}
-
-.mini-space-placeholder {
-  width: 24px;
-  height: 24px;
-  visibility: hidden;
-}
-
-.board-legend {
+/* Permanent visible tooltips */
+.space-tooltip {
+  position: absolute;
+  background: rgba(20, 20, 35, 0.8);
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  width: max-content;
+  max-width: 180px;
   text-align: center;
-  margin-top: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-.legend-items {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-bottom: 0.5rem;
+/* Caret/pointer for tooltips */
+.space-tooltip::after {
+  content: "";
+  position: absolute;
+  border: 6px solid transparent;
 }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+.space-tooltip.top {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.legend-icon {
-  font-size: 1.2rem;
+.space-tooltip.top::after {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: rgba(20, 20, 35, 0.8);
 }
 
-.legend-icon.exit-icon {
-  color: rgba(200, 195, 185, 0.8);
-  font-size: 1rem;
+.space-tooltip.bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.board-setup-note {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 0.5rem;
+.space-tooltip.bottom::after {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: rgba(20, 20, 35, 0.8);
+}
+
+.space-tooltip.left {
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.space-tooltip.left::after {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: rgba(20, 20, 35, 0.8);
+}
+
+.space-tooltip.right {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.space-tooltip.right::after {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: rgba(20, 20, 35, 0.8);
+}
+
+.full-space.mountain {
+  background: rgba(50, 49, 41, 0.71);
+  border: none;
+}
+
+.full-space.mountain span {
+  filter: saturate(0.8) brightness(0.8);
+}
+
+.full-space.fire {
+  background: rgba(255, 120, 50, 0.4);
+  border-color: rgba(255, 100, 30, 0.5);
+}
+
+.full-space.fire span {
+  font-size: 42px;
+}
+
+/* Mother is bigger like in actual game */
+.full-space .mother-piece {
+  font-size: 72px;
+  margin: -12px;
+}
+
+.full-space.exit {
+  background: rgba(200, 195, 185, 0.4);
+  border: none;
+}
+
+.full-space.exit::after {
+  content: "→";
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.full-space.exit.left::after {
+  content: "←";
+}
+
+.full-space.exit.right::after {
+  content: "→";
+}
+
+.full-space-placeholder {
+  width: 56px;
+  height: 56px;
+  visibility: hidden;
 }
 
 /* How Rounds Work */

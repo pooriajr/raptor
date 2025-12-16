@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Tutorial.css";
+import "./Piece.css";
 
 interface TutorialProps {
   onClose: () => void;
@@ -9,16 +10,6 @@ interface TutorialProps {
 interface TutorialSlide {
   title: string;
   content: React.ReactNode;
-}
-
-// Visual components for tutorial
-function PieceDisplay({ emoji, label, size = "large" }: { emoji: string; label: string; size?: "large" | "medium" }) {
-  return (
-    <div className={`tutorial-piece ${size}`}>
-      <span className="tutorial-piece-emoji">{emoji}</span>
-      <span className="tutorial-piece-label">{label}</span>
-    </div>
-  );
 }
 
 function CardDisplay({
@@ -41,12 +32,30 @@ function CardDisplay({
   );
 }
 
-// Full game board miniature for tutorial
-function GameBoardMini() {
-  // Simplified board representation matching actual game layout
-  // 2 rows, each with: L-tile (left), 3 square tiles, L-tile (right)
+// Space with permanent visible tooltip
+function TooltipSpace({
+  children,
+  tooltip,
+  className,
+  tooltipPosition = "top",
+}: {
+  children?: React.ReactNode;
+  tooltip: string;
+  className: string;
+  tooltipPosition?: "top" | "bottom" | "left" | "right";
+}) {
   return (
-    <div className="tutorial-game-board">
+    <div className={`${className} has-tooltip`}>
+      {children}
+      <div className={`space-tooltip ${tooltipPosition}`}>{tooltip}</div>
+    </div>
+  );
+}
+
+// Full game board for tutorial - same size as actual game
+function GameBoardFull() {
+  return (
+    <div className="tutorial-game-board-full">
       <svg width="0" height="0" style={{ position: "absolute" }}>
         <defs>
           <clipPath id="tutorial-exit-right" clipPathUnits="objectBoundingBox">
@@ -59,203 +68,212 @@ function GameBoardMini() {
       </svg>
 
       {/* Row 1 */}
-      <div className="board-mini-row">
+      <div className="board-full-row">
         {/* L-tile left (exit top) */}
-        <div className="mini-tile l-tile left">
-          <div className="mini-l-exit-col">
-            <div className="mini-space exit left" />
-            <div className="mini-space-placeholder" />
-            <div className="mini-space-placeholder" />
+        <div className="full-tile l-tile left">
+          <div className="full-l-exit-col">
+            <TooltipSpace
+              className="full-space exit left"
+              tooltip="Exit: Baby raptors escape here"
+              tooltipPosition="top"
+            />
+            <div className="full-space-placeholder" />
+            <div className="full-space-placeholder" />
           </div>
-          <div className="mini-l-main-col">
-            <div className="mini-space">
-              <span>🧑‍🔬</span>
+          <div className="full-l-main-col">
+            <div className="full-space">
+              <span>🦎</span>
             </div>
-            <div className="mini-space" />
-            <div className="mini-space" />
+            <div className="full-space" />
+            <div className="full-space" />
           </div>
         </div>
 
         {/* Square tile 1 */}
-        <div className="mini-tile square">
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+        <div className="full-tile square">
+          <div className="full-space" />
+          <TooltipSpace
+            className="full-space mountain"
+            tooltip="Mountain: Blocks movement and shooting"
+            tooltipPosition="top"
+          >
+            <span>⛰️</span>
+          </TooltipSpace>
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space">
+            <span>🧑‍🔬</span>
+          </div>
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space">
-            <span>🦎</span>
-          </div>
-          <div className="mini-space" />
-          <div className="mini-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
+          <div className="full-space" />
+          <div className="full-space" />
         </div>
 
-        {/* Square tile 2 (center-left, where mother can start) */}
-        <div className="mini-tile square">
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+        {/* Square tile 2 */}
+        <div className="full-tile square">
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space">
+          <div className="full-space">
             <span>🦎</span>
           </div>
-          <div className="mini-space">
-            <span>🦖</span>
-          </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space" />
         </div>
 
         {/* Square tile 3 */}
-        <div className="mini-tile square">
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="mini-space">
+        <div className="full-tile square">
+          <div className="full-space" />
+          <div className="full-space" />
+          <TooltipSpace className="full-space" tooltip="Baby: Moves slowly, escapes via exits" tooltipPosition="top">
             <span>🦎</span>
-          </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+          </TooltipSpace>
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
+          <div className="full-space">
+            <span>🧑‍🔬</span>
+          </div>
+          <TooltipSpace
+            className="full-space fire"
+            tooltip="Fire: Created by scientists to blocks raptors"
+            tooltipPosition="bottom"
+          >
+            <span>🔥</span>
+          </TooltipSpace>
+          <div className="full-space" />
+          <div className="full-space mountain">
+            <span>⛰️</span>
+          </div>
+          <div className="full-space" />
         </div>
 
         {/* L-tile right (exit top) */}
-        <div className="mini-tile l-tile right">
-          <div className="mini-l-main-col">
-            <div className="mini-space">
-              <span>🧑‍🔬</span>
+        <div className="full-tile l-tile right">
+          <div className="full-l-main-col">
+            <div className="full-space fire">
+              <span>🔥</span>
             </div>
-            <div className="mini-space" />
-            <div className="mini-space" />
+            <div className="full-space fire">
+              <span>🔥</span>
+            </div>
+            <div className="full-space" />
           </div>
-          <div className="mini-l-exit-col">
-            <div className="mini-space exit right" />
-            <div className="mini-space-placeholder" />
-            <div className="mini-space-placeholder" />
+          <div className="full-l-exit-col">
+            <div className="full-space exit right" />
+            <div className="full-space-placeholder" />
+            <div className="full-space-placeholder" />
           </div>
         </div>
       </div>
 
       {/* Row 2 */}
-      <div className="board-mini-row">
+      <div className="board-full-row">
         {/* L-tile left (exit bottom) */}
-        <div className="mini-tile l-tile left">
-          <div className="mini-l-exit-col">
-            <div className="mini-space-placeholder" />
-            <div className="mini-space-placeholder" />
-            <div className="mini-space exit left" />
+        <div className="full-tile l-tile left">
+          <div className="full-l-exit-col">
+            <div className="full-space-placeholder" />
+            <div className="full-space-placeholder" />
+            <div className="full-space exit left" />
           </div>
-          <div className="mini-l-main-col">
-            <div className="mini-space" />
-            <div className="mini-space" />
-            <div className="mini-space">
-              <span>🧑‍🔬</span>
-            </div>
+          <div className="full-l-main-col">
+            <div className="full-space" />
+            <div className="full-space" />
+            <div className="full-space" />
           </div>
         </div>
 
         {/* Square tile 4 */}
-        <div className="mini-tile square">
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+        <div className="full-tile square">
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space">
-            <span>🦎</span>
-          </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+          <TooltipSpace className="full-space" tooltip="Sleeping baby: vulnerable to capture" tooltipPosition="left">
+            <span className="piece asleep">
+              🦎<span className="status-icon">😴</span>
+            </span>
+          </TooltipSpace>
+          <TooltipSpace
+            className="full-space"
+            tooltip="Scientist: Moves slow, captures babies"
+            tooltipPosition="bottom"
+          >
+            <span>🧑‍🔬</span>
+          </TooltipSpace>
+          <TooltipSpace className="full-space" tooltip="Mother: Moves fast, kills scientists" tooltipPosition="top">
+            <span className="mother-piece">🦖</span>
+          </TooltipSpace>
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
+          <div className="full-space" />
         </div>
 
         {/* Square tile 5 */}
-        <div className="mini-tile square">
-          <div className="mini-space mountain">
+        <div className="full-tile square">
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+          <div className="full-space">
+            <span>🧑‍🔬</span>
+          </div>
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
+          <div className="full-space" />
         </div>
 
         {/* Square tile 6 */}
-        <div className="mini-tile square">
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+        <div className="full-tile square">
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
-          <div className="mini-space">
+          <div className="full-space" />
+          <div className="full-space" />
+          <div className="full-space">
             <span>🦎</span>
           </div>
-          <div className="mini-space" />
-          <div className="mini-space mountain">
+          <div className="full-space" />
+          <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <div className="mini-space" />
-          <div className="mini-space" />
+          <div className="full-space" />
+          <div className="full-space" />
         </div>
 
         {/* L-tile right (exit bottom) */}
-        <div className="mini-tile l-tile right">
-          <div className="mini-l-main-col">
-            <div className="mini-space" />
-            <div className="mini-space" />
-            <div className="mini-space">
+        <div className="full-tile l-tile right">
+          <div className="full-l-main-col">
+            <div className="full-space" />
+            <div className="full-space" />
+            <div className="full-space">
               <span>🧑‍🔬</span>
             </div>
           </div>
-          <div className="mini-l-exit-col">
-            <div className="mini-space-placeholder" />
-            <div className="mini-space-placeholder" />
-            <div className="mini-space exit right" />
+          <div className="full-l-exit-col">
+            <div className="full-space-placeholder" />
+            <div className="full-space-placeholder" />
+            <div className="full-space exit right" />
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function WinCondition({
-  player,
-  condition,
-  icon,
-}: {
-  player: "raptor" | "scientist";
-  condition: string;
-  icon: string;
-}) {
-  return (
-    <div className={`tutorial-win-condition ${player}`}>
-      <span className="win-icon">{icon}</span>
-      <span className="win-text">{condition}</span>
     </div>
   );
 }
@@ -347,90 +365,12 @@ const slides: TutorialSlide[] = [
       </div>
     ),
   },
-  {
-    title: "The Pieces",
-    content: (
-      <div className="slide-content pieces">
-        <div className="pieces-section raptor">
-          <h3>Raptor Team</h3>
-          <div className="pieces-row mother-row">
-            <PieceDisplay emoji="🦖" label="Mother Raptor" />
-          </div>
-          <div className="pieces-row babies-row">
-            <PieceDisplay emoji="🦎" label="" size="medium" />
-            <PieceDisplay emoji="🦎" label="" size="medium" />
-            <PieceDisplay emoji="🦎" label="" size="medium" />
-            <PieceDisplay emoji="🦎" label="" size="medium" />
-            <PieceDisplay emoji="🦎" label="" size="medium" />
-          </div>
-          <p className="pieces-count">1 Mother + 5 Baby Raptors</p>
-        </div>
-        <div className="pieces-section scientist">
-          <h3>Scientist Team</h3>
-          <div className="pieces-row scientists-row">
-            <div className="scientists-on-board">
-              <div className="scientist-group">
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-              </div>
-              <span className="group-label">On Board</span>
-            </div>
-            <div className="scientists-reserve">
-              <div className="scientist-group">
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-                <PieceDisplay emoji="🧑‍🔬" label="" size="medium" />
-              </div>
-              <span className="group-label">In Reserve</span>
-            </div>
-          </div>
-          <p className="pieces-count">4 start on board + 6 in reserve = 10 total</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "Win Conditions",
-    content: (
-      <div className="slide-content win-conditions">
-        <div className="win-section raptor">
-          <h3>🦖 Raptor Wins If:</h3>
-          <WinCondition player="raptor" condition="3 babies escape the board" icon="🦎🦎🦎" />
-          <WinCondition player="raptor" condition="All scientists are eliminated" icon="💀" />
-        </div>
-        <div className="win-section scientist">
-          <h3>🧑‍🔬 Scientist Wins If:</h3>
-          <WinCondition player="scientist" condition="3 babies are captured" icon="🦎🦎🦎" />
-          <WinCondition player="scientist" condition="Mother has 5 sleep tokens" icon="💉💉💉💉💉" />
-        </div>
-      </div>
-    ),
-  },
+
   {
     title: "The Board",
     content: (
-      <div className="slide-content board-overview">
-        <GameBoardMini />
-        <div className="board-legend">
-          <div className="legend-items">
-            <div className="legend-item">
-              <span className="legend-icon">⛰️</span>
-              <span>Mountains block movement</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-icon exit-icon">▶</span>
-              <span>Exits for baby raptors to escape</span>
-            </div>
-          </div>
-          <p className="board-setup-note">
-            Scientists start on L-tiles. Mother starts in a central tile. Babies spread across square tiles.
-          </p>
-        </div>
+      <div className="slide-content board-overview-full">
+        <GameBoardFull />
       </div>
     ),
   },
