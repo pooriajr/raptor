@@ -69,23 +69,23 @@ function GameBoardFull() {
 
       {/* Row 1 */}
       <div className="board-full-row">
-        {/* L-tile left (exit top) */}
+        {/* L-tile left (exit bottom/center) */}
         <div className="full-tile l-tile left">
           <div className="full-l-exit-col">
+            <div className="full-space-placeholder" />
+            <div className="full-space-placeholder" />
             <TooltipSpace
               className="full-space exit left"
               tooltip="Baby raptors escape via 4 exit spaces"
               tooltipPosition="top"
             />
-            <div className="full-space-placeholder" />
-            <div className="full-space-placeholder" />
           </div>
           <div className="full-l-main-col">
+            <div className="full-space" />
+            <div className="full-space" />
             <div className="full-space">
               <span>🦎</span>
             </div>
-            <div className="full-space" />
-            <div className="full-space" />
           </div>
         </div>
 
@@ -177,12 +177,12 @@ function GameBoardFull() {
 
       {/* Row 2 */}
       <div className="board-full-row">
-        {/* L-tile left (exit bottom) */}
+        {/* L-tile left (exit top/center) */}
         <div className="full-tile l-tile left">
           <div className="full-l-exit-col">
-            <div className="full-space-placeholder" />
-            <div className="full-space-placeholder" />
             <div className="full-space exit left" />
+            <div className="full-space-placeholder" />
+            <div className="full-space-placeholder" />
           </div>
           <div className="full-l-main-col">
             <div className="full-space" />
