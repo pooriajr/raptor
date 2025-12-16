@@ -74,7 +74,7 @@ function GameBoardFull() {
           <div className="full-l-exit-col">
             <TooltipSpace
               className="full-space exit left"
-              tooltip="Exit: Baby raptors escape here"
+              tooltip="Baby raptors escape via 4 exit spaces"
               tooltipPosition="top"
             />
             <div className="full-space-placeholder" />
@@ -94,7 +94,7 @@ function GameBoardFull() {
           <div className="full-space" />
           <TooltipSpace
             className="full-space mountain"
-            tooltip="Mountain: Blocks movement and shooting"
+            tooltip="Mountains blocks movement and line of sight"
             tooltipPosition="top"
           >
             <span>⛰️</span>
@@ -133,7 +133,7 @@ function GameBoardFull() {
         <div className="full-tile square">
           <div className="full-space" />
           <div className="full-space" />
-          <TooltipSpace className="full-space" tooltip="Baby: Moves slowly, escapes via exits" tooltipPosition="top">
+          <TooltipSpace className="full-space" tooltip="Babies try to escape via exits" tooltipPosition="top">
             <span>🦎</span>
           </TooltipSpace>
           <div className="full-space mountain">
@@ -144,7 +144,7 @@ function GameBoardFull() {
           </div>
           <TooltipSpace
             className="full-space fire"
-            tooltip="Fire: Created by scientists to blocks raptors"
+            tooltip="Scientists set fires to blocks raptors"
             tooltipPosition="bottom"
           >
             <span>🔥</span>
@@ -198,19 +198,27 @@ function GameBoardFull() {
           <div className="full-space mountain">
             <span>⛰️</span>
           </div>
-          <TooltipSpace className="full-space" tooltip="Sleeping baby: vulnerable to capture" tooltipPosition="left">
+          <TooltipSpace
+            className="full-space"
+            tooltip="Sleeping babies are vulnerable to capture"
+            tooltipPosition="left"
+          >
             <span className="piece asleep">
               🦎<span className="status-icon">😴</span>
             </span>
           </TooltipSpace>
           <TooltipSpace
             className="full-space"
-            tooltip="Scientist: Moves slow, captures babies"
+            tooltip="Scientists work together to capture babies. This one is in trouble."
             tooltipPosition="bottom"
           >
             <span>🧑‍🔬</span>
           </TooltipSpace>
-          <TooltipSpace className="full-space" tooltip="Mother: Moves fast, kills scientists" tooltipPosition="top">
+          <TooltipSpace
+            className="full-space"
+            tooltip="Mother speeds around the board, killing scientists and saving babies"
+            tooltipPosition="top"
+          >
             <span className="mother-piece">🦖</span>
           </TooltipSpace>
           <div className="full-space" />
