@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Tutorial.css";
 import "./Piece.css";
+import { HandDisplay } from "./PlayerArea/Hand";
+import { CARDS } from "./data/cards";
 
 interface TutorialProps {
   onClose: () => void;
@@ -10,26 +12,6 @@ interface TutorialProps {
 interface TutorialSlide {
   title: string;
   content: React.ReactNode;
-}
-
-function CardDisplay({
-  value,
-  player,
-  name,
-  icon,
-}: {
-  value: number;
-  player: "raptor" | "scientist";
-  name: string;
-  icon: string;
-}) {
-  return (
-    <div className={`tutorial-card ${player}`}>
-      <div className="tutorial-card-value">{value}</div>
-      <div className="tutorial-card-icon">{icon}</div>
-      <div className="tutorial-card-name">{name}</div>
-    </div>
-  );
 }
 
 // Space with permanent visible tooltip
@@ -385,32 +367,45 @@ const slides: TutorialSlide[] = [
         <div className="round-step">
           <div className="step-number">1</div>
           <div className="step-content">
-            <h4>Select Cards</h4>
-            <p>Both players secretly choose a card from their hand of 3 (numbered 1-9).</p>
+            <h4>Both players secretly select a card (1-9)</h4>
+            <div className="step-hands">
+              <HandDisplay
+                player="raptor"
+                cards={[CARDS.raptor_3_fear, CARDS.raptor_5_recovery, CARDS.raptor_8_fear]}
+                selectedCardId="raptor_3_fear"
+                static
+              />
+              <HandDisplay
+                player="scientist"
+                cards={[CARDS.scientist_2_reinforcements, CARDS.scientist_6_reinforcements, CARDS.scientist_9_none]}
+                selectedCardId="scientist_6_reinforcements"
+                static
+              />
+            </div>
           </div>
         </div>
         <div className="round-step">
           <div className="step-number">2</div>
           <div className="step-content">
-            <h4>Reveal & Compare</h4>
-            <div className="compare-example">
-              <CardDisplay value={3} player="raptor" name="Fear" icon="😱" />
-              <span className="vs">vs</span>
-              <CardDisplay value={7} player="scientist" name="Fire" icon="🔥" />
-            </div>
+            <h4>Cards revealed — if tied, round ends with no effect</h4>
           </div>
         </div>
         <div className="round-step">
           <div className="step-number">3</div>
           <div className="step-content">
-            <h4>Resolve</h4>
-            <p>
-              <strong>If tied:</strong> Round ends — no effects!
-            </p>
-            <p>
-              <strong>If different:</strong> Lower card uses its effect. Higher card gets action points (difference
-              between values).
-            </p>
+            <h4>Lower card uses its special effect</h4>
+          </div>
+        </div>
+        <div className="round-step">
+          <div className="step-number">4</div>
+          <div className="step-content">
+            <h4>Higher card gets action points = difference</h4>
+          </div>
+        </div>
+        <div className="round-step">
+          <div className="step-number">5</div>
+          <div className="step-content">
+            <h4>Discard played cards, draw back to 3</h4>
           </div>
         </div>
       </div>
@@ -740,10 +735,6 @@ function Tutorial({ onClose }: TutorialProps) {
               Next →
             </button>
           )}
-        </div>
-
-        <div className="slide-counter">
-          {currentSlide + 1} / {slides.length}
         </div>
       </div>
     </div>

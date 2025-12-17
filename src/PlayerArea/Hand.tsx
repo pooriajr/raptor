@@ -1,13 +1,99 @@
 import Card from "../Card";
 import PrivacyScreen from "./PrivacyScreen";
 import { useGame } from "../state/GameContext";
-import type { CardId } from "@/data/cards.ts";
-import "./Hand.css";
+import type { CardId, CardInfo } from "@/data/cards.ts";
+
+interface HandDisplayProps {
+  player: "raptor" | "scientist";
+  cards: CardInfo[];
+  selectedCardId?: CardId | null;
+  onCardSelect?: (cardId: CardId) => void;
+  selecting?: boolean;
+  static?: boolean;
+}
+
+// Get fan animation class based on card index and total cards
+function getFanClass(index: number, totalCards: number, isStatic: boolean): string {
+  if (isStatic) {
+    // Static: apply final transforms directly, no animation
+    if (totalCards === 3) {
+      if (index === 0) return "-rotate-[5deg]";
+      if (index === 1) return "-translate-y-2.5";
+      if (index === 2) return "rotate-[5deg]";
+    } else if (totalCards === 2) {
+      if (index === 0) return "-rotate-[5deg]";
+      if (index === 1) return "rotate-[5deg]";
+    }
+    return "";
+  }
+  // Animated: use keyframe animations
+  if (totalCards === 3) {
+    if (index === 0) return "animate-fan-left";
+    if (index === 1) return "animate-fan-middle";
+    if (index === 2) return "animate-fan-right";
+  } else if (totalCards === 2) {
+    if (index === 0) return "animate-fan-left";
+    if (index === 1) return "animate-fan-right";
+  }
+  return "";
+}
+
+// Presentational component - renders a hand of cards with no state management
+export function HandDisplay({
+  player,
+  cards,
+  selectedCardId = null,
+  onCardSelect,
+  selecting = false,
+  static: isStatic = false,
+}: HandDisplayProps) {
+  const hasSelection = selectedCardId != null;
+  const isRaptor = player === "raptor";
+
+  const handClasses = [
+    "flex flex-col items-center transition-transform duration-300 ease-in-out relative",
+    isRaptor ? "origin-top" : "origin-bottom",
+    selecting ? "scale-[1.2]" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div className={handClasses} style={isStatic ? { pointerEvents: "none" } : undefined}>
+      <div className="flex [perspective:1000px] relative">
+        {cards.map((card, index) => {
+          const isSelected = card.id === selectedCardId;
+          const isDimmed = hasSelection && !isSelected;
+          const fanClass = getFanClass(index, cards.length, isStatic);
+
+          return (
+            <div
+              key={card.id}
+              className={`relative z-[1] first:ml-0 -ml-[15px] hover:z-10 has-[.selected]:z-10 ${fanClass}`}
+            >
+              <Card
+                card={card}
+                faceUp={true}
+                onClick={onCardSelect ? () => onCardSelect(card.id) : undefined}
+                selected={isSelected}
+                dimmed={isDimmed}
+                layoutId={isStatic ? undefined : `card-${card.id}`}
+                layoutDelay={index * 0.1 + 0.1}
+                skipAnimation={isStatic}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 interface HandProps {
   player: "raptor" | "scientist";
 }
 
+// Container component - manages state and passes to HandDisplay
 function Hand({ player }: HandProps) {
   const { state, dispatch } = useGame();
   const isRaptor = player === "raptor";
@@ -48,26 +134,33 @@ function Hand({ player }: HandProps) {
   const canSelect = !faceDown && !showPrivacyScreen;
   const hasSelection = selectedCardId != null;
 
-  const handClassName = `Hand ${player}${isThisPlayerSelecting ? " selecting" : ""}`;
+  const handClasses = [
+    "flex flex-col items-center transition-transform duration-300 ease-in-out relative",
+    isRaptor ? "origin-top" : "origin-bottom",
+    isThisPlayerSelecting ? "scale-[1.2]" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  // Filter out cards that shouldn't render (during CARD_REVEAL, the selected card is shown elsewhere)
+  const visibleCards = handCards.filter((card) => !(isCardReveal && card.id === selectedCardId));
 
   return (
-    <div className={handClassName}>
-      <div className="hand-cards">
-        {handCards.map((card, index) => {
+    <div className={handClasses}>
+      <div className="flex [perspective:1000px] relative">
+        {visibleCards.map((card, index) => {
           const isSelected = card.id === selectedCardId;
-
-          // During CARD_REVEAL, don't render the selected card - it's in the reveal
-          if (isCardReveal && isSelected) {
-            return null;
-          }
-
           const isDimmed = hasSelection && !isSelected;
           // During observation, show the selected card face-up
           const revealedByObservation = observationRevealsCard && isSelected;
           const cardFaceDown = revealedByObservation ? false : faceDown || (faceDownUnselected && !isSelected);
+          const fanClass = getFanClass(index, visibleCards.length, false);
 
           return (
-            <div key={card.id} className="card-wrapper">
+            <div
+              key={card.id}
+              className={`relative z-[1] first:ml-0 -ml-[15px] hover:z-10 has-[.selected]:z-10 ${fanClass}`}
+            >
               <Card
                 card={card}
                 faceUp={!cardFaceDown}

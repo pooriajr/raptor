@@ -38,6 +38,11 @@
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
 }
 
 .tutorial-close:hover {
@@ -787,6 +792,13 @@
   margin: 0.25rem 0;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.8);
+}
+
+.step-hands {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+  padding: 2rem 0;
 }
 
 .compare-example {
