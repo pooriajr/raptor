@@ -10,6 +10,7 @@ interface HandDisplayProps {
   onCardSelect?: (cardId: CardId) => void;
   selecting?: boolean;
   static?: boolean;
+  faceUp?: boolean;
 }
 
 // Get fan animation class based on card index and total cards
@@ -46,6 +47,7 @@ export function HandDisplay({
   onCardSelect,
   selecting = false,
   static: isStatic = false,
+  faceUp = true,
 }: HandDisplayProps) {
   const hasSelection = selectedCardId != null;
   const isRaptor = player === "raptor";
@@ -73,7 +75,7 @@ export function HandDisplay({
             >
               <Card
                 card={card}
-                faceUp={true}
+                faceUp={faceUp}
                 onClick={onCardSelect ? () => onCardSelect(card.id) : undefined}
                 selected={isSelected}
                 dimmed={isDimmed}

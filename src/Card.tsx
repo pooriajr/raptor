@@ -150,7 +150,7 @@ function Card({
       </div>
 
       {/* Back face - shows the card back pattern */}
-      <div className={`${cardFaceBase} ${borderColor} ${backBg} [transform:rotateY(180deg)]`}>
+      <div className={`${cardFaceBase} ${borderColor} ${backBg} ${selectedStyles} [transform:rotateY(180deg)]`}>
         <div className="text-[42px] opacity-60">{isRaptor ? "🦖" : "🔬"}</div>
       </div>
 

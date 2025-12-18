@@ -4,6 +4,7 @@ import "./Tutorial.css";
 import "./Piece.css";
 import { HandDisplay } from "./PlayerArea/Hand";
 import { CARDS } from "./data/cards";
+import { CardResolutionDisplay, EffectContent, ActionPointsContent } from "./CardResolution";
 
 interface TutorialProps {
   onClose: () => void;
@@ -367,19 +368,21 @@ const slides: TutorialSlide[] = [
         <div className="round-step">
           <div className="step-number">1</div>
           <div className="step-content">
-            <h4>Both players secretly select a card (1-9)</h4>
+            <h4>Both players secretly choose a card from their hand</h4>
             <div className="step-hands">
               <HandDisplay
                 player="raptor"
                 cards={[CARDS.raptor_3_fear, CARDS.raptor_5_recovery, CARDS.raptor_8_fear]}
                 selectedCardId="raptor_3_fear"
                 static
+                faceUp={false}
               />
               <HandDisplay
                 player="scientist"
                 cards={[CARDS.scientist_2_reinforcements, CARDS.scientist_6_reinforcements, CARDS.scientist_9_none]}
                 selectedCardId="scientist_6_reinforcements"
                 static
+                faceUp={false}
               />
             </div>
           </div>
@@ -388,12 +391,29 @@ const slides: TutorialSlide[] = [
           <div className="step-number">2</div>
           <div className="step-content">
             <h4>Cards revealed — if tied, round ends with no effect</h4>
+            <div className="step-hands">
+              <HandDisplay player="raptor" cards={[CARDS.raptor_3_fear]} static />
+              <HandDisplay player="scientist" cards={[CARDS.scientist_6_reinforcements]} static />
+            </div>
           </div>
         </div>
         <div className="round-step">
           <div className="step-number">3</div>
           <div className="step-content">
             <h4>Lower card uses its special effect</h4>
+            <div className="step-resolution">
+              <HandDisplay player="raptor" cards={[CARDS.raptor_3_fear]} static />
+              <CardResolutionDisplay
+                raptorContent={<EffectContent card={CARDS.raptor_3_fear} />}
+                scientistContent={<ActionPointsContent actionPoints={3} animate={false} />}
+                raptorState="active"
+                scientistState="done"
+                static
+              />
+              <div className="step-scribble">
+                (The FEAR effect lets Raptor prevent 1 scientist piece from taking actions)
+              </div>
+            </div>
           </div>
         </div>
         <div className="round-step">
