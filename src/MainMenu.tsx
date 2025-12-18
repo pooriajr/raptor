@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./MainMenu.css";
 import { useGame } from "./state/GameContext";
 import { hasSavedGame, loadGame } from "./utils/saveLoad";
-import Tutorial from "./Tutorial";
+import Tutorial from "./Tutorial/Tutorial";
 
 function MainMenu() {
   const { dispatch } = useGame();

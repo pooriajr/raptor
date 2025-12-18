@@ -796,9 +796,9 @@
 
 .step-hands {
   display: flex;
-  justify-content: space-around;
-  gap: 1rem;
-  padding: 2rem 0;
+  justify-content: space-between;
+  gap: 3rem;
+  padding: 2rem 1rem;
 }
 
 .step-resolution {
@@ -817,6 +817,10 @@
   line-height: 1.3;
   transform: rotate(2deg);
   margin-left: -1rem;
+}
+
+.step-scribble.scientist {
+  color: #ffcc80;
 }
 
 .compare-example {
