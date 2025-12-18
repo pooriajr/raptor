@@ -2,8 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Tutorial.css";
 import "../Piece.css";
-import { CARDS } from "@/data/cards";
 import PlayingARoundSlide from "./PlayingARoundSlide";
+import RaptorCardsSlide from "./RaptorCardsSlide";
+import ScientistCardsSlide from "./ScientistCardsSlide";
 
 interface TutorialProps {
   onClose: () => void;
@@ -365,181 +366,12 @@ const slides: TutorialSlide[] = [
     content: <PlayingARoundSlide />,
   },
   {
-    title: "Raptor Actions",
-    content: (
-      <div className="slide-content raptor-actions">
-        <h3>🦖 Mother Raptor (1 AP each)</h3>
-        <div className="actions-grid">
-          <div className="action-item">
-            <span className="action-icon">➡️</span>
-            <span className="action-text">Move in a straight line until blocked</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">💀</span>
-            <span className="action-text">Kill adjacent scientist</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">⏰</span>
-            <span className="action-text">Wake adjacent sleeping baby</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">💧</span>
-            <span className="action-text">Extinguish adjacent fire</span>
-          </div>
-        </div>
-        <h3>🦎 Baby Raptor (1 AP each)</h3>
-        <div className="actions-grid">
-          <div className="action-item">
-            <span className="action-icon">↔️</span>
-            <span className="action-text">Move one space orthogonally</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">🚪</span>
-            <span className="action-text">Exit the board (if on exit space)</span>
-          </div>
-        </div>
-        <p className="action-note">⚠️ Wounded mother must spend AP equal to sleep tokens before first move!</p>
-      </div>
-    ),
-  },
-  {
-    title: "Scientist Actions",
-    content: (
-      <div className="slide-content scientist-actions">
-        <h3>🧑‍🔬 Scientist Actions (1 AP each)</h3>
-        <div className="actions-grid">
-          <div className="action-item">
-            <span className="action-icon">↔️</span>
-            <span className="action-text">Move one space orthogonally</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">🧍</span>
-            <span className="action-text">Stand up frightened scientist</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">😴</span>
-            <span className="action-text">Put adjacent baby to sleep</span>
-          </div>
-          <div className="action-item">
-            <span className="action-icon">🪤</span>
-            <span className="action-text">Capture adjacent sleeping baby</span>
-          </div>
-          <div className="action-item aggressive">
-            <span className="action-icon">🔫</span>
-            <span className="action-text">Shoot mother (straight line, adds sleep token)</span>
-          </div>
-        </div>
-        <p className="action-note">⚠️ Each scientist can only shoot OR capture once per round!</p>
-      </div>
-    ),
-  },
-  {
     title: "Raptor Card Effects",
-    content: (
-      <div className="slide-content card-effects raptor compact">
-        <div className="effects-grid">
-          <div className="effect-item">
-            <span className="effect-value">1</span>
-            <span className="effect-icon">📣</span>
-            <span className="effect-text">Move 1 baby to mother (shuffles deck)</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">2</span>
-            <span className="effect-icon">👁️</span>
-            <span className="effect-text">Mother vanishes, see opponent's next card</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">3</span>
-            <span className="effect-icon">😱</span>
-            <span className="effect-text">Frighten 1 scientist</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">4</span>
-            <span className="effect-icon">📣</span>
-            <span className="effect-text">Move up to 2 babies to mother</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">5</span>
-            <span className="effect-icon">💚</span>
-            <span className="effect-text">Remove sleep tokens / wake babies (×2)</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">6</span>
-            <span className="effect-icon">👁️</span>
-            <span className="effect-text">Mother vanishes, see opponent's next card</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">7</span>
-            <span className="effect-icon">💚</span>
-            <span className="effect-text">Remove sleep tokens / wake babies (×3)</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">8</span>
-            <span className="effect-icon">😱</span>
-            <span className="effect-text">Frighten up to 2 scientists</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">9</span>
-            <span className="effect-icon">⭕</span>
-            <span className="effect-text">No effect (but high value = more AP!)</span>
-          </div>
-        </div>
-      </div>
-    ),
+    content: <RaptorCardsSlide />,
   },
   {
     title: "Scientist Card Effects",
-    content: (
-      <div className="slide-content card-effects scientist compact">
-        <div className="effects-grid">
-          <div className="effect-item">
-            <span className="effect-value">1</span>
-            <span className="effect-icon">💨</span>
-            <span className="effect-text">Put 1 baby to sleep (shuffles deck)</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">2</span>
-            <span className="effect-icon">🧑‍🔬</span>
-            <span className="effect-text">Place 1-2 scientists from reserve</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">3</span>
-            <span className="effect-icon">🚙</span>
-            <span className="effect-text">2 straight-line moves, extinguishes fire</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">4</span>
-            <span className="effect-icon">💨</span>
-            <span className="effect-text">Put up to 2 babies to sleep</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">5</span>
-            <span className="effect-icon">🔥</span>
-            <span className="effect-text">Place 2 fire tokens (blocks raptors)</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">6</span>
-            <span className="effect-icon">🧑‍🔬</span>
-            <span className="effect-text">Place 1-2 scientists from reserve</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">7</span>
-            <span className="effect-icon">🔥</span>
-            <span className="effect-text">Place 3 fire tokens (blocks raptors)</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">8</span>
-            <span className="effect-icon">🚙</span>
-            <span className="effect-text">4 straight-line moves, extinguishes fire</span>
-          </div>
-          <div className="effect-item">
-            <span className="effect-value">9</span>
-            <span className="effect-icon">⭕</span>
-            <span className="effect-text">No effect (but high value = more AP!)</span>
-          </div>
-        </div>
-      </div>
-    ),
+    content: <ScientistCardsSlide />,
   },
   {
     title: "Special Rules & Status",

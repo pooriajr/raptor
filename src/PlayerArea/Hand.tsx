@@ -11,6 +11,10 @@ interface HandDisplayProps {
   selecting?: boolean;
   static?: boolean;
   faceUp?: boolean;
+  // Granular controls (these are all implied by static=true)
+  skipEntryAnimation?: boolean;
+  hideTooltips?: boolean;
+  staticFan?: boolean;
 }
 
 // Get fan animation class based on card index and total cards
@@ -48,9 +52,17 @@ export function HandDisplay({
   selecting = false,
   static: isStatic = false,
   faceUp = true,
+  skipEntryAnimation = false,
+  hideTooltips = false,
+  staticFan = false,
 }: HandDisplayProps) {
   const hasSelection = selectedCardId != null;
   const isRaptor = player === "raptor";
+
+  // static implies all granular controls
+  const shouldSkipEntryAnimation = skipEntryAnimation || isStatic;
+  const shouldHideTooltips = hideTooltips || isStatic;
+  const shouldStaticFan = staticFan || isStatic;
 
   const handClasses = [
     "flex flex-col items-center transition-transform duration-300 ease-in-out relative",
@@ -66,7 +78,7 @@ export function HandDisplay({
         {cards.map((card, index) => {
           const isSelected = card.id === selectedCardId;
           const isDimmed = hasSelection && !isSelected;
-          const fanClass = getFanClass(index, cards.length, isStatic);
+          const fanClass = getFanClass(index, cards.length, shouldStaticFan);
 
           return (
             <div
@@ -79,9 +91,10 @@ export function HandDisplay({
                 onClick={onCardSelect ? () => onCardSelect(card.id) : undefined}
                 selected={isSelected}
                 dimmed={isDimmed}
-                layoutId={isStatic ? undefined : `card-${card.id}`}
+                layoutId={shouldSkipEntryAnimation ? undefined : `card-${card.id}`}
                 layoutDelay={index * 0.1 + 0.1}
-                skipAnimation={isStatic}
+                skipAnimation={shouldSkipEntryAnimation}
+                hideTooltip={shouldHideTooltips}
               />
             </div>
           );
