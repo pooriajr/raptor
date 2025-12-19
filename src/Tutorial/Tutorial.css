@@ -111,10 +111,15 @@
   color: #fff;
 }
 
-.nav-button.next:hover,
+.nav-button.next:hover:not(:disabled),
 .nav-button.start:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(74, 138, 74, 0.4);
+}
+
+.nav-button.next:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .slide-indicators {
@@ -146,7 +151,6 @@
   position: absolute;
   bottom: 1rem;
   right: 1rem;
-  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -311,7 +315,6 @@
 }
 
 .win-label {
-  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -882,7 +885,6 @@
 
 .effect-text {
   flex: 1;
-  font-size: 0.85rem;
 }
 
 /* Special Rules & Status combined */
@@ -911,7 +913,6 @@
 
 .rule-box p {
   margin: 0;
-  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -1151,7 +1152,6 @@
 }
 
 .action-text {
-  font-size: 0.85rem;
 }
 
 .action-note {
@@ -1389,4 +1389,69 @@
   .slide-indicators {
     display: none;
   }
+}
+
+/* Action Points slide */
+.slide-content.actions-slide {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.actions-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.actions-column {
+  padding: 1rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.actions-column.raptor {
+  border: 1px solid rgba(45, 90, 39, 0.4);
+}
+
+.actions-column.scientist {
+  border: 1px solid rgba(138, 90, 26, 0.4);
+}
+
+.actions-column h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+}
+
+.actions-column.raptor h3 {
+  color: #90ee90;
+}
+
+.actions-column.scientist h3 {
+  color: #ffb347;
+}
+
+.actions-intro {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.actions-important {
+  color: #ffd700;
+  margin: 0 0 0.75rem;
+  font-weight: bold;
+}
+
+.actions-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.5;
+}
+
+.actions-list li {
+  margin-bottom: 0.5rem;
+}
+
+.actions-list li strong {
+  color: #fff;
 }

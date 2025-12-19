@@ -5,6 +5,7 @@ import "../Piece.css";
 import PlayingARoundSlide from "./PlayingARoundSlide";
 import RaptorCardsSlide from "./RaptorCardsSlide";
 import ScientistCardsSlide from "./ScientistCardsSlide";
+import ActionPointsSlide from "./ActionPointsSlide";
 
 interface TutorialProps {
   onClose: () => void;
@@ -348,6 +349,10 @@ const slides: TutorialSlide[] = [
     title: "Scientist Card Effects",
     content: <ScientistCardsSlide />,
   },
+  {
+    title: "Action Points",
+    content: <ActionPointsSlide />,
+  },
 ];
 
 function Tutorial({ onClose }: TutorialProps) {
@@ -401,15 +406,9 @@ function Tutorial({ onClose }: TutorialProps) {
             ))}
           </div>
 
-          {isLastSlide ? (
-            <button className="nav-button start" onClick={onClose}>
-              Start Playing →
-            </button>
-          ) : (
-            <button className="nav-button next" onClick={nextSlide}>
-              Next →
-            </button>
-          )}
+          <button className="nav-button next" onClick={nextSlide} disabled={isLastSlide}>
+            Next →
+          </button>
         </div>
       </div>
     </div>
