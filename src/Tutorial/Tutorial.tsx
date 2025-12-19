@@ -265,31 +265,6 @@ function GameBoardFull() {
   );
 }
 
-function TrackerDisplay({
-  emoji,
-  filled,
-  total,
-  label,
-}: {
-  emoji: string;
-  filled: number;
-  total: number;
-  label: string;
-}) {
-  return (
-    <div className="tutorial-tracker">
-      <span className="tracker-label">{label}</span>
-      <div className="tracker-pips">
-        {Array.from({ length: total }).map((_, i) => (
-          <span key={i} className={`tracker-pip ${i < filled ? "filled" : "empty"}`}>
-            {emoji}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const slides: TutorialSlide[] = [
   {
     title: "Welcome to Raptor",
@@ -373,91 +348,6 @@ const slides: TutorialSlide[] = [
     title: "Scientist Card Effects",
     content: <ScientistCardsSlide />,
   },
-  {
-    title: "Special Rules & Status",
-    content: (
-      <div className="slide-content special-and-status">
-        <div className="rules-row">
-          <div className="rule-box">
-            <h4>🔥 Fire</h4>
-            <p>Blocks raptors. Scientists walk through. Mother can extinguish.</p>
-          </div>
-          <div className="rule-box">
-            <h4>⛰️ Mountains</h4>
-            <p>Block all movement and shooting line of sight.</p>
-          </div>
-        </div>
-        <div className="status-row">
-          <div className="status-box">
-            <span className="status-piece-small">
-              🦎<span className="status-icon-small">😴</span>
-            </span>
-            <div>
-              <strong>Sleeping Baby</strong>
-              <p>Can't move. Can be captured. Wake with mother or Recovery.</p>
-            </div>
-          </div>
-          <div className="status-box">
-            <span className="status-piece-small">
-              🧑‍🔬<span className="status-icon-small">😨</span>
-            </span>
-            <div>
-              <strong>Frightened Scientist</strong>
-              <p>Can't act. Another scientist can stand them up.</p>
-            </div>
-          </div>
-          <div className="status-box">
-            <TrackerDisplay emoji="💉" filled={3} total={5} label="" />
-            <div>
-              <strong>Sleep Tokens</strong>
-              <p>5 tokens = scientists win! Costs AP to move.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "Tips & Strategy",
-    content: (
-      <div className="slide-content tips">
-        <div className="tips-section raptor">
-          <h3>🦖 Raptor Tips</h3>
-          <ul>
-            <li>Keep babies spread out — harder to catch multiple</li>
-            <li>Mother can kill scientists to thin their numbers</li>
-            <li>Use Fear to disable key scientists</li>
-            <li>Exit tiles are your goal — get babies there!</li>
-          </ul>
-        </div>
-        <div className="tips-section scientist">
-          <h3>🧑‍🔬 Scientist Tips</h3>
-          <ul>
-            <li>Sleep babies before capturing — you can't grab awake ones</li>
-            <li>Fire creates barriers to control movement</li>
-            <li>Shooting mother is powerful but reveals your position</li>
-            <li>Work together — stand up frightened allies</li>
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: "Ready to Play!",
-    content: (
-      <div className="slide-content ready">
-        <div className="ready-content">
-          <span className="ready-emoji">🎮</span>
-          <p className="ready-text">You know the rules. Time to hunt... or be hunted.</p>
-          <div className="ready-matchup">
-            <span className="ready-piece">🦖</span>
-            <span className="ready-vs">⚔️</span>
-            <span className="ready-piece">🧑‍🔬</span>
-          </div>
-        </div>
-      </div>
-    ),
-  },
 ];
 
 function Tutorial({ onClose }: TutorialProps) {
@@ -476,8 +366,8 @@ function Tutorial({ onClose }: TutorialProps) {
   const isLastSlide = currentSlide === slides.length - 1;
 
   return (
-    <div className="Tutorial">
-      <div className="tutorial-container">
+    <div className="Tutorial" onClick={onClose}>
+      <div className="tutorial-container" onClick={(e) => e.stopPropagation()}>
         <button className="tutorial-close" onClick={onClose}>
           ✕
         </button>

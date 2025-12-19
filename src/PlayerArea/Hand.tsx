@@ -83,7 +83,7 @@ export function HandDisplay({
           return (
             <div
               key={card.id}
-              className={`relative z-[1] first:ml-0 -ml-[15px] hover:z-10 has-[.selected]:z-10 ${fanClass}`}
+              className={`relative first:ml-0 -ml-[15px] hover:z-10 ${isSelected ? "z-10" : "z-[1]"} ${fanClass}`}
             >
               <Card
                 card={card}
@@ -174,7 +174,7 @@ function Hand({ player }: HandProps) {
           return (
             <div
               key={card.id}
-              className={`relative z-[1] first:ml-0 -ml-[15px] hover:z-10 has-[.selected]:z-10 ${fanClass}`}
+              className={`relative first:ml-0 -ml-[15px] hover:z-10 ${isSelected ? "z-10" : "z-[1]"} ${fanClass}`}
             >
               <Card
                 card={card}
