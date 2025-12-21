@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { GameState } from "../types/gameState.ts";
 import type { GameAction } from "./gameReducer.ts";
 
-interface GameContextValue {
+export interface GameContextValue {
   state: GameState;
   dispatch: React.Dispatch<GameAction>;
 }

@@ -1,7 +1,8 @@
 import "./Space.css";
-import "./Tooltip.css";
-import { useState } from "react";
-import { useGame } from "./state/GameContext.tsx";
+import { useContext, useState } from "react";
+import type { ReactNode } from "react";
+import { GameContext, type GameContextValue } from "./state/GameContext.tsx";
+import Tooltip from "./Tooltip.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
 import type { GameState, ScientistState, BabyState, MotherState } from "./types/gameState.ts";
 import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
@@ -14,10 +15,18 @@ import ScientistPiece from "./ScientistPiece.tsx";
 interface SpaceProps {
   space: SpaceType;
   spaceActions: SpaceActions<GameAction>;
+  game?: GameContextValue;
+  className?: string;
+  overlay?: ReactNode;
 }
 
-function Space({ space, spaceActions }: SpaceProps) {
-  const { state, dispatch } = useGame();
+function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
+  const context = useContext(GameContext);
+  const resolvedGame = game ?? context;
+  if (!resolvedGame) {
+    throw new Error("Space must be used within a GameContext.Provider or passed a game prop");
+  }
+  const { state, dispatch } = resolvedGame;
   const [showTooltip, setShowTooltip] = useState(false);
   const spaceAction = spaceActions.get(space.id);
   const style = spaceAction?.style;
@@ -44,9 +53,11 @@ function Space({ space, spaceActions }: SpaceProps) {
   // Determine exit direction for triangle shape
   const exitDirection = space.isExit ? (tileId === 0 || tileId === 5 ? "left" : "right") : undefined;
 
+  const spaceClassName = ["space", className].filter(Boolean).join(" ");
+
   return (
     <div
-      className="space"
+      className={spaceClassName}
       data-exit={space.isExit}
       data-exit-direction={exitDirection}
       data-mountain={space.hasMountain}
@@ -59,10 +70,7 @@ function Space({ space, spaceActions }: SpaceProps) {
       onMouseLeave={() => setShowTooltip(false)}
     >
       {showTooltip && spaceAction?.tooltip && (
-        <div className="card-tooltip tooltip-above">
-          <div className="tooltip-title">Not allowed</div>
-          <div className="tooltip-description">{spaceAction.tooltip}</div>
-        </div>
+        <Tooltip variant="card" position="above" title="Not allowed" description={spaceAction.tooltip} />
       )}
       <SpaceContent
         space={space}
@@ -72,6 +80,7 @@ function Space({ space, spaceActions }: SpaceProps) {
         mother={state.mother}
         spacePosition={spacePosition}
       />
+      {overlay}
     </div>
   );
 }

@@ -1,15 +1,31 @@
 import "./Tile.css";
-import type { Tile as TileType } from "./types/board.ts";
+import type { ReactNode } from "react";
+import type { Tile as TileType, Space as SpaceType } from "./types/board.ts";
 import Space from "./Space.tsx";
-import type { SpaceActions } from "./types/spaceActions.ts";
+import type { SpaceActions, SpaceId } from "./types/spaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
+import type { GameContextValue } from "./state/GameContext.tsx";
 
 interface TileProps {
   tile: TileType;
   spaceActions: SpaceActions<GameAction>;
+  game?: GameContextValue;
+  spaceClassNames?: Partial<Record<SpaceId, string>>;
+  spaceOverlays?: Partial<Record<SpaceId, ReactNode>>;
 }
 
-function Tile({ tile, spaceActions }: TileProps) {
+function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays }: TileProps) {
+  const renderSpace = (space: SpaceType) => (
+    <Space
+      key={space.id}
+      space={space}
+      spaceActions={spaceActions}
+      game={game}
+      className={spaceClassNames?.[space.id]}
+      overlay={spaceOverlays?.[space.id]}
+    />
+  );
+
   if (tile.shape === "L") {
     // Separate spaces into columns
     const usableCol = tile.side === "left" ? 1 : 0;
@@ -22,25 +38,13 @@ function Tile({ tile, spaceActions }: TileProps) {
         <div className="l-tile-layout">
           {tile.side === "left" ? (
             <>
-              <div className="l-tile-exit-column">
-                {exitSpace && <Space key={exitSpace.id} space={exitSpace} spaceActions={spaceActions} />}
-              </div>
-              <div className="l-tile-main-column">
-                {usableSpaces.map((space) => (
-                  <Space key={space.id} space={space} spaceActions={spaceActions} />
-                ))}
-              </div>
+              <div className="l-tile-exit-column">{exitSpace && renderSpace(exitSpace)}</div>
+              <div className="l-tile-main-column">{usableSpaces.map(renderSpace)}</div>
             </>
           ) : (
             <>
-              <div className="l-tile-main-column">
-                {usableSpaces.map((space) => (
-                  <Space key={space.id} space={space} spaceActions={spaceActions} />
-                ))}
-              </div>
-              <div className="l-tile-exit-column">
-                {exitSpace && <Space key={exitSpace.id} space={exitSpace} spaceActions={spaceActions} />}
-              </div>
+              <div className="l-tile-main-column">{usableSpaces.map(renderSpace)}</div>
+              <div className="l-tile-exit-column">{exitSpace && renderSpace(exitSpace)}</div>
             </>
           )}
         </div>
@@ -50,11 +54,7 @@ function Tile({ tile, spaceActions }: TileProps) {
 
   return (
     <div className="Tile" data-shape={tile.shape}>
-      <div className="spaces-grid">
-        {tile.spaces.map((space) => (
-          <Space key={space.id} space={space} spaceActions={spaceActions} />
-        ))}
-      </div>
+      <div className="spaces-grid">{tile.spaces.map(renderSpace)}</div>
     </div>
   );
 }

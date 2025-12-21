@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import "./Tooltip.css";
+import Tooltip from "./Tooltip.tsx";
 import type { CardInfo } from "@/data/cards.ts";
 
 interface CardProps {
@@ -156,10 +156,7 @@ function Card({
 
       {/* Tooltip */}
       {showTooltip && (
-        <div className={`card-tooltip ${isRaptor ? "tooltip-below" : "tooltip-above"}`}>
-          <div className="tooltip-title">{name}</div>
-          <div className="tooltip-description">{description}</div>
-        </div>
+        <Tooltip variant="card" position={isRaptor ? "below" : "above"} title={name} description={description} />
       )}
     </motion.div>
   );

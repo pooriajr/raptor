@@ -1,259 +1,75 @@
+import type { ReactNode } from "react";
 import "../Piece.css";
+import BoardView from "../BoardView.tsx";
+import Tooltip from "../Tooltip.tsx";
+import { buildSpaceActions } from "../utils/buildSpaceActions.ts";
+import { createSpaceId, type SpaceId } from "../types/spaceActions.ts";
+import { createGameElementsState } from "./gameElementsState.ts";
 
-// Space with permanent visible tooltip
-function TooltipSpace({
-  children,
-  tooltip,
-  className,
-  tooltipPosition = "top",
-}: {
-  children?: React.ReactNode;
-  tooltip: string;
-  className: string;
-  tooltipPosition?: "top" | "bottom" | "left" | "right";
-}) {
-  return (
-    <div className={`${className} has-tooltip`}>
-      {children}
-      <div className={`space-tooltip ${tooltipPosition}`}>{tooltip}</div>
-    </div>
-  );
-}
+type TooltipPosition = "top" | "bottom" | "left" | "right";
 
-// Full game board for tutorial - same size as actual game
-function GameBoardFull() {
-  return (
-    <div className="tutorial-game-board-full">
-      <svg width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <clipPath id="tutorial-exit-right" clipPathUnits="objectBoundingBox">
-            <path d="M0.12,0 L0.65,0 L1,0.5 L0.65,1 L0.12,1 Q0,1 0,0.88 L0,0.12 Q0,0 0.12,0" />
-          </clipPath>
-          <clipPath id="tutorial-exit-left" clipPathUnits="objectBoundingBox">
-            <path d="M0.88,0 L0.35,0 L0,0.5 L0.35,1 L0.88,1 Q1,1 1,0.88 L1,0.12 Q1,0 0.88,0" />
-          </clipPath>
-        </defs>
-      </svg>
+const tutorialState = createGameElementsState();
+const tutorialSpaceActions = buildSpaceActions(tutorialState);
 
-      {/* Row 1 */}
-      <div className="board-full-row">
-        {/* L-tile left (exit bottom/center) */}
-        <div className="full-tile l-tile left">
-          <div className="full-l-exit-col">
-            <div className="full-space-placeholder" />
-            <div className="full-space-placeholder" />
-            <TooltipSpace
-              className="full-space exit left"
-              tooltip="Baby raptors escape via 4 exit spaces"
-              tooltipPosition="top"
-            />
-          </div>
-          <div className="full-l-main-col">
-            <div className="full-space" />
-            <div className="full-space" />
-            <div className="full-space">
-              <span>🦎</span>
-            </div>
-          </div>
-        </div>
+const tooltipSpecs: Array<{ id: SpaceId; text: string; position: TooltipPosition }> = [
+  {
+    id: createSpaceId(0, 0, 2),
+    text: "Baby raptors escape via 4 exit spaces",
+    position: "top",
+  },
+  {
+    id: createSpaceId(1, 1, 0),
+    text: "Mountains blocks movement and line of sight",
+    position: "top",
+  },
+  {
+    id: createSpaceId(3, 2, 0),
+    text: "Babies try to escape via exits",
+    position: "top",
+  },
+  {
+    id: createSpaceId(3, 2, 1),
+    text: "Scientists set fires to blocks raptors",
+    position: "bottom",
+  },
+  {
+    id: createSpaceId(6, 0, 1),
+    text: "Sleeping babies are vulnerable to capture",
+    position: "left",
+  },
+  {
+    id: createSpaceId(6, 1, 1),
+    text: "Scientists work together to capture babies",
+    position: "bottom",
+  },
+  {
+    id: createSpaceId(6, 2, 1),
+    text: "Mother kills scientists and saves babies",
+    position: "top",
+  },
+];
 
-        {/* Square tile 1 */}
-        <div className="full-tile square">
-          <div className="full-space" />
-          <TooltipSpace
-            className="full-space mountain"
-            tooltip="Mountains blocks movement and line of sight"
-            tooltipPosition="top"
-          >
-            <span>⛰️</span>
-          </TooltipSpace>
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space">
-            <span>🧑‍🔬</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space" />
-        </div>
+const tutorialSpaceOverlays: Partial<Record<SpaceId, ReactNode>> = {};
+const tutorialSpaceClasses: Partial<Record<SpaceId, string>> = {};
 
-        {/* Square tile 2 */}
-        <div className="full-tile square">
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space">
-            <span>🦎</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space" />
-        </div>
-
-        {/* Square tile 3 */}
-        <div className="full-tile square">
-          <div className="full-space" />
-          <div className="full-space" />
-          <TooltipSpace className="full-space" tooltip="Babies try to escape via exits" tooltipPosition="top">
-            <span>🦎</span>
-          </TooltipSpace>
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space">
-            <span>🧑‍🔬</span>
-          </div>
-          <TooltipSpace
-            className="full-space fire"
-            tooltip="Scientists set fires to blocks raptors"
-            tooltipPosition="bottom"
-          >
-            <span>🔥</span>
-          </TooltipSpace>
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space" />
-        </div>
-
-        {/* L-tile right (exit top) */}
-        <div className="full-tile l-tile right">
-          <div className="full-l-main-col">
-            <div className="full-space fire">
-              <span>🔥</span>
-            </div>
-            <div className="full-space fire">
-              <span>🔥</span>
-            </div>
-            <div className="full-space" />
-          </div>
-          <div className="full-l-exit-col">
-            <div className="full-space exit right" />
-            <div className="full-space-placeholder" />
-            <div className="full-space-placeholder" />
-          </div>
-        </div>
-      </div>
-
-      {/* Row 2 */}
-      <div className="board-full-row">
-        {/* L-tile left (exit top/center) */}
-        <div className="full-tile l-tile left">
-          <div className="full-l-exit-col">
-            <div className="full-space exit left" />
-            <div className="full-space-placeholder" />
-            <div className="full-space-placeholder" />
-          </div>
-          <div className="full-l-main-col">
-            <div className="full-space" />
-            <div className="full-space" />
-            <div className="full-space" />
-          </div>
-        </div>
-
-        {/* Square tile 4 */}
-        <div className="full-tile square">
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <TooltipSpace
-            className="full-space"
-            tooltip="Sleeping babies are vulnerable to capture"
-            tooltipPosition="left"
-          >
-            <span className="piece asleep">
-              🦎<span className="status-icon">😴</span>
-            </span>
-          </TooltipSpace>
-          <TooltipSpace
-            className="full-space"
-            tooltip="Scientists work together to capture babies"
-            tooltipPosition="bottom"
-          >
-            <span>🧑‍🔬</span>
-          </TooltipSpace>
-          <TooltipSpace className="full-space" tooltip="Mother kills scientists and saves babies" tooltipPosition="top">
-            <span className="mother-piece">🦖</span>
-          </TooltipSpace>
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space" />
-        </div>
-
-        {/* Square tile 5 */}
-        <div className="full-tile square">
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space">
-            <span>🧑‍🔬</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space" />
-        </div>
-
-        {/* Square tile 6 */}
-        <div className="full-tile square">
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space" />
-          <div className="full-space">
-            <span>🦎</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space mountain">
-            <span>⛰️</span>
-          </div>
-          <div className="full-space" />
-          <div className="full-space" />
-        </div>
-
-        {/* L-tile right (exit bottom) */}
-        <div className="full-tile l-tile right">
-          <div className="full-l-main-col">
-            <div className="full-space" />
-            <div className="full-space" />
-            <div className="full-space">
-              <span>🧑‍🔬</span>
-            </div>
-          </div>
-          <div className="full-l-exit-col">
-            <div className="full-space-placeholder" />
-            <div className="full-space-placeholder" />
-            <div className="full-space exit right" />
-          </div>
-        </div>
-      </div>
-    </div>
+for (const { id, text, position } of tooltipSpecs) {
+  tutorialSpaceClasses[id] = "z-[2000]";
+  tutorialSpaceOverlays[id] = (
+    <Tooltip variant="space" position={position}>
+      {text}
+    </Tooltip>
   );
 }
 
 function GameElementsSlide() {
   return (
     <div className="slide-content board-overview-full">
-      <GameBoardFull />
+      <BoardView
+        state={tutorialState}
+        spaceActions={tutorialSpaceActions}
+        spaceClassNames={tutorialSpaceClasses}
+        spaceOverlays={tutorialSpaceOverlays}
+      />
     </div>
   );
 }
