@@ -21,7 +21,10 @@ export const SOUNDS = {
   setup_place_baby: { file: "setup_place_baby.mp3", description: "Place baby during setup" },
   setup_place_scientist: { file: "setup_place_scientist.mp3", description: "Place scientist during setup" },
   setup_remove_piece: { file: "setup_remove_piece.mp3", description: "Remove a placed piece during setup" },
-  setup_move_piece_on_tile: { file: "setup_move_piece_on_tile.mp3", description: "Reposition a piece within its tile during setup" },
+  setup_move_piece_on_tile: {
+    file: "setup_move_piece_on_tile.mp3",
+    description: "Reposition a piece within its tile during setup",
+  },
 
   // Effect phase actions
   effect_fear: { file: "effect_fear.mp3", description: "Frighten a scientist (Fear)" },
@@ -33,11 +36,17 @@ export const SOUNDS = {
     file: "effect_recovery_remove_sleep_token.mp3",
     description: "Recovery: remove mother sleep token",
   },
-  effect_reinforcements: { file: "effect_reinforcements.mp3", description: "Reinforcements: place scientist from reserve" },
+  effect_reinforcements: {
+    file: "effect_reinforcements.mp3",
+    description: "Reinforcements: place scientist from reserve",
+  },
   effect_fire_place: { file: "effect_fire_place.mp3", description: "Fire: place a fire token" },
   effect_jeep_move: { file: "effect_jeep_move.mp3", description: "Jeep: move scientist and extinguish fires" },
   effect_revert: { file: "effect_revert.mp3", description: "Effect phase undo/revert" },
-  effect_mother_return_place: { file: "effect_mother_return_place.mp3", description: "Place mother back after disappearance" },
+  effect_mother_return_place: {
+    file: "effect_mother_return_place.mp3",
+    description: "Place mother back after disappearance",
+  },
 
   // Action phase actions
   action_move_baby: { file: "action_move_baby.mp3", description: "Move baby (action phase)" },
@@ -45,11 +54,23 @@ export const SOUNDS = {
   action_move_mother: { file: "action_move_mother.mp3", description: "Move mother (action phase)" },
   action_mother_kill: { file: "action_mother_kill.mp3", description: "Mother kills adjacent scientist" },
   action_mother_wake_baby: { file: "action_mother_wake_baby.mp3", description: "Mother wakes adjacent baby" },
-  action_mother_extinguish_fire: { file: "action_mother_extinguish_fire.mp3", description: "Mother extinguishes connected fire" },
+  action_mother_extinguish_fire: {
+    file: "action_mother_extinguish_fire.mp3",
+    description: "Mother extinguishes connected fire",
+  },
   action_scientist_sleep_baby: { file: "action_scientist_sleep_baby.mp3", description: "Scientist puts baby to sleep" },
-  action_scientist_capture_baby: { file: "action_scientist_capture_baby.mp3", description: "Scientist captures sleeping baby" },
-  action_scientist_shoot_mother: { file: "action_scientist_shoot_mother.mp3", description: "Scientist shoots mother (adds sleep token)" },
-  action_scientist_stand_up: { file: "action_scientist_stand_up.mp3", description: "Scientist stands up (removes fear)" },
+  action_scientist_capture_baby: {
+    file: "action_scientist_capture_baby.mp3",
+    description: "Scientist captures sleeping baby",
+  },
+  action_scientist_shoot_mother: {
+    file: "action_scientist_shoot_mother.mp3",
+    description: "Scientist shoots mother (adds sleep token)",
+  },
+  action_scientist_stand_up: {
+    file: "action_scientist_stand_up.mp3",
+    description: "Scientist stands up (removes fear)",
+  },
   action_reset: { file: "action_reset.mp3", description: "Reset action phase (undo to snapshot)" },
 
   // Cards / deck lifecycle
@@ -67,7 +88,10 @@ export const SOUNDS = {
 
   // Animations
   anim_card_reveal_in: { file: "anim_card_reveal_in.mp3", description: "Card reveal: cards fly in" },
-  anim_card_reveal_effect: { file: "anim_card_reveal_effect.mp3", description: "Card reveal: effect shown / highlight" },
+  anim_card_reveal_effect: {
+    file: "anim_card_reveal_effect.mp3",
+    description: "Card reveal: effect shown / highlight",
+  },
   anim_card_reveal_ap: { file: "anim_card_reveal_ap.mp3", description: "Card reveal: action points shown / highlight" },
   anim_card_reveal_out: { file: "anim_card_reveal_out.mp3", description: "Card reveal: cards fly out" },
   anim_round_end_tick: { file: "anim_round_end_tick.mp3", description: "Round end countdown tick" },

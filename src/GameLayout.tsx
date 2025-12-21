@@ -8,28 +8,37 @@ import GameOverScreen from "./GameOverScreen.tsx";
 import Trackers from "./Trackers.tsx";
 import Tutorial from "./Tutorial/Tutorial.tsx";
 import { useGame } from "./state/GameContext.tsx";
-import "./GameLayout.css";
 
 function GameLayout() {
   const { state } = useGame();
   const [showTutorial, setShowTutorial] = useState(false);
 
-  const layoutClassName = `game-layout${state.activePlayer ? ` active-${state.activePlayer}` : ""}`;
+  const layoutClassName = [
+    "game-layout group grid h-screen w-screen grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden bg-[#242424] transition-colors duration-300",
+    state.activePlayer === "raptor" ? "active-raptor bg-[#1a3518]" : "",
+    state.activePlayer === "scientist" ? "active-scientist bg-[#4a3010]" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={layoutClassName}>
       <RaptorPlayerArea />
-      <div className="middle-row">
-        <div className="side-column left">
+      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
+        <div className="flex flex-col items-center justify-center gap-3">
           <Trackers />
-          <button className="help-button" onClick={() => setShowTutorial(true)} title="How to Play">
+          <button
+            className="flex h-9 min-h-9 w-9 min-w-9 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 text-[1.2rem] leading-none font-bold text-white/60 transition-all duration-200 hover:border-white/50 hover:bg-white/20 hover:text-white"
+            onClick={() => setShowTutorial(true)}
+            title="How to Play"
+          >
             ?
           </button>
         </div>
-        <div className="board-column">
+        <div className="flex items-center justify-center">
           <Board />
         </div>
-        <div className="side-column right">
+        <div className="flex flex-col items-center justify-center gap-3">
           <UndoButton player="raptor" />
           <CardResolution />
           <UndoButton player="scientist" />

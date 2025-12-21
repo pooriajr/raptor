@@ -6,7 +6,6 @@ import { useGame } from "../state/GameContext";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
 import { CARDS } from "@/data/cards.ts";
 import type { CardState, InteractionState } from "../types/gameState";
-import "./PlayerArea.css";
 
 interface SetupInfo {
   phaseLabel: string;
@@ -35,6 +34,7 @@ function PlayerAreaBase({
 
   const isEffectPhase = state.phase === "EFFECT_PHASE";
   const isActionPhase = state.phase === "ACTION_PHASE";
+  const isRaptor = player === "raptor";
 
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
   const isThisPlayerAction = isActionPhase && state.activePlayer === player;
@@ -68,25 +68,40 @@ function PlayerAreaBase({
     return null;
   })();
 
+  const playerAreaClassName = [
+    "relative z-[100] grid w-full grid-cols-[1fr_auto_1fr] items-center px-7 py-7",
+    isRaptor
+      ? "bg-[linear-gradient(135deg,#1a3318_0%,#2a4a25_100%)] border-b-2 border-[#3d6a37] transition-opacity duration-300"
+      : "bg-[linear-gradient(135deg,#3d2510_0%,#5a3810_100%)] border-t-2 border-[#e68a11] transition-opacity duration-300",
+    isRaptor
+      ? "group-[.active-raptor]:border-b-0 group-[.active-raptor]:after:content-[''] group-[.active-raptor]:after:absolute group-[.active-raptor]:after:bottom-0 group-[.active-raptor]:after:left-0 group-[.active-raptor]:after:right-0 group-[.active-raptor]:after:h-0.5 group-[.active-raptor]:after:z-[-1] group-[.active-raptor]:after:bg-[linear-gradient(90deg,#2d5a27_0%,#2d5a27_30%,#90ee90_50%,#2d5a27_70%,#2d5a27_100%)] group-[.active-raptor]:after:[background-size:200%_100%] group-[.active-raptor]:after:animate-[gradient-flow_2s_linear_infinite]"
+      : "group-[.active-scientist]:border-t-0 group-[.active-scientist]:after:content-[''] group-[.active-scientist]:after:absolute group-[.active-scientist]:after:top-0 group-[.active-scientist]:after:left-0 group-[.active-scientist]:after:right-0 group-[.active-scientist]:after:h-0.5 group-[.active-scientist]:after:z-[-1] group-[.active-scientist]:after:bg-[linear-gradient(90deg,#5a3810_0%,#5a3810_30%,#ffb347_50%,#5a3810_70%,#5a3810_100%)] group-[.active-scientist]:after:[background-size:200%_100%] group-[.active-scientist]:after:animate-[gradient-flow_2s_linear_infinite]",
+    isRaptor ? "group-[.active-scientist]:opacity-60" : "group-[.active-raptor]:opacity-60",
+  ].join(" ");
+
   return (
     <>
-      <div className={`player-area ${player}-area`}>
-        <div className="player-area-left">
+      <div className={playerAreaClassName}>
+        <div className="flex items-center justify-start gap-8">
           <CardDeck deck={cards.deck} />
           <DiscardPile discardPile={cards.discard} />
         </div>
 
-        <div className="player-area-center">
+        <div className="flex items-center justify-center">
           <Hand player={player} />
         </div>
 
-        <div className="player-area-action">
+        <div className="flex h-full items-center justify-end gap-6">
           {actionInfo && (
-            <div className="action-info">
-              <div className="action-text">
-                <div className="action-phase-label">{actionInfo.phaseLabel}</div>
-                {actionInfo.progress && <div className="action-progress">{actionInfo.progress}</div>}
-                <div className="action-instruction">{actionInfo.instruction}</div>
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-end gap-2 text-right">
+                <div className="text-[1.6rem] font-bold tracking-[2px] text-white uppercase">
+                  {actionInfo.phaseLabel}
+                </div>
+                {actionInfo.progress && (
+                  <div className="flex gap-4 text-[1.4rem] font-bold text-white">{actionInfo.progress}</div>
+                )}
+                <div className="max-w-80 text-[1.1rem] text-white/80">{actionInfo.instruction}</div>
               </div>
             </div>
           )}

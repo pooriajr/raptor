@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
 import { useReveal } from "./revealContext.ts";
-import "./CardResolution.css";
 import type { CardInfo } from "@/data/cards.ts";
 
 type HalfState = "active" | "done" | "hidden" | "neutral";
@@ -22,24 +21,39 @@ export function CardResolutionDisplay({
   scientistState = "neutral",
   static: isStatic = false,
 }: CardResolutionDisplayProps) {
-  const raptorClassName = `half raptor${raptorState === "active" ? " active" : ""}${raptorState === "done" ? " done" : ""}`;
-  const scientistClassName = `half scientist${scientistState === "active" ? " active" : ""}${scientistState === "done" ? " done" : ""}`;
+  const halfBase = "flex flex-1 items-center justify-center text-center";
+  const raptorClassName = [
+    halfBase,
+    "bg-[linear-gradient(180deg,#2d5a27_0%,#1a3518_100%)] text-[#a5d6a7]",
+    raptorState === "active" ? "animate-[pulse-raptor_1.5s_ease-in-out_infinite]" : "",
+    raptorState === "done" ? "grayscale opacity-50" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const scientistClassName = [
+    halfBase,
+    "bg-[linear-gradient(0deg,#8a5a1a_0%,#5a3810_100%)] text-[#ffcc80]",
+    scientistState === "active" ? "animate-[pulse-scientist_1.5s_ease-in-out_infinite]" : "",
+    scientistState === "done" ? "grayscale opacity-50" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const showRaptorHalf = raptorState !== "hidden";
   const showScientistHalf = scientistState !== "hidden";
 
   if (isStatic) {
     return (
-      <div className="CardResolution">
+      <div className="relative z-1001 flex h-60 w-60 flex-col overflow-hidden rounded-3xl">
         {showRaptorHalf && <div className={raptorClassName}>{raptorContent}</div>}
-        <div className="divider" />
+        <div className="h-0.5" />
         {showScientistHalf && <div className={scientistClassName}>{scientistContent}</div>}
       </div>
     );
   }
 
   return (
-    <div className="CardResolution">
+    <div className="relative z-1001 flex h-60 w-60 flex-col overflow-hidden rounded-3xl">
       <motion.div
         className={raptorClassName}
         initial={{ opacity: 0, scale: 0.8 }}
@@ -48,7 +62,7 @@ export function CardResolutionDisplay({
       >
         {raptorContent}
       </motion.div>
-      <div className="divider" />
+      <div className="h-0.5" />
       <motion.div
         className={scientistClassName}
         initial={{ opacity: 0, scale: 0.8 }}
@@ -65,19 +79,31 @@ export function CardResolutionDisplay({
 export function EffectContent({ card, usedCount = 0 }: { card: CardInfo; usedCount?: number }) {
   const { effectCount, icon, name } = card;
   return (
-    <div className="effect">
-      <div className="effect-icons">
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center justify-center gap-4">
         {effectCount > 0 ? (
           Array.from({ length: effectCount }, (_, i) => (
-            <span key={i} className={`icon${i < usedCount ? " used" : ""}`}>
+            <span
+              key={i}
+              className={[
+                "text-[3rem] filter-[grayscale(0)_contrast(1)_brightness(1)_drop-shadow(1px_0_0_currentColor)_drop-shadow(-1px_0_0_currentColor)_drop-shadow(0_1px_0_currentColor)_drop-shadow(0_-1px_0_currentColor)] transition-[filter] duration-300",
+                i < usedCount
+                  ? "filter-[grayscale(1)_contrast(0)_brightness(0.3)_drop-shadow(1px_0_0_currentColor)_drop-shadow(-1px_0_0_currentColor)_drop-shadow(0_1px_0_currentColor)_drop-shadow(0_-1px_0_currentColor)]"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               {icon}
             </span>
           ))
         ) : (
-          <span className="icon">{icon}</span>
+          <span className="text-[3rem] filter-[grayscale(0)_contrast(1)_brightness(1)_drop-shadow(1px_0_0_currentColor)_drop-shadow(-1px_0_0_currentColor)_drop-shadow(0_1px_0_currentColor)_drop-shadow(0_-1px_0_currentColor)]">
+            {icon}
+          </span>
         )}
       </div>
-      <span className="label">{name}</span>
+      <span className="text-[0.8rem] tracking-[1px] uppercase opacity-90">{name}</span>
     </div>
   );
 }
@@ -86,11 +112,11 @@ export function EffectContent({ card, usedCount = 0 }: { card: CardInfo; usedCou
 export function ActionPointsContent({ actionPoints, animate = true }: { actionPoints: number; animate?: boolean }) {
   if (animate) {
     return (
-      <div className="action-points">
+      <div className="flex flex-col items-center">
         <AnimatePresence mode="popLayout">
           <motion.span
             key={actionPoints}
-            className="number"
+            className="font-['Bungee'] text-[3.6rem] leading-none"
             initial={{ scale: 1.4, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.6, opacity: 0 }}
@@ -99,14 +125,14 @@ export function ActionPointsContent({ actionPoints, animate = true }: { actionPo
             {actionPoints}
           </motion.span>
         </AnimatePresence>
-        <span className="label">AP</span>
+        <span className="text-[1.2rem] tracking-[1px] uppercase opacity-80">AP</span>
       </div>
     );
   }
   return (
-    <div className="action-points">
-      <span className="number">{actionPoints}</span>
-      <span className="label">AP</span>
+    <div className="flex flex-col items-center">
+      <span className="font-['Bungee'] text-[3.6rem] leading-none">{actionPoints}</span>
+      <span className="text-[1.2rem] tracking-[1px] uppercase opacity-80">AP</span>
     </div>
   );
 }
@@ -172,8 +198,8 @@ function CardResolution() {
       }
     } else {
       // Tied - no effect card, no action points displayed
-      raptorContent = <span className="tied">Tied</span>;
-      scientistContent = <span className="tied">Tied</span>;
+      raptorContent = <span className="text-[1.6rem] italic opacity-60">Tied</span>;
+      scientistContent = <span className="text-[1.6rem] italic opacity-60">Tied</span>;
     }
   }
 

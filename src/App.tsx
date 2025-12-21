@@ -1,4 +1,3 @@
-import "./App.css";
 import { useEffect, useReducer, useRef, useCallback } from "react";
 
 import GameLayout from "./GameLayout.tsx";

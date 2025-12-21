@@ -15,11 +15,11 @@ function ActionSection({
   const titleColor = variant === "raptor" ? "text-[#90ee90]" : "text-[#ffb347]";
 
   return (
-    <div className={`p-4 rounded-lg bg-white/[0.03] border ${borderColor}`}>
+    <div className={`rounded-lg border bg-white/3 p-4 ${borderColor}`}>
       <h3 className={`m-0 mb-3 text-xl ${titleColor}`}>{title}</h3>
-      <p className="text-sm text-white/70 mb-3 leading-relaxed">{intro}</p>
-      {important && <p className="text-sm text-[#ffd700] font-bold mb-3">{important}</p>}
-      <ul className="m-0 pl-5 text-sm leading-relaxed space-y-2">
+      <p className="mb-3 text-sm leading-relaxed text-white/70">{intro}</p>
+      {important && <p className="mb-3 text-sm font-bold text-[#ffd700]">{important}</p>}
+      <ul className="m-0 space-y-2 pl-5 text-sm leading-relaxed">
         {actions.map((action) => (
           <li key={action.name}>
             <strong className="text-white">{action.name}:</strong> {action.description}

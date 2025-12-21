@@ -25,7 +25,7 @@ function Tooltip({ variant, position, title, description, className, children }:
         "px-3.5",
         "py-2.5",
         "rounded-lg",
-        "w-[280px]",
+        "w-70",
         "z-[10000]",
         "pointer-events-none",
         "shadow-[0_4px_12px_rgba(0,0,0,0.4)]",
@@ -39,7 +39,7 @@ function Tooltip({ variant, position, title, description, className, children }:
         "rounded-md",
         "text-[0.95rem]",
         "w-max",
-        "max-w-[200px]",
+        "max-w-50",
         "text-center",
         "pointer-events-none",
         "z-[3000]",
@@ -59,7 +59,7 @@ function Tooltip({ variant, position, title, description, className, children }:
           ? "right-full top-1/2 -translate-y-1/2 mr-2"
           : "left-full top-1/2 -translate-y-1/2 ml-2";
   const classes = [baseClass, positionClass, className].filter(Boolean).join(" ");
-  const arrowBase = "absolute h-0 w-0 border-[8px] border-transparent";
+  const arrowBase = "absolute h-0 w-0 border-8 border-transparent";
   const cardArrowUp = "top-full left-1/2 -translate-x-1/2 border-t-[rgba(0,0,0,0.9)]";
   const cardArrowDown = "bottom-full left-1/2 -translate-x-1/2 border-b-[rgba(0,0,0,0.9)]";
   const spaceArrowUp = "top-full left-1/2 -translate-x-1/2 border-t-[rgba(20,20,35,0.8)]";
@@ -81,8 +81,8 @@ function Tooltip({ variant, position, title, description, className, children }:
     children ??
     ((title || description) && (
       <>
-        {title && <div className="text-[13px] font-bold text-[#ffd700] mb-1.5">{title}</div>}
-        {description && <div className="text-[12px] leading-[1.4] opacity-90">{description}</div>}
+        {title && <div className="mb-1.5 text-[13px] font-bold text-[#ffd700]">{title}</div>}
+        {description && <div className="text-xs leading-[1.4] opacity-90">{description}</div>}
       </>
     ));
 

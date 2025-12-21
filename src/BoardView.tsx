@@ -1,4 +1,3 @@
-import "./Board.css";
 import type { ReactNode } from "react";
 import type { GameState } from "./types/gameState.ts";
 import type { SpaceActions, SpaceId } from "./types/spaceActions.ts";
@@ -17,6 +16,19 @@ interface BoardViewProps {
 
 const noopDispatch: React.Dispatch<GameAction> = () => undefined;
 
+const tilePositions = [
+  "col-start-1 row-start-1",
+  "col-start-2 row-start-1",
+  "col-start-3 row-start-1",
+  "col-start-4 row-start-1",
+  "col-start-5 row-start-1",
+  "col-start-1 row-start-2",
+  "col-start-2 row-start-2",
+  "col-start-3 row-start-2",
+  "col-start-4 row-start-2",
+  "col-start-5 row-start-2",
+];
+
 function BoardView({
   state,
   spaceActions,
@@ -27,8 +39,13 @@ function BoardView({
   spaceOverlays,
 }: BoardViewProps) {
   const resolvedDispatch = dispatch ?? noopDispatch;
-  const containerClassName = ["board-container", className].filter(Boolean).join(" ");
-  const boardClassNames = ["Board", boardClassName].filter(Boolean).join(" ");
+  const containerClassName = ["flex flex-1 items-center justify-center", className].filter(Boolean).join(" ");
+  const boardClassNames = [
+    "grid grid-cols-[auto_auto_auto_auto_auto] grid-rows-[auto_auto] gap-px p-5 w-fit [transform:perspective(1200px)_rotateX(15deg)]",
+    boardClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={containerClassName}>
@@ -44,7 +61,7 @@ function BoardView({
         </defs>
       </svg>
       <div className={boardClassNames}>
-        {state.tiles.map((tile) => (
+        {state.tiles.map((tile, index) => (
           <Tile
             key={tile.id}
             tile={tile}
@@ -52,6 +69,7 @@ function BoardView({
             game={{ state, dispatch: resolvedDispatch }}
             spaceClassNames={spaceClassNames}
             spaceOverlays={spaceOverlays}
+            className={tilePositions[index]}
           />
         ))}
       </div>

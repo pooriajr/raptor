@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./DevPanel.css";
 import { useGame } from "./state/GameContext.tsx";
 import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils.ts";
 
@@ -73,7 +72,10 @@ function DevPanel() {
 
   if (collapsed) {
     return (
-      <div className="DevPanel collapsed" onClick={() => setCollapsed(false)}>
+      <div
+        className="absolute bottom-2.5 left-2.5 z-1000 min-w-0 cursor-pointer rounded-md border border-[#555] bg-[rgba(30,30,30,0.95)] px-3 py-2 text-[0.85rem] text-[#ccc] opacity-70 hover:opacity-100"
+        onClick={() => setCollapsed(false)}
+      >
         Dev
       </div>
     );
@@ -82,38 +84,46 @@ function DevPanel() {
   const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
 
   return (
-    <div className="DevPanel">
-      <div className="header">
+    <div className="absolute bottom-2.5 left-2.5 z-1000 min-w-45 rounded-md border border-[#555] bg-[rgba(30,30,30,0.95)] p-3 text-[0.85rem] text-[#ccc]">
+      <div className="mb-3 flex items-center justify-between font-bold text-white">
         <span>Dev Panel</span>
-        <button className="collapse-btn" onClick={() => setCollapsed(true)}>
+        <button
+          className="h-5 w-5 cursor-pointer rounded border border-[#666] bg-transparent p-0 text-sm leading-none text-[#ccc] hover:bg-[#444]"
+          onClick={() => setCollapsed(true)}
+        >
           -
         </button>
       </div>
 
-      <div className="section">
-        <label>Phase:</label>
-        <span className="value">{state.phase}</span>
+      <div className="mb-2 last:mb-0">
+        <label className="flex items-center gap-2 text-[#999]">
+          Phase:
+          <span className="font-mono text-[#7cb7ff]">{state.phase}</span>
+        </label>
       </div>
 
       {isSetupPhase && (
-        <div className="section">
-          <button className="auto-setup-btn" onClick={handleAutoSetup}>
+        <div className="mb-2 last:mb-0">
+          <button
+            className="w-full cursor-pointer rounded bg-[#4a5568] px-3 py-1.5 text-[0.85rem] text-white hover:bg-[#5a6578] active:bg-[#3a4558]"
+            onClick={handleAutoSetup}
+          >
             Auto Setup
           </button>
         </div>
       )}
 
-      <div className="section">
-        <div className="section-label">Card Selection</div>
-        <div className="skip-buttons">
+      <div className="mb-2 last:mb-0">
+        <div className="mb-1 text-[0.7rem] tracking-[0.5px] text-[#888] uppercase">Card Selection</div>
+        <div className="flex flex-col gap-1">
           <button
-            className="skip-btn card-btn"
+            className="w-full cursor-pointer rounded bg-[#4a4a2d] px-2 py-1 text-[0.75rem] text-[#d6d69e] hover:bg-[#5a5a3d]"
             onClick={() => dispatch({ type: "DEV_SKIP_TO_CARD_SELECTION", player: "scientist" })}
           >
             Scientist Cards
           </button>
           <button
-            className="skip-btn card-btn"
+            className="w-full cursor-pointer rounded bg-[#4a4a2d] px-2 py-1 text-[0.75rem] text-[#d6d69e] hover:bg-[#5a5a3d]"
             onClick={() => dispatch({ type: "DEV_SKIP_TO_CARD_SELECTION", player: "raptor" })}
           >
             Raptor Cards
@@ -121,17 +131,17 @@ function DevPanel() {
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-label">Action Phase</div>
-        <div className="skip-buttons">
+      <div className="mb-2 last:mb-0">
+        <div className="mb-1 text-[0.7rem] tracking-[0.5px] text-[#888] uppercase">Action Phase</div>
+        <div className="flex flex-col gap-1">
           <button
-            className="skip-btn action-btn"
+            className="w-full cursor-pointer rounded bg-[#4a3d2d] px-2 py-1 text-[0.75rem] text-[#d6b89e] hover:bg-[#5a4d3d]"
             onClick={() => dispatch({ type: "DEV_SKIP_TO_ACTION", player: "scientist" })}
           >
             Scientist Actions (8)
           </button>
           <button
-            className="skip-btn action-btn"
+            className="w-full cursor-pointer rounded bg-[#4a3d2d] px-2 py-1 text-[0.75rem] text-[#d6b89e] hover:bg-[#5a4d3d]"
             onClick={() => dispatch({ type: "DEV_SKIP_TO_ACTION", player: "raptor" })}
           >
             Raptor Actions (8)
@@ -139,11 +149,11 @@ function DevPanel() {
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-label">Raptor Effects</div>
-        <div className="skip-buttons">
+      <div className="mb-2 last:mb-0">
+        <div className="mb-1 text-[0.7rem] tracking-[0.5px] text-[#888] uppercase">Raptor Effects</div>
+        <div className="flex flex-col gap-1">
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -155,7 +165,7 @@ function DevPanel() {
             Mother's Call (1)
           </button>
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -167,7 +177,7 @@ function DevPanel() {
             Mother's Call (2)
           </button>
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -179,7 +189,7 @@ function DevPanel() {
             Disappearance
           </button>
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_3_fear", scientistCard: "scientist_5_fire" })
             }
@@ -187,7 +197,7 @@ function DevPanel() {
             Fear (1)
           </button>
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_8_fear", scientistCard: "scientist_9_none" })
             }
@@ -195,7 +205,7 @@ function DevPanel() {
             Fear (2)
           </button>
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -207,7 +217,7 @@ function DevPanel() {
             Recovery (2)
           </button>
           <button
-            className="skip-btn raptor-effect"
+            className="w-full cursor-pointer rounded bg-[#2d4a3d] px-2 py-1 text-[0.75rem] text-[#9ed6b8] hover:bg-[#3d5a4d]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -221,11 +231,11 @@ function DevPanel() {
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-label">Scientist Effects</div>
-        <div className="skip-buttons">
+      <div className="mb-2 last:mb-0">
+        <div className="mb-1 text-[0.7rem] tracking-[0.5px] text-[#888] uppercase">Scientist Effects</div>
+        <div className="flex flex-col gap-1">
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -237,7 +247,7 @@ function DevPanel() {
             Sleep Gas (1)
           </button>
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -249,7 +259,7 @@ function DevPanel() {
             Sleep Gas (2)
           </button>
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({
                 type: "DEV_SKIP_TO_EFFECT",
@@ -261,7 +271,7 @@ function DevPanel() {
             Reinforcements
           </button>
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_5_fire" })
             }
@@ -269,7 +279,7 @@ function DevPanel() {
             Fire (2)
           </button>
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_7_fire" })
             }
@@ -277,7 +287,7 @@ function DevPanel() {
             Fire (3)
           </button>
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_3_jeep" })
             }
@@ -285,7 +295,7 @@ function DevPanel() {
             Jeep (2)
           </button>
           <button
-            className="skip-btn scientist-effect"
+            className="w-full cursor-pointer rounded bg-[#2d3d4a] px-2 py-1 text-[0.75rem] text-[#9eb8d6] hover:bg-[#3d4d5a]"
             onClick={() =>
               dispatch({ type: "DEV_SKIP_TO_EFFECT", raptorCard: "raptor_9_none", scientistCard: "scientist_8_jeep" })
             }

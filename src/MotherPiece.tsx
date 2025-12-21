@@ -1,4 +1,3 @@
-import "./Piece.css";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MotherState } from "./types/gameState.ts";
 
@@ -23,6 +22,13 @@ function MotherPiece({ mother, isSelected, spacePosition }: MotherPieceProps) {
 
   if (!motherIsHere && !shouldKeepMountedForExit) return null;
 
+  const className = [
+    "relative z-20 inline-block select-none pointer-events-none text-7xl -m-3",
+    isSelected ? "animate-[piece-bounce_0.6s_ease-in-out_infinite]" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <AnimatePresence>
       {motherIsHere && (
@@ -30,7 +36,7 @@ function MotherPiece({ mother, isSelected, spacePosition }: MotherPieceProps) {
           key="mother"
           layout
           layoutId={`piece-${mother.id}`}
-          className={`piece piece-mother ${isSelected ? "action-selected" : ""}`}
+          className={className}
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -50, opacity: 0 }}
@@ -45,7 +51,7 @@ function MotherPiece({ mother, isSelected, spacePosition }: MotherPieceProps) {
           }}
         >
           {"🦖"}
-          {mother.sleepTokens > 0 && <span className="status-icon sleep-tokens">{mother.sleepTokens}</span>}
+          {mother.sleepTokens > 0 && <span className="absolute -top-2 -right-2 text-3xl">{mother.sleepTokens}</span>}
         </motion.span>
       )}
     </AnimatePresence>

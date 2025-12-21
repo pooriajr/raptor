@@ -74,7 +74,7 @@ export function HandDisplay({
 
   return (
     <div className={handClasses} style={isStatic ? { pointerEvents: "none" } : undefined}>
-      <div className="flex [perspective:1000px] relative">
+      <div className="relative flex perspective-[1000px]">
         {cards.map((card, index) => {
           const isSelected = card.id === selectedCardId;
           const isDimmed = hasSelection && !isSelected;
@@ -83,7 +83,7 @@ export function HandDisplay({
           return (
             <div
               key={card.id}
-              className={`relative first:ml-0 -ml-[15px] hover:z-10 ${isSelected ? "z-10" : "z-[1]"} ${fanClass}`}
+              className={`relative -ml-3.75 first:ml-0 hover:z-10 ${isSelected ? "z-10" : "z-1"} ${fanClass}`}
             >
               <Card
                 card={card}
@@ -162,7 +162,7 @@ function Hand({ player }: HandProps) {
 
   return (
     <div className={handClasses}>
-      <div className="flex [perspective:1000px] relative">
+      <div className="relative flex perspective-[1000px]">
         {visibleCards.map((card, index) => {
           const isSelected = card.id === selectedCardId;
           const isDimmed = hasSelection && !isSelected;
@@ -174,7 +174,7 @@ function Hand({ player }: HandProps) {
           return (
             <div
               key={card.id}
-              className={`relative first:ml-0 -ml-[15px] hover:z-10 ${isSelected ? "z-10" : "z-[1]"} ${fanClass}`}
+              className={`relative -ml-3.75 first:ml-0 hover:z-10 ${isSelected ? "z-10" : "z-1"} ${fanClass}`}
             >
               <Card
                 card={card}

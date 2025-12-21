@@ -1,4 +1,3 @@
-import "./Tile.css";
 import type { ReactNode } from "react";
 import type { Tile as TileType, Space as SpaceType } from "./types/board.ts";
 import Space from "./Space.tsx";
@@ -12,9 +11,10 @@ interface TileProps {
   game?: GameContextValue;
   spaceClassNames?: Partial<Record<SpaceId, string>>;
   spaceOverlays?: Partial<Record<SpaceId, ReactNode>>;
+  className?: string;
 }
 
-function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays }: TileProps) {
+function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays, className }: TileProps) {
   const renderSpace = (space: SpaceType) => (
     <Space
       key={space.id}
@@ -33,18 +33,35 @@ function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays }: Tile
     const usableSpaces = tile.spaces.filter((s) => s.coordinate.x === usableCol);
     const exitSpace = tile.spaces.find((s) => s.isExit);
 
+    const tileClassName = ["relative rounded-2xl transition-shadow", "bg-transparent p-0", className]
+      .filter(Boolean)
+      .join(" ");
+    const exitColumnClassName = [
+      "flex flex-col",
+      tile.exitPosition === "top" ? "justify-start pt-2" : "justify-end pb-2",
+    ].join(" ");
+
     return (
-      <div className="Tile" data-shape={tile.shape} data-side={tile.side} data-exit-position={tile.exitPosition}>
-        <div className="l-tile-layout">
+      <div
+        className={tileClassName}
+        data-shape={tile.shape}
+        data-side={tile.side}
+        data-exit-position={tile.exitPosition}
+      >
+        <div className="flex gap-1.5">
           {tile.side === "left" ? (
             <>
-              <div className="l-tile-exit-column">{exitSpace && renderSpace(exitSpace)}</div>
-              <div className="l-tile-main-column">{usableSpaces.map(renderSpace)}</div>
+              <div className={exitColumnClassName}>{exitSpace && renderSpace(exitSpace)}</div>
+              <div className="flex flex-col gap-1.5 rounded-2xl bg-[rgba(160,155,145,0.5)] p-2">
+                {usableSpaces.map(renderSpace)}
+              </div>
             </>
           ) : (
             <>
-              <div className="l-tile-main-column">{usableSpaces.map(renderSpace)}</div>
-              <div className="l-tile-exit-column">{exitSpace && renderSpace(exitSpace)}</div>
+              <div className="flex flex-col gap-1.5 rounded-2xl bg-[rgba(160,155,145,0.5)] p-2">
+                {usableSpaces.map(renderSpace)}
+              </div>
+              <div className={exitColumnClassName}>{exitSpace && renderSpace(exitSpace)}</div>
             </>
           )}
         </div>
@@ -53,8 +70,13 @@ function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays }: Tile
   }
 
   return (
-    <div className="Tile" data-shape={tile.shape}>
-      <div className="spaces-grid">{tile.spaces.map(renderSpace)}</div>
+    <div
+      className={["relative rounded-2xl bg-[rgba(160,155,145,0.5)] p-2 transition-shadow", className]
+        .filter(Boolean)
+        .join(" ")}
+      data-shape={tile.shape}
+    >
+      <div className="grid grid-cols-3 grid-rows-3 gap-1.5">{tile.spaces.map(renderSpace)}</div>
     </div>
   );
 }

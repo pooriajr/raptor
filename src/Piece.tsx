@@ -1,4 +1,3 @@
-import "./Piece.css";
 import { motion } from "framer-motion";
 import type { BabyState } from "./types/gameState.ts";
 import type { PieceType } from "./utils/pieceUtils.ts";
@@ -12,11 +11,22 @@ interface PieceProps {
 }
 
 function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
+  const baseClasses = [
+    "relative z-10 inline-block select-none pointer-events-none text-5xl",
+    type === "mother" ? "text-7xl -m-3 z-20" : "",
+    isAsleep
+      ? "saturate-[0.75] brightness-[0.95] origin-[50%_85%] animate-[asleep-rock_2.4s_ease-in-out_infinite]"
+      : "",
+    isSelected ? "animate-[piece-bounce_0.6s_ease-in-out_infinite]" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <motion.span
       layout
       layoutId={`piece-${id}`}
-      className={`piece piece-${type} ${isAsleep ? "asleep" : ""} ${isSelected ? "action-selected" : ""}`}
+      className={baseClasses}
       transition={{
         layout: {
           type: "tween",
@@ -26,7 +36,7 @@ function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
       }}
     >
       {getPieceEmoji(type)}
-      {isAsleep && <span className="status-icon">😴</span>}
+      {isAsleep && <span className="absolute -top-2 -right-2 text-3xl">😴</span>}
     </motion.span>
   );
 }

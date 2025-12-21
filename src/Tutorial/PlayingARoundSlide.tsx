@@ -14,8 +14,8 @@ function RoundStep({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-4 items-start p-3 bg-white/[0.03] rounded-lg">
-      <div className="w-9 h-9 bg-[linear-gradient(145deg,#4a8a4a,#2a6a2a)] text-white/80 rounded-full flex items-center justify-center font-bold text-xl shrink-0">
+    <div className="flex items-start gap-4 rounded-lg bg-white/3 p-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(145deg,#4a8a4a,#2a6a2a)] text-xl font-bold text-white/80">
         {number}
       </div>
       <div className="flex-1">
@@ -30,7 +30,7 @@ function RoundStep({
 function Scribble({ children, scientist }: { children: React.ReactNode; scientist?: boolean }) {
   return (
     <div
-      className={`font-[Caveat] text-[1.8rem] max-w-[300px] leading-tight rotate-2 -ml-4 ${scientist ? "text-[#ffcc80]" : "text-[#90ee90]"}`}
+      className={`-ml-4 max-w-75 rotate-2 font-[Caveat] text-[1.8rem] leading-tight ${scientist ? "text-[#ffcc80]" : "text-[#90ee90]"}`}
     >
       {children}
     </div>
@@ -45,7 +45,7 @@ function PlayingARoundSlide() {
         title="Select a Card in Secret"
         description="Both players secretly choose a card from their hand of 3 (numbered 1-9)."
       >
-        <div className="flex justify-around gap-12 py-8 px-4">
+        <div className="flex justify-around gap-12 px-4 py-8">
           <HandDisplay
             player="raptor"
             cards={[CARDS.raptor_3_fear, CARDS.raptor_5_recovery, CARDS.raptor_8_fear]}
@@ -68,7 +68,7 @@ function PlayingARoundSlide() {
         title="Reveal Cards"
         description="Both cards are revealed and compared. If tied, the round ends immediately with no effects."
       >
-        <div className="flex justify-center gap-12 py-8 px-4">
+        <div className="flex justify-center gap-12 px-4 py-8">
           <HandDisplay player="raptor" cards={[CARDS.raptor_3_fear]} static />
           <HandDisplay player="scientist" cards={[CARDS.scientist_6_reinforcements]} static />
         </div>

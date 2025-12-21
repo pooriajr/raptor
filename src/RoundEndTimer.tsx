@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import "./RoundEndTimer.css";
 import { playSfx } from "./audio/sfx.ts";
 
 const COUNTDOWN_SECONDS = 3;
@@ -43,10 +42,10 @@ function RoundEndTimer() {
   }, [skip]);
 
   return (
-    <div className="RoundEndTimer">
-      <div className="title">New Round in...</div>
+    <div className="absolute top-1/2 left-1/2 z-500 -translate-x-1/2 -translate-y-1/2 rounded-xl border-2 border-[#666] bg-[rgba(20,20,20,0.95)] px-10 py-6 text-center text-white">
+      <div className="mb-2 text-[1.2rem] font-bold text-[#ccc]">New Round in...</div>
       <motion.div
-        className="countdown"
+        className="my-2 font-['Bungee'] text-[3rem] leading-none font-bold text-[#7cb7ff]"
         key={secondsLeft}
         initial={{ scale: 1.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

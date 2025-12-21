@@ -1,6 +1,5 @@
 import Card from "../Card";
 import type { CardInfo } from "@/data/cards.ts";
-import "./CardDeck.css";
 
 interface CardDeckProps {
   deck: CardInfo[];
@@ -8,16 +7,16 @@ interface CardDeckProps {
 
 function CardDeck({ deck }: CardDeckProps) {
   return (
-    <div className={`CardDeck ${deck[0]?.player ?? "raptor"}`}>
-      <div className="deck-stack">
+    <div className="flex origin-center scale-[0.85] flex-col items-center">
+      <div className="relative h-52.5 w-37.5">
         {deck.length === 0 ? (
-          <div className="deck-placeholder" />
+          <div className="h-52.5 w-37.5 rounded-xl border-2 border-dashed border-[#555]" />
         ) : (
-          <div className="deck-stack-inner">
+          <div className="absolute inset-0">
             {[...deck].reverse().map((card, index) => (
               <div
                 key={card.id}
-                className="deck-card-wrapper"
+                className="absolute"
                 style={{
                   transform: `translate(${-index * 2}px, ${-index * 2}px)`,
                 }}

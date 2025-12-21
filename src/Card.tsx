@@ -68,7 +68,7 @@ function Card({
 
   return (
     <motion.div
-      className="w-[150px] h-[210px] relative cursor-default [transform-style:preserve-3d] [perspective:1000px]"
+      className="relative h-52.5 w-37.5 cursor-default perspective-[1000px] transform-3d"
       layoutId={layoutId}
       onClick={onClick}
       onMouseEnter={() => faceUp && !hideTooltip && setShowTooltip(true)}
@@ -134,23 +134,23 @@ function Card({
     >
       {/* Front face - shows the card value */}
       <div
-        className={`${cardFaceBase} ${borderColor} ${frontBg} ${frontText} ${selectedStyles} ${dimmedStyles} [transform:rotateY(0deg)]`}
+        className={`${cardFaceBase} ${borderColor} ${frontBg} ${frontText} ${selectedStyles} ${dimmedStyles} transform-[rotateY(0deg)]`}
       >
-        <div className="absolute top-2 left-3 font-display text-4xl [text-shadow:1px_1px_2px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-2 left-3 font-['Bungee'] text-4xl [text-shadow:1px_1px_2px_rgba(0,0,0,0.5)]">
           {value}
         </div>
-        <div className="text-5xl my-1.5 [filter:drop-shadow(1px_1px_2px_rgba(0,0,0,0.3))] flex flex-row flex-wrap items-center justify-center gap-1 leading-none flex-1 pt-5">
+        <div className="my-1.5 flex flex-1 flex-row flex-wrap items-center justify-center gap-1 pt-5 text-5xl leading-none filter-[drop-shadow(1px_1px_2px_rgba(0,0,0,0.3))]">
           {Array.from({ length: Math.max(1, effectCount) }, (_, i) => (
             <span key={i} className="inline-block">
               {icon}
             </span>
           ))}
         </div>
-        <div className="text-[15px] text-center px-2 opacity-90 leading-tight mt-auto pb-2.5">{name}</div>
+        <div className="mt-auto px-2 pb-2.5 text-center text-[15px] leading-tight opacity-90">{name}</div>
       </div>
 
       {/* Back face - shows the card back pattern */}
-      <div className={`${cardFaceBase} ${borderColor} ${backBg} ${selectedStyles} [transform:rotateY(180deg)]`}>
+      <div className={`${cardFaceBase} ${borderColor} ${backBg} ${selectedStyles} transform-[rotateY(180deg)]`}>
         <div className="text-[42px] opacity-60">{isRaptor ? "🦖" : "🔬"}</div>
       </div>
 

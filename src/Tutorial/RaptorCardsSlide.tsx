@@ -18,8 +18,8 @@ function CardEffectRow({ cards }: { cards: [CardId, CardId] }) {
   const selectedCard = selectedIndex === 0 ? lowerCard : higherCard;
 
   return (
-    <div className="flex items-center gap-8 py-3 pl-6 border-b border-white/10 last:border-b-0">
-      <div className="shrink-0 w-[230px] flex justify-center">
+    <div className="flex items-center gap-8 border-b border-white/10 py-3 pl-6 last:border-b-0">
+      <div className="flex w-57.5 shrink-0 justify-center">
         <div className="scale-75">
           <HandDisplay
             player="raptor"
@@ -33,14 +33,14 @@ function CardEffectRow({ cards }: { cards: [CardId, CardId] }) {
         </div>
       </div>
       <div className="flex-1">
-        <h4 className="text-lg font-bold text-[#90ee90] mb-1 flex items-center gap-2">
+        <h4 className="mb-1 flex items-center gap-2 text-lg font-bold text-[#90ee90]">
           <span>{selectedCard.icon}</span>
           {selectedCard.name}
           {selectedCard.effectCount > 1 && (
             <span className="text-sm font-normal text-white/60">(×{selectedCard.effectCount})</span>
           )}
         </h4>
-        <p className="text-sm text-white/80 leading-relaxed">{selectedCard.description}</p>
+        <p className="text-sm leading-relaxed text-white/80">{selectedCard.description}</p>
       </div>
     </div>
   );
@@ -52,7 +52,7 @@ function Card9Row({ player }: { player: "raptor" | "scientist" }) {
 
   return (
     <div className="flex items-center gap-8 py-3 pl-6">
-      <div className="shrink-0 w-[230px] flex justify-center">
+      <div className="flex w-57.5 shrink-0 justify-center">
         <div className="scale-75">
           <HandDisplay
             player={player}
@@ -69,7 +69,7 @@ function Card9Row({ player }: { player: "raptor" | "scientist" }) {
           <span>{card9.icon}</span>
           {card9.name}
         </h4>
-        <p className="text-sm text-white/80 leading-relaxed">{card9.description}</p>
+        <p className="text-sm leading-relaxed text-white/80">{card9.description}</p>
       </div>
     </div>
   );

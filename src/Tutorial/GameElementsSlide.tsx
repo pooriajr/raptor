@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import "../Piece.css";
 import BoardView from "../BoardView.tsx";
 import Tooltip from "../Tooltip.tsx";
 import { buildSpaceActions } from "../utils/buildSpaceActions.ts";
@@ -63,7 +62,7 @@ for (const { id, text, position } of tooltipSpecs) {
 
 function GameElementsSlide() {
   return (
-    <div className="slide-content board-overview-full">
+    <div className="board-overview-full flex h-full flex-col items-center justify-center overflow-visible">
       <BoardView
         state={tutorialState}
         spaceActions={tutorialSpaceActions}

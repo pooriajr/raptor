@@ -1,6 +1,5 @@
 import { useGame } from "../state/GameContext";
 import { shouldShowEffectUndo, getEffectPlayer } from "../utils/effectUtils";
-import "./UndoButton.css";
 
 interface UndoButtonProps {
   player: "raptor" | "scientist";
@@ -36,14 +35,14 @@ function UndoButton({ player }: UndoButtonProps) {
   };
 
   const showButton = showEffectUndo || showActionReset;
+  const className = [
+    "border-0 bg-transparent p-0 transition-opacity duration-200",
+    showButton ? "cursor-pointer opacity-100" : "cursor-default opacity-0",
+    player === "raptor" ? "text-[#8bc34a]" : "text-[#e68a11]",
+  ].join(" ");
 
   return (
-    <button
-      className={`undo-button ${player}${showButton ? " visible" : ""}`}
-      onClick={handleUndo}
-      disabled={!showButton}
-      title="Restart"
-    >
+    <button className={className} onClick={handleUndo} disabled={!showButton} title="Restart">
       <UndoIcon />
     </button>
   );
