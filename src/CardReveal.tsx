@@ -4,7 +4,6 @@ import Card from "./Card";
 import { useGame } from "./state/GameContext";
 import { useReveal } from "./revealContext";
 import { CARDS } from "@/data/cards.ts";
-import "./CardReveal.css";
 import { playSfx } from "./audio/sfx.ts";
 
 type AnimationStage = "flying-in" | "pausing" | "show-effect" | "show-action-points" | "flying-out" | "complete";
@@ -140,12 +139,12 @@ function CardReveal() {
   const raptorState = getCardState(!scientistWins);
 
   return (
-    <div className="CardReveal">
-      <div className="overlay" />
+    <div className="pointer-events-none fixed inset-0 z-1000 flex flex-col items-center justify-center gap-7.5">
+      <div className="absolute inset-0 -z-1 bg-black/60" />
       {/* Cards */}
-      <div className="reveal-cards">
+      <div className="flex scale-[1.2] items-center justify-center gap-10">
         <motion.div
-          className="reveal-card scientist-card"
+          className="transition-[filter] duration-300"
           animate={{
             scale: scientistState === "selected" ? 1.15 : scientistState === "dimmed" ? 0.9 : 1,
           }}
@@ -162,7 +161,7 @@ function CardReveal() {
         </motion.div>
 
         <motion.div
-          className="reveal-card raptor-card"
+          className="transition-[filter] duration-300"
           animate={{
             scale: raptorState === "selected" ? 1.15 : raptorState === "dimmed" ? 0.9 : 1,
           }}
@@ -182,7 +181,7 @@ function CardReveal() {
       {/* Tied message */}
       {isTied && stage === "pausing" && (
         <motion.div
-          className="tied-message"
+          className="text-[32px] font-bold text-white [text-shadow:2px_2px_8px_rgba(0,0,0,0.8)]"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
