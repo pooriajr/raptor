@@ -56,19 +56,20 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   // Determine exit direction for triangle shape
   const exitDirection = space.isExit ? (tileId === 0 || tileId === 5 ? "left" : "right") : undefined;
 
+  const fireClassName = hasFireToken && style !== "hostileTarget" ? "bg-[#e8a060] border-[#c07030]" : null;
+
   const spaceClassName = [
-    "relative flex h-14 w-14 flex-col items-center justify-center rounded-xl border border-[rgba(200,195,185,0.1)] bg-transparent text-lg",
-    "data-[exit=true]:rounded-lg data-[exit=true]:border-0 data-[exit=true]:bg-[rgba(200,195,185,0.4)]",
+    "relative flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-transparent text-lg",
+    "data-[exit=true]:rounded-lg data-[exit=true]:bg-[rgba(200,195,185,0.4)]",
     "data-[exit-direction=right]:[clip-path:url(#exit-arrow-right)] data-[exit-direction=left]:[clip-path:url(#exit-arrow-left)]",
-    "data-[mountain=true]:border-0 data-[mountain=true]:bg-[rgba(50,49,41,0.71)]",
-    "data-[unusable=true]:invisible data-[unusable=true]:border-transparent",
+    "data-[mountain=true]:bg-[rgba(50,49,41,0.71)]",
+    "data-[unusable=true]:invisible",
     "data-[style=selectable]:cursor-pointer data-[style=selectable]:bg-[rgba(180,220,255,0.85)] data-[style=selectable]:hover:bg-[rgba(150,200,255,0.95)]",
-    "data-[style=selected]:cursor-pointer data-[style=selected]:bg-[#ffe066] data-[style=selected]:border-[#ffd700] data-[style=selected]:shadow-[inset_0_0_12px_rgba(255,215,0,0.6)]",
-    "data-[style=hostileTarget]:cursor-pointer data-[style=hostileTarget]:bg-[#e89090] data-[style=hostileTarget]:border-[#c45050] data-[style=hostileTarget]:shadow-[inset_0_0_8px_rgba(196,80,80,0.4)]",
-    "data-[style=hostileTarget]:hover:bg-[#d87070] data-[style=hostileTarget]:hover:border-[#b04040] data-[style=hostileTarget]:hover:shadow-[inset_0_0_12px_rgba(176,64,64,0.6)]",
-    "data-[fire=true]:bg-[#e8a060] data-[fire=true]:border-[#c07030]",
-    hasAction && hasFireToken ? "cursor-pointer ring-2 ring-[rgba(140,190,255,0.85)]" : null,
-    "data-[style=disabled]:cursor-not-allowed data-[style=disabled]:bg-[rgba(160,160,160,0.55)] data-[style=disabled]:border-[rgba(130,130,130,0.65)]",
+    "data-[style=selected]:cursor-pointer data-[style=selected]:bg-[#ffe066] data-[style=selected]:shadow-[inset_0_0_12px_rgba(255,215,0,0.6)]",
+    "data-[style=hostileTarget]:cursor-pointer data-[style=hostileTarget]:bg-[#e89090] data-[style=hostileTarget]:shadow-[inset_0_0_8px_rgba(196,80,80,0.4)]",
+    "data-[style=hostileTarget]:hover:bg-[#d87070] data-[style=hostileTarget]:hover:shadow-[inset_0_0_12px_rgba(176,64,64,0.6)]",
+    fireClassName,
+    "data-[style=disabled]:cursor-not-allowed data-[style=disabled]:bg-[rgba(160,160,160,0.55)]",
     "data-[style=disabled]:shadow-[inset_0_0_10px_rgba(70,70,70,0.25)] data-[style=disabled]:hover:bg-[rgba(160,160,160,0.7)]",
     className,
   ]

@@ -337,7 +337,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     }
     const existing = h.get(spaceId);
     if (!existing) return;
-    if (existing.style === "fire" && style === "selectable") {
+    if (existing.style === "fire" && style !== "fire") {
       existing.style = style;
     }
     if (action && !existing.action) {
@@ -367,7 +367,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
     set(createSpaceId(target.tileId, target.x, target.y), "selectable", target.action);
   }
   for (const fire of actionTargets.friendlyFirePositions) {
-    set(createSpaceId(fire.tileId, fire.x, fire.y), "selectable", fire.action);
+    set(createSpaceId(fire.tileId, fire.x, fire.y), "hostileTarget", fire.action);
   }
   for (const disabled of actionTargets.disabledPositions) {
     set(createSpaceId(disabled.tileId, disabled.x, disabled.y), "disabled", undefined, disabled.tooltip);
