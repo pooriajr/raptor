@@ -227,9 +227,12 @@ function createWakeBabyState(): { state: GameState; spaceActions: SpaceActions }
     babies: {
       ...baseState.babies,
       [babyId]: {
-        ...baseState.babies[babyId],
+        id: babyId,
         position: { tileId: 0, x: 0, y: 1 },
         isAsleep: true,
+        isEscaped: false,
+        isCaptured: false,
+        asleepThisRound: false,
       },
     },
     activePlayer: "raptor",
