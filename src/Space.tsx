@@ -59,7 +59,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   const fireClassName = hasFireToken && style !== "hostileTarget" ? "bg-[#e8a060] border-[#c07030]" : null;
 
   const spaceClassName = [
-    "relative flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-transparent text-lg",
+    "relative flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-transparent text-lg border border-white/10",
     "data-[exit=true]:rounded-lg data-[exit=true]:bg-[rgba(200,195,185,0.4)]",
     "data-[exit-direction=right]:[clip-path:url(#exit-arrow-right)] data-[exit-direction=left]:[clip-path:url(#exit-arrow-left)]",
     "data-[mountain=true]:bg-[rgba(50,49,41,0.71)]",

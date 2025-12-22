@@ -5,7 +5,8 @@ import GameElementsSlide from "./GameElementsSlide";
 import PlayingARoundSlide from "./PlayingARoundSlide";
 import RaptorCardsSlide from "./RaptorCardsSlide";
 import ScientistCardsSlide from "./ScientistCardsSlide";
-import ActionPointsSlide from "./ActionPointsSlide";
+import RaptorActionsSlide from "./RaptorActionsSlide";
+import ScientistActionsSlide from "./ScientistActionsSlide";
 
 interface TutorialProps {
   onClose: () => void;
@@ -38,8 +39,12 @@ const slides: TutorialSlide[] = [
     content: <ScientistCardsSlide />,
   },
   {
-    title: "Action Points",
-    content: <ActionPointsSlide />,
+    title: "Raptor Actions",
+    content: <RaptorActionsSlide />,
+  },
+  {
+    title: "Scientist Actions",
+    content: <ScientistActionsSlide />,
   },
 ];
 
