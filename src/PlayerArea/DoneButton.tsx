@@ -84,7 +84,7 @@ function DoneButton({ player }: DoneButtonProps) {
 
   const isScientist = player === "scientist";
   const buttonClassName = [
-    "group relative h-31.25 w-31.25 rounded-[20px] border-0 bg-transparent p-0 outline-offset-4 transition-[filter] duration-150",
+    "group/done relative h-31.25 w-31.25 rounded-[20px] border-0 bg-transparent p-0 outline-offset-4 transition-[filter] duration-150",
     disabled ? "cursor-not-allowed brightness-50" : "cursor-pointer hover:brightness-110",
   ].join(" ");
 
@@ -103,7 +103,7 @@ function DoneButton({ player }: DoneButtonProps) {
     "relative flex h-full w-full flex-col items-center justify-center rounded-[20px] text-[1.75rem] font-bold uppercase tracking-[1px] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.3)] transition-transform [transition-timing-function:cubic-bezier(0.3,0.7,0.4,1)]",
     disabled
       ? "-translate-y-0.5"
-      : "-translate-y-1.5 group-hover:-translate-y-2 group-active:-translate-y-0.5 group-active:duration-[34ms]",
+      : "-translate-y-1.5 group-hover/done:-translate-y-2 group-active/done:-translate-y-0.5 group-active/done:duration-[34ms]",
     isScientist
       ? disabled
         ? "bg-[linear-gradient(180deg,#8a5a20_0%,#6a4a18_40%,#4a3510_100%)]"
