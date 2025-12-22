@@ -4,7 +4,7 @@ import { GameContext, type GameContextValue } from "./state/GameContext.tsx";
 import Tooltip from "./Tooltip.tsx";
 import type { Space as SpaceType } from "./types/board.ts";
 import type { GameState, ScientistState, BabyState, MotherState } from "./types/gameState.ts";
-import type { SpaceStyle, SpaceActions } from "./types/spaceActions.ts";
+import type { SpaceActions } from "./types/spaceActions.ts";
 import { parseSpaceId } from "./types/spaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
 import { BabyPiece } from "./Piece.tsx";
@@ -29,7 +29,6 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const spaceAction = spaceActions.get(space.id);
   const style = spaceAction?.style;
-  const hasAction = Boolean(spaceAction?.action);
 
   // Parse space.id to get tileId for piece lookup
   const { tileId } = parseSpaceId(space.id);
@@ -119,7 +118,6 @@ type PieceOnSpace =
 interface SpaceContentProps {
   space: SpaceType;
   pieceOnSpace: PieceOnSpace;
-  style?: SpaceStyle;
   hasFireToken: boolean;
   selectedActorId: string | null;
   mother: MotherState;
@@ -129,7 +127,6 @@ interface SpaceContentProps {
 function SpaceContent({
   space,
   pieceOnSpace,
-  style,
   hasFireToken,
   selectedActorId,
   mother,
