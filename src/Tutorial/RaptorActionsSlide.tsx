@@ -321,8 +321,6 @@ function RaptorActionsSlide() {
     <div className="h-full">
       <div className="flex flex-col gap-4">
         <ActionSection
-          variant="raptor"
-          title="Raptor Actions"
           intro="You can spend action points to perform actions using the mother raptor and any active baby raptors. A baby raptor is active if its figurine is standing up. A raptor can never move to or move through a space occupied by a fire token."
           actions={RAPTOR_ACTIONS}
         />

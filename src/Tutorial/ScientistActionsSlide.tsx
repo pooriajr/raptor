@@ -327,8 +327,6 @@ function ScientistActionsSlide() {
     <div className="h-full">
       <div className="flex flex-col gap-4">
         <ActionSection
-          variant="scientist"
-          title="Scientist Actions"
           intro="You can spend action points to perform actions using any active scientist. A scientist is active if its figurine is standing up. Scientists can move through and shoot through fire, but you cannot end the turn with any scientist standing on a fire space."
           important="Each scientist can perform ONLY ONE aggressive action (shoot or capture) per round."
           actions={SCIENTIST_ACTIONS}

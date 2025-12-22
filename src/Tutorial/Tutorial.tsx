@@ -104,11 +104,11 @@ function Tutorial({ onClose }: TutorialProps) {
             ← Previous
           </button>
 
-          <div className="hidden gap-1.5 md:flex">
+          <div className="flex flex-1 flex-wrap items-center justify-center gap-2 px-2">
             {slides.map((_, index) => (
               <button
                 key={index}
-                className={`h-2.5 w-2.5 rounded-full bg-white/20 transition-all duration-200 ${index === currentSlide ? "scale-110 bg-[#4a8a4a]" : "hover:bg-white/40"}`}
+                className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${index === currentSlide ? "scale-110 bg-[#4a8a4a]" : "bg-white/20 hover:bg-white/40"}`}
                 onClick={() => goToSlide(index)}
               />
             ))}
