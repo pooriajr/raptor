@@ -29,11 +29,13 @@ const RAPTOR_ACTIONS = [
     name: "Wake up a baby raptor",
     description:
       "For one action point, wake up a sleeping baby raptor located on a space adjacent to the mother raptor. You cannot wake up a baby raptor the same round it was put to sleep by a scientist.",
+    visual: <WakeBabyActionVisual />,
   },
   {
     name: "Put out a fire",
     description:
       "For one action point, put out a fire located on a space adjacent to the mother raptor; remove the fire token and all fire tokens connected to it orthogonally.",
+    visual: <PutOutFireActionVisual />,
   },
 ];
 
@@ -197,6 +199,109 @@ function KillScientistActionVisual() {
   return (
     <div className="flex w-full justify-start">
       <LayoutGroup id="tutorial-kill-scientist">
+        <BoardView
+          state={state}
+          spaceActions={spaceActions}
+          className="justify-start"
+          boardClassName="gap-1.5 p-3 [transform:none]"
+        />
+      </LayoutGroup>
+    </div>
+  );
+}
+
+function createWakeBabyState(): { state: GameState; spaceActions: SpaceActions } {
+  const baseState = createInitialGameState();
+  const tiles = [createSquareTile(0, [])];
+  const babyId = "baby-wake";
+  const motherId = "mother-wake";
+
+  const state: GameState = {
+    ...baseState,
+    tiles,
+    mother: {
+      ...baseState.mother,
+      id: motherId,
+      position: { tileId: 0, x: 1, y: 1 },
+    },
+    babies: {
+      ...baseState.babies,
+      [babyId]: {
+        ...baseState.babies[babyId],
+        position: { tileId: 0, x: 0, y: 1 },
+        isAsleep: true,
+      },
+    },
+    activePlayer: "raptor",
+    raptorInteraction: {
+      ...baseState.raptorInteraction,
+      selectedActorId: motherId,
+    },
+  };
+
+  const spaceActions: SpaceActions = new Map([
+    [createSpaceId(0, 1, 1), { style: "selected" }],
+    [createSpaceId(0, 0, 1), { style: "selectable" }],
+  ]);
+
+  return { state, spaceActions };
+}
+
+function WakeBabyActionVisual() {
+  const { state, spaceActions } = createWakeBabyState();
+
+  return (
+    <div className="flex w-full justify-start">
+      <LayoutGroup id="tutorial-wake-baby">
+        <BoardView
+          state={state}
+          spaceActions={spaceActions}
+          className="justify-start"
+          boardClassName="gap-1.5 p-3 [transform:none]"
+        />
+      </LayoutGroup>
+    </div>
+  );
+}
+
+function createPutOutFireState(): { state: GameState; spaceActions: SpaceActions } {
+  const baseState = createInitialGameState();
+  const tiles = [createSquareTile(0, [])];
+  const motherId = "mother-fire";
+
+  const state: GameState = {
+    ...baseState,
+    tiles,
+    mother: {
+      ...baseState.mother,
+      id: motherId,
+      position: { tileId: 0, x: 1, y: 1 },
+    },
+    fireTokens: [
+      { id: "fire-0", tileId: 0, x: 0, y: 1 },
+      { id: "fire-1", tileId: 0, x: 0, y: 0 },
+    ],
+    activePlayer: "raptor",
+    raptorInteraction: {
+      ...baseState.raptorInteraction,
+      selectedActorId: motherId,
+    },
+  };
+
+  const spaceActions: SpaceActions = new Map([
+    [createSpaceId(0, 1, 1), { style: "selected" }],
+    [createSpaceId(0, 0, 1), { style: "selectable" }],
+  ]);
+
+  return { state, spaceActions };
+}
+
+function PutOutFireActionVisual() {
+  const { state, spaceActions } = createPutOutFireState();
+
+  return (
+    <div className="flex w-full justify-start">
+      <LayoutGroup id="tutorial-put-out-fire">
         <BoardView
           state={state}
           spaceActions={spaceActions}
