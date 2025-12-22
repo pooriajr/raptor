@@ -1562,6 +1562,106 @@ describe("Game Reducer - Card System", () => {
       });
     });
 
+    describe("DISAPPEARANCE", () => {
+      it("removes mother from board and marks observation active", () => {
+        let state = getToEffectPhaseRaptorLower();
+        expect(state.mother.position).not.toBeNull();
+
+        const originalPos = state.mother.position!;
+        const originalRemaining = state.effectActionsRemaining;
+
+        state = gameReducer(state, { type: "DISAPPEARANCE" });
+
+        expect(state.mother.position).toBeNull();
+        expect(state.mother.lastPosition).toEqual(originalPos);
+        expect(state.mother.disappeared).toBe(true);
+        expect(state.mother.observationActive).toBe(true);
+        expect(state.effectActionsRemaining).toBe(originalRemaining);
+      });
+    });
+
+    describe("MOTHER_RETURN", () => {
+      it("places mother on a valid empty space during MOTHER_RETURN", () => {
+        let state = getToEffectPhaseRaptorLower();
+        state = gameReducer(state, { type: "DISAPPEARANCE" });
+        state = { ...state, phase: "MOTHER_RETURN" };
+
+        const occupied = new Set(getAllBoardPositions(state).map((p) => `${p.tileId},${p.x},${p.y}`));
+
+        let target:
+          | {
+              tileId: number;
+              x: number;
+              y: number;
+            }
+          | undefined;
+
+        for (const tile of state.tiles) {
+          for (const space of tile.spaces) {
+            if (space.hasMountain || space.isUnusable || space.isExit) continue;
+            const key = `${tile.id},${space.coordinate.x},${space.coordinate.y}`;
+            if (!occupied.has(key)) {
+              target = { tileId: tile.id, x: space.coordinate.x, y: space.coordinate.y };
+              break;
+            }
+          }
+          if (target) break;
+        }
+
+        expect(target).toBeDefined();
+
+        state = gameReducer(state, {
+          type: "MOTHER_RETURN",
+          tileId: target!.tileId,
+          x: target!.x,
+          y: target!.y,
+        });
+
+        expect(state.mother.position).toEqual(target);
+        expect(state.mother.lastPosition).toBeNull();
+      });
+    });
+
+    describe("WAKE_BABY", () => {
+      it("wakes a sleeping baby and decrements effect actions", () => {
+        let state = getToEffectPhaseScientistLower();
+        const baby = Object.values(state.babies).find((b) => b.position !== null);
+        expect(baby).toBeDefined();
+
+        state = {
+          ...state,
+          babies: {
+            ...state.babies,
+            [baby!.id]: { ...baby!, isAsleep: true },
+          },
+        };
+
+        const originalRemaining = state.effectActionsRemaining;
+
+        state = gameReducer(state, { type: "WAKE_BABY", pieceId: baby!.id });
+
+        expect(state.babies[baby!.id].isAsleep).toBe(false);
+        expect(state.effectActionsRemaining).toBe(originalRemaining - 1);
+      });
+    });
+
+    describe("REMOVE_MOTHER_SLEEP_TOKEN", () => {
+      it("removes a sleep token and decrements effect actions", () => {
+        let state = getToEffectPhaseRaptorLower();
+        state = {
+          ...state,
+          mother: { ...state.mother, sleepTokens: 2 },
+        };
+
+        const originalRemaining = state.effectActionsRemaining;
+
+        state = gameReducer(state, { type: "REMOVE_MOTHER_SLEEP_TOKEN" });
+
+        expect(state.mother.sleepTokens).toBe(1);
+        expect(state.effectActionsRemaining).toBe(originalRemaining - 1);
+      });
+    });
+
     describe("MOVE_JEEP", () => {
       // Helper to get to effect phase with scientist having card 3 (Jeep x2)
       function getToEffectPhaseWithJeep(): GameState {
@@ -2199,6 +2299,129 @@ describe("Game Reducer - Action Phase", () => {
       const sameScientist = state.scientists[scientist.id]!;
       if (!sameScientist.position) return;
       expect(sameScientist.position.x).toBe(originalX);
+    });
+  });
+
+  describe("ACTION_SCIENTIST_SLEEP_BABY", () => {
+    it("allows scientist to put an adjacent baby to sleep", () => {
+      let state = getToActionPhaseScientistActive();
+      const scientistId = Object.keys(state.scientists)[0];
+      const babyId = Object.keys(state.babies)[0];
+      const originalAP = state.actionPoints;
+
+      let placement:
+        | {
+            tileId: number;
+            scientist: { x: number; y: number };
+            baby: { x: number; y: number };
+          }
+        | undefined;
+
+      for (const tile of state.tiles) {
+        const validSpaces = tile.spaces.filter((s) => !s.hasMountain && !s.isUnusable && !s.isExit);
+        const spaceMap = new Map(validSpaces.map((s) => [`${s.coordinate.x},${s.coordinate.y}`, s]));
+        for (const space of validSpaces) {
+          const neighbors = [
+            { dx: 1, dy: 0 },
+            { dx: -1, dy: 0 },
+            { dx: 0, dy: 1 },
+            { dx: 0, dy: -1 },
+          ];
+          for (const { dx, dy } of neighbors) {
+            const neighbor = spaceMap.get(`${space.coordinate.x + dx},${space.coordinate.y + dy}`);
+            if (neighbor) {
+              placement = {
+                tileId: tile.id,
+                scientist: { x: space.coordinate.x, y: space.coordinate.y },
+                baby: { x: neighbor.coordinate.x, y: neighbor.coordinate.y },
+              };
+              break;
+            }
+          }
+          if (placement) break;
+        }
+        if (placement) break;
+      }
+
+      expect(placement).toBeDefined();
+
+      const updatedScientists: Record<string, ScientistState> = {};
+      Object.entries(state.scientists).forEach(([id, s]) => {
+        updatedScientists[id] =
+          id === scientistId
+            ? {
+                ...s,
+                position: {
+                  tileId: placement!.tileId,
+                  x: placement!.scientist.x,
+                  y: placement!.scientist.y,
+                },
+                isFrightened: false,
+                hasUsedAggressiveAction: false,
+                frightenedThisRound: false,
+              }
+            : { ...s, position: null };
+      });
+
+      const updatedBabies: Record<string, BabyState> = {};
+      Object.entries(state.babies).forEach(([id, b]) => {
+        updatedBabies[id] =
+          id === babyId
+            ? {
+                ...b,
+                position: { tileId: placement!.tileId, x: placement!.baby.x, y: placement!.baby.y },
+                isAsleep: false,
+              }
+            : { ...b, position: null };
+      });
+
+      state = {
+        ...state,
+        mother: { ...state.mother, position: null },
+        scientists: updatedScientists,
+        babies: updatedBabies,
+      };
+
+      state = gameReducer(state, {
+        type: "ACTION_SCIENTIST_SLEEP_BABY",
+        scientistId,
+        targetId: babyId,
+      });
+
+      expect(state.babies[babyId].isAsleep).toBe(true);
+      expect(state.scientists[scientistId].hasUsedAggressiveAction).toBe(true);
+      expect(state.actionPoints).toBe(originalAP - 1);
+    });
+  });
+
+  describe("ACTION_SCIENTIST_STAND_UP", () => {
+    it("allows a frightened scientist to stand up", () => {
+      let state = getToActionPhaseScientistActive();
+      const scientistId = Object.keys(state.scientists)[0];
+      const scientist = state.scientists[scientistId];
+      expect(scientist.position).not.toBeNull();
+
+      state = {
+        ...state,
+        scientists: {
+          ...state.scientists,
+          [scientistId]: {
+            ...scientist,
+            isFrightened: true,
+            frightenedThisRound: false,
+          },
+        },
+      };
+
+      const originalAP = state.actionPoints;
+
+      state = gameReducer(state, {
+        type: "ACTION_SCIENTIST_STAND_UP",
+        scientistId,
+      });
+
+      expect(state.scientists[scientistId].isFrightened).toBe(false);
+      expect(state.actionPoints).toBe(originalAP - 1);
     });
   });
 
