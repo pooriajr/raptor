@@ -14,9 +14,9 @@ function GameLayout() {
   const [showTutorial, setShowTutorial] = useState(false);
 
   const layoutClassName = [
-    "game-layout group grid h-screen w-screen grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden bg-[#242424] transition-colors duration-300",
-    state.activePlayer === "raptor" ? "active-raptor bg-[#1a3518]" : "",
-    state.activePlayer === "scientist" ? "active-scientist bg-[#4a3010]" : "",
+    "game-layout group grid h-screen w-screen grid-cols-1 grid-rows-[auto_1fr_auto] overflow-hidden transition-colors duration-300",
+    state.activePlayer === "raptor" ? "active-raptor bg-[#142514]" : "",
+    state.activePlayer === "scientist" ? "active-scientist bg-[#3a240c]" : "",
   ]
     .filter(Boolean)
     .join(" ");

@@ -71,8 +71,8 @@ function PlayerAreaBase({
   const playerAreaClassName = [
     "relative z-[100] grid w-full grid-cols-[1fr_auto_1fr] items-center px-7 py-7",
     isRaptor
-      ? "bg-[linear-gradient(135deg,#1a3318_0%,#2a4a25_100%)] border-b-2 border-[#3d6a37] transition-opacity duration-300"
-      : "bg-[linear-gradient(135deg,#3d2510_0%,#5a3810_100%)] border-t-2 border-[#e68a11] transition-opacity duration-300",
+      ? "bg-[linear-gradient(135deg,#1a3318_0%,#2a4a25_100%)] border-b-2 border-[#3d6a37] transition-colors duration-300 group-[.active-scientist]:bg-[linear-gradient(135deg,rgba(26,51,24,0.3)_0%,rgba(42,74,37,0.3)_100%)]"
+      : "bg-[linear-gradient(135deg,#3d2510_0%,#5a3810_100%)] border-t-2 border-[#e68a11] transition-colors duration-300 group-[.active-raptor]:bg-[linear-gradient(135deg,rgba(61,37,16,0.3)_0%,rgba(90,56,16,0.3)_100%)]",
     isRaptor
       ? "group-[.active-raptor]:border-b-0 group-[.active-raptor]:after:content-[''] group-[.active-raptor]:after:absolute group-[.active-raptor]:after:bottom-0 group-[.active-raptor]:after:left-0 group-[.active-raptor]:after:right-0 group-[.active-raptor]:after:h-0.5 group-[.active-raptor]:after:z-[-1] group-[.active-raptor]:after:bg-[linear-gradient(90deg,#2d5a27_0%,#2d5a27_30%,#90ee90_50%,#2d5a27_70%,#2d5a27_100%)] group-[.active-raptor]:after:[background-size:200%_100%] group-[.active-raptor]:after:animate-[gradient-flow_2s_linear_infinite]"
       : "group-[.active-scientist]:border-t-0 group-[.active-scientist]:after:content-[''] group-[.active-scientist]:after:absolute group-[.active-scientist]:after:top-0 group-[.active-scientist]:after:left-0 group-[.active-scientist]:after:right-0 group-[.active-scientist]:after:h-0.5 group-[.active-scientist]:after:z-[-1] group-[.active-scientist]:after:bg-[linear-gradient(90deg,#5a3810_0%,#5a3810_30%,#ffb347_50%,#5a3810_70%,#5a3810_100%)] group-[.active-scientist]:after:[background-size:200%_100%] group-[.active-scientist]:after:animate-[gradient-flow_2s_linear_infinite]",
