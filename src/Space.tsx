@@ -29,6 +29,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const spaceAction = spaceActions.get(space.id);
   const style = spaceAction?.style;
+  const hasAction = Boolean(spaceAction?.action);
 
   // Parse space.id to get tileId for piece lookup
   const { tileId } = parseSpaceId(space.id);
@@ -48,6 +49,9 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   };
 
   const spacePosition = { tileId, x: space.coordinate.x, y: space.coordinate.y };
+  const hasFireToken = state.fireTokens.some(
+    (fire) => fire.tileId === tileId && fire.x === space.coordinate.x && fire.y === space.coordinate.y,
+  );
 
   // Determine exit direction for triangle shape
   const exitDirection = space.isExit ? (tileId === 0 || tileId === 5 ? "left" : "right") : undefined;
@@ -62,7 +66,8 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
     "data-[style=selected]:cursor-pointer data-[style=selected]:bg-[#ffe066] data-[style=selected]:border-[#ffd700] data-[style=selected]:shadow-[inset_0_0_12px_rgba(255,215,0,0.6)]",
     "data-[style=hostileTarget]:cursor-pointer data-[style=hostileTarget]:bg-[#e89090] data-[style=hostileTarget]:border-[#c45050] data-[style=hostileTarget]:shadow-[inset_0_0_8px_rgba(196,80,80,0.4)]",
     "data-[style=hostileTarget]:hover:bg-[#d87070] data-[style=hostileTarget]:hover:border-[#b04040] data-[style=hostileTarget]:hover:shadow-[inset_0_0_12px_rgba(176,64,64,0.6)]",
-    "data-[style=fire]:bg-[#e8a060] data-[style=fire]:border-[#c07030]",
+    "data-[fire=true]:bg-[#e8a060] data-[fire=true]:border-[#c07030]",
+    hasAction && hasFireToken ? "cursor-pointer ring-2 ring-[rgba(140,190,255,0.85)]" : null,
     "data-[style=disabled]:cursor-not-allowed data-[style=disabled]:bg-[rgba(160,160,160,0.55)] data-[style=disabled]:border-[rgba(130,130,130,0.65)]",
     "data-[style=disabled]:shadow-[inset_0_0_10px_rgba(70,70,70,0.25)] data-[style=disabled]:hover:bg-[rgba(160,160,160,0.7)]",
     className,
@@ -77,6 +82,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
       data-exit-direction={exitDirection}
       data-mountain={space.hasMountain}
       data-unusable={space.isUnusable}
+      data-fire={hasFireToken}
       data-style={style}
       onClick={handleClick}
       onMouseEnter={() => {
@@ -91,6 +97,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
         space={space}
         pieceOnSpace={pieceOnSpace}
         style={style}
+        hasFireToken={hasFireToken}
         selectedActorId={selectedActorId}
         mother={state.mother}
         spacePosition={spacePosition}
@@ -112,12 +119,21 @@ interface SpaceContentProps {
   space: SpaceType;
   pieceOnSpace: PieceOnSpace;
   style?: SpaceStyle;
+  hasFireToken: boolean;
   selectedActorId: string | null;
   mother: MotherState;
   spacePosition: { tileId: number; x: number; y: number };
 }
 
-function SpaceContent({ space, pieceOnSpace, style, selectedActorId, mother, spacePosition }: SpaceContentProps) {
+function SpaceContent({
+  space,
+  pieceOnSpace,
+  style,
+  hasFireToken,
+  selectedActorId,
+  mother,
+  spacePosition,
+}: SpaceContentProps) {
   // Priority 1: Mountain
   if (space.hasMountain) {
     return <span className="relative z-10 inline-block text-5xl filter-[saturate(0.8)_brightness(0.8)]">⛰️</span>;
@@ -133,6 +149,16 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId, mother, spa
     const isSelected = selectedActorId === pieceOnSpace.data.id;
     switch (pieceOnSpace.type) {
       case "scientist":
+        if (hasFireToken) {
+          return (
+            <>
+              <span className="absolute z-5 text-[42px]">🔥</span>
+              <div className="relative z-10">
+                <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} />
+              </div>
+            </>
+          );
+        }
         return <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} />;
       case "baby":
         return <BabyPiece baby={pieceOnSpace.data} isSelected={isSelected} />;
@@ -153,7 +179,7 @@ function SpaceContent({ space, pieceOnSpace, style, selectedActorId, mother, spa
   const motherMaybeHere = motherElement;
 
   // Priority 4: Fire token
-  if (style === "fire") {
+  if (hasFireToken) {
     return <span className="absolute z-5 text-[42px]">🔥</span>;
   }
 

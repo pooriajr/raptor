@@ -46,3 +46,17 @@ export function getConnectedFires(
 
   return connected;
 }
+
+export function hasScientistOnFire(state: GameState): boolean {
+  if (state.fireTokens.length === 0) return false;
+  return Object.values(state.scientists).some(
+    (scientist) =>
+      scientist.position &&
+      state.fireTokens.some(
+        (fire) =>
+          fire.tileId === scientist.position!.tileId &&
+          fire.x === scientist.position!.x &&
+          fire.y === scientist.position!.y,
+      ),
+  );
+}

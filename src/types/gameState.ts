@@ -76,7 +76,7 @@ export interface CardState {
   discard: CardInfo[]; // Cards that have been played (visible to opponent)
 }
 
-// Fire token - blocks raptor movement, scientists can pass through but not end on
+// Fire token - blocks raptor movement; scientists can move onto fire but must leave before ending their turn
 export interface FireToken {
   id: string;
   tileId: number;

@@ -2265,7 +2265,7 @@ describe("Game Reducer - Action Phase", () => {
       expect(sameScientist.position.x).toBe(originalX);
     });
 
-    it("rejects scientist movement onto fire", () => {
+    it("allows scientist movement onto fire", () => {
       let state = getToActionPhaseScientistActive();
       const boardScientists = getBoardScientists(state.scientists);
       const scientist = boardScientists[0]!;
@@ -2286,8 +2286,6 @@ describe("Game Reducer - Action Phase", () => {
         ],
       };
 
-      const originalX = scientist.position.x;
-
       state = gameReducer(state, {
         type: "ACTION_MOVE_SCIENTIST",
         pieceId: scientist.id,
@@ -2298,7 +2296,7 @@ describe("Game Reducer - Action Phase", () => {
 
       const sameScientist = state.scientists[scientist.id]!;
       if (!sameScientist.position) return;
-      expect(sameScientist.position.x).toBe(originalX);
+      expect(sameScientist.position.x).toBe(fireX);
     });
   });
 
@@ -2433,6 +2431,31 @@ describe("Game Reducer - Action Phase", () => {
       state = gameReducer(state, { type: "ADVANCE_PHASE" });
 
       expect(state.phase).toBe("ROUND_END");
+    });
+
+    it("blocks action phase end when a scientist is on fire", () => {
+      let state = getToActionPhaseScientistActive();
+      expect(state.phase).toBe("ACTION_PHASE");
+
+      const boardScientists = getBoardScientists(state.scientists);
+      const scientist = boardScientists[0]!;
+      if (!scientist.position) return;
+
+      state = {
+        ...state,
+        fireTokens: [
+          {
+            id: "fire-0",
+            tileId: scientist.position.tileId,
+            x: scientist.position.x,
+            y: scientist.position.y,
+          },
+        ],
+      };
+
+      state = gameReducer(state, { type: "ADVANCE_PHASE" });
+
+      expect(state.phase).toBe("ACTION_PHASE");
     });
 
     it("is ignored during non-ACTION_PHASE", () => {

@@ -3,6 +3,7 @@ import { useGame } from "../state/GameContext";
 import { countPlacedScientists } from "../utils/pieceUtils";
 import { getEffectPlayer } from "../utils/effectUtils";
 import { isRaptorSetupComplete } from "../utils/boardUtils";
+import { hasScientistOnFire } from "../utils/fireUtils";
 
 interface DoneButtonProps {
   player: "raptor" | "scientist";
@@ -28,6 +29,7 @@ function DoneButton({ player }: DoneButtonProps) {
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
   const isThisPlayerAction = isActionPhase && state.activePlayer === player;
   const isMotherReturn = state.phase === "MOTHER_RETURN" && isRaptor;
+  const scientistOnFire = hasScientistOnFire(state);
 
   // === Handler ===
 
@@ -42,24 +44,28 @@ function DoneButton({ player }: DoneButtonProps) {
 
   // === Compute button disabled state ===
 
-  const disabled = (() => {
+  const disabledReason = (() => {
     if (isThisPlayerSetup) {
       const setupComplete = isRaptor ? isRaptorSetupComplete(state) : countPlacedScientists(state) >= 4;
-      return !setupComplete;
+      return setupComplete ? null : "Complete setup to continue";
     }
     if (isThisPlayerSelecting) {
-      return selectedCard === null;
+      return selectedCard === null ? "Select a card to continue" : null;
     }
     if (isThisPlayerEffect || isThisPlayerAction) {
-      return false;
+      if (isThisPlayerAction && !isRaptor && scientistOnFire) {
+        return "Move scientists off fire before ending the turn";
+      }
+      return null;
     }
     if (isMotherReturn) {
       // Only enabled if mother has been placed back on the board
-      return state.mother.position === null;
+      return state.mother.position === null ? "Place the mother to continue" : null;
     }
     // Not this player's turn
-    return true;
+    return "Wait for your turn";
   })();
+  const disabled = disabledReason !== null;
 
   // Keyboard shortcut: Space triggers Done for active player
   useEffect(() => {
@@ -108,7 +114,7 @@ function DoneButton({ player }: DoneButtonProps) {
   ].join(" ");
 
   return (
-    <button className={buttonClassName} disabled={disabled} onClick={handleClick}>
+    <button className={buttonClassName} disabled={disabled} onClick={handleClick} title={disabledReason ?? undefined}>
       <span className={edgeClassName} />
       <span className={frontClassName}>
         Done

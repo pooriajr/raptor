@@ -99,7 +99,7 @@ function ActionPointsSlide() {
         <ActionSection
           variant="scientist"
           title="Scientist Actions"
-          intro="You can spend action points to perform actions using any active scientist. A scientist is active if its figurine is standing up. Scientists can move through and shoot through a space occupied by a fire token, but they cannot end their movement on a space occupied by a fire token."
+          intro="You can spend action points to perform actions using any active scientist. A scientist is active if its figurine is standing up. Scientists can move through and shoot through fire, but you cannot end the turn with any scientist standing on a fire space."
           important="Each scientist can perform ONLY ONE aggressive action (shoot or capture) per round."
           actions={SCIENTIST_ACTIONS}
         />

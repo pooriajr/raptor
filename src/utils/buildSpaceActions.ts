@@ -318,7 +318,7 @@ function getValidMoves(
     );
     if (isOccupied) return false;
     const hasFire = state.fireTokens.some((f) => f.tileId === move.tileId && f.x === move.x && f.y === move.y);
-    if (hasFire) return false;
+    if (hasFire && pieceInfo.type !== "scientist") return false;
     return true;
   });
 }
@@ -331,9 +331,19 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
   const h = new Map<SpaceId, SpaceAction<GameAction>>();
 
   const set = (spaceId: SpaceId, style: SpaceStyle, action?: GameAction, tooltip?: string) => {
-    if (!h.has(spaceId)) h.set(spaceId, { style, action });
+    if (!h.has(spaceId)) {
+      h.set(spaceId, { style, action });
+      return;
+    }
     const existing = h.get(spaceId);
-    if (existing && tooltip) {
+    if (!existing) return;
+    if (existing.style === "fire" && style === "selectable") {
+      existing.style = style;
+    }
+    if (action && !existing.action) {
+      existing.action = action;
+    }
+    if (tooltip) {
       existing.tooltip = tooltip;
     }
   };

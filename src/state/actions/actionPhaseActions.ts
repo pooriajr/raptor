@@ -174,12 +174,6 @@ export function handleActionMoveScientist(
   // Check target space is not occupied
   if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
 
-  // Check scientist can't end on fire
-  const hasFireAtTarget = state.fireTokens.some(
-    (f) => f.tileId === action.tileId && f.x === action.x && f.y === action.y,
-  );
-  if (hasFireAtTarget) return state;
-
   return {
     ...state,
     scientists: {

@@ -7,6 +7,7 @@ import { isRaptorSetupComplete } from "@/utils/boardUtils.ts";
 import { countPlacedScientists } from "@/utils/pieceUtils.ts";
 import { CARDS } from "@/data/cards.ts";
 import { getActivePlayerForPhase } from "@/state/phase.ts";
+import { hasScientistOnFire } from "@/utils/fireUtils.ts";
 
 // Reset per-round flags on all board scientists
 function resetScientistRoundFlags(scientists: Record<string, ScientistState>): Record<string, ScientistState> {
@@ -115,6 +116,9 @@ function getNextPhase(state: GameState): GamePhase | null {
       return "ACTION_PHASE";
 
     case "ACTION_PHASE":
+      if (state.activePlayer === "scientist" && hasScientistOnFire(state)) {
+        return null;
+      }
       // If mother disappeared, she needs to return first
       if (state.mother.disappeared) {
         return "MOTHER_RETURN";
