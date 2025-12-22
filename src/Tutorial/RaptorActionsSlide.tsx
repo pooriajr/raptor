@@ -315,7 +315,7 @@ function PutOutFireActionVisual() {
 
 function RaptorActionsSlide() {
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full">
       <div className="flex flex-col gap-4">
         <ActionSection
           variant="raptor"
