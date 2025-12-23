@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "./state/GameContext";
 import { hasSavedGame, loadGame } from "./utils/saveLoad";
 import Tutorial from "./Tutorial/Tutorial";
@@ -6,6 +6,21 @@ import Tutorial from "./Tutorial/Tutorial";
 function MainMenu() {
   const { dispatch } = useGame();
   const [showTutorial, setShowTutorial] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const menuAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio("/sounds/drums-bg.mp3");
+    audio.loop = true;
+    audio.volume = 0.5;
+    menuAudioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      menuAudioRef.current = null;
+    };
+  }, []);
 
   const handleNewGame = () => {
     dispatch({ type: "ADVANCE_PHASE" });
@@ -22,6 +37,23 @@ function MainMenu() {
 
   if (showTutorial) {
     return <Tutorial onClose={() => setShowTutorial(false)} />;
+  }
+
+  if (!hasInteracted) {
+    return (
+      <button
+        className="fixed inset-0 z-100 flex items-center justify-center bg-black text-[1.3rem] font-bold text-white/80 transition-[transform,box-shadow] duration-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+        onClick={() => {
+          setHasInteracted(true);
+          void new Audio("/sounds/big-roar.mp3").play();
+          void menuAudioRef.current?.play();
+        }}
+      >
+        <span className="rounded-xl border-2 border-white/30 bg-white/5 px-10 py-6 transition-transform duration-200 hover:scale-105 active:scale-95">
+          Click to Begin
+        </span>
+      </button>
+    );
   }
 
   return (

@@ -4,6 +4,7 @@ import BoardView from "../BoardView";
 import { createInitialGameState } from "../types/gameState";
 import { createSquareTile } from "../types/board";
 import { createSpaceId, type SpaceActions } from "../types/spaceActions";
+import type { GameAction } from "../state/gameReducer";
 import type { GameState } from "../types/gameState";
 
 function createScientistState(
@@ -81,7 +82,7 @@ const SCIENTIST_ACTIONS = [
   },
 ];
 
-function createMoveScientistState(): { state: GameState; spaceActions: SpaceActions } {
+function createMoveScientistState(): { state: GameState; spaceActions: SpaceActions<GameAction> } {
   const baseState = createInitialGameState();
   const tiles = [createSquareTile(0, [])];
   const scientistId = "scientist-move";
@@ -100,7 +101,7 @@ function createMoveScientistState(): { state: GameState; spaceActions: SpaceActi
     },
   };
 
-  const spaceActions: SpaceActions = new Map([
+  const spaceActions: SpaceActions<GameAction> = new Map([
     [createSpaceId(0, 1, 1), { style: "selected" }],
     [createSpaceId(0, 0, 1), { style: "selectable" }],
     [createSpaceId(0, 2, 1), { style: "selectable" }],
@@ -128,7 +129,7 @@ function MoveScientistActionVisual() {
   );
 }
 
-function createStandScientistState(): { state: GameState; spaceActions: SpaceActions } {
+function createStandScientistState(): { state: GameState; spaceActions: SpaceActions<GameAction> } {
   const baseState = createInitialGameState();
   const tiles = [createSquareTile(0, [])];
   const scientistId = "scientist-stand";
@@ -147,7 +148,7 @@ function createStandScientistState(): { state: GameState; spaceActions: SpaceAct
     },
   };
 
-  const spaceActions: SpaceActions = new Map([[createSpaceId(0, 1, 1), { style: "selected" }]]);
+  const spaceActions: SpaceActions<GameAction> = new Map([[createSpaceId(0, 1, 1), { style: "selected" }]]);
 
   return { state, spaceActions };
 }
@@ -169,7 +170,7 @@ function StandScientistActionVisual() {
   );
 }
 
-function createPutBabyToSleepState(): { state: GameState; spaceActions: SpaceActions } {
+function createPutBabyToSleepState(): { state: GameState; spaceActions: SpaceActions<GameAction> } {
   const baseState = createInitialGameState();
   const tiles = [createSquareTile(0, [])];
   const scientistId = "scientist-sleep";
@@ -193,7 +194,7 @@ function createPutBabyToSleepState(): { state: GameState; spaceActions: SpaceAct
     },
   };
 
-  const spaceActions: SpaceActions = new Map([
+  const spaceActions: SpaceActions<GameAction> = new Map([
     [createSpaceId(0, 1, 1), { style: "selected" }],
     [createSpaceId(0, 0, 1), { style: "hostileTarget" }],
   ]);
@@ -218,7 +219,7 @@ function PutBabyToSleepActionVisual() {
   );
 }
 
-function createCaptureBabyState(): { state: GameState; spaceActions: SpaceActions } {
+function createCaptureBabyState(): { state: GameState; spaceActions: SpaceActions<GameAction> } {
   const baseState = createInitialGameState();
   const tiles = [createSquareTile(0, [])];
   const scientistId = "scientist-capture";
@@ -242,7 +243,7 @@ function createCaptureBabyState(): { state: GameState; spaceActions: SpaceAction
     },
   };
 
-  const spaceActions: SpaceActions = new Map([
+  const spaceActions: SpaceActions<GameAction> = new Map([
     [createSpaceId(0, 1, 1), { style: "selected" }],
     [createSpaceId(0, 0, 1), { style: "hostileTarget" }],
   ]);
@@ -267,7 +268,7 @@ function CaptureBabyActionVisual() {
   );
 }
 
-function createShootMotherState(): { state: GameState; spaceActions: SpaceActions } {
+function createShootMotherState(): { state: GameState; spaceActions: SpaceActions<GameAction> } {
   const baseState = createInitialGameState();
   const tiles = [createSquareTile(0, []), createSquareTile(1, []), createSquareTile(2, [])];
   const scientistId = "scientist-shoot";
@@ -297,7 +298,7 @@ function createShootMotherState(): { state: GameState; spaceActions: SpaceAction
     },
   };
 
-  const spaceActions: SpaceActions = new Map([
+  const spaceActions: SpaceActions<GameAction> = new Map([
     [createSpaceId(0, 1, 1), { style: "selected" }],
     [createSpaceId(2, 1, 1), { style: "hostileTarget" }],
   ]);

@@ -75,14 +75,6 @@ export function getSoundForAction(action: GameAction, state: GameState): SoundId
     case "ACTION_SCIENTIST_STAND_UP":
       return "action_scientist_stand_up";
 
-    // Dev / load/reset (keep subtle)
-    case "DEV_SKIP_TO_EFFECT":
-    case "DEV_SKIP_TO_ACTION":
-    case "DEV_SKIP_TO_CARD_SELECTION":
-    case "LOAD_GAME":
-    case "RESET_GAME":
-      return "ui_click_secondary";
-
     // Misc / plumbing
     case "DRAW_CARDS":
       return "cards_draw";
