@@ -10,6 +10,7 @@ import type { GameAction } from "./state/gameReducer.ts";
 import { BabyPiece } from "./Piece.tsx";
 import MotherPiece from "./MotherPiece.tsx";
 import ScientistPiece from "./ScientistPiece.tsx";
+import { getCurrentEffectType } from "./utils/effectUtils.ts";
 
 interface SpaceProps {
   space: SpaceType;
@@ -40,6 +41,8 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   const currentPlayer = state.activePlayer;
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
   const selectedActorId = interaction.selectedActorId;
+  const jeepEffectActive =
+    state.phase === "EFFECT_PHASE" && getCurrentEffectType(state) === "jeep" && state.effectActionsRemaining > 0;
 
   const handleClick = () => {
     if (spaceAction?.action) {
@@ -99,6 +102,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
         style={style}
         hasFireToken={hasFireToken}
         selectedActorId={selectedActorId}
+        jeepEffectActive={jeepEffectActive}
         mother={state.mother}
         spacePosition={spacePosition}
       />
@@ -120,6 +124,7 @@ interface SpaceContentProps {
   pieceOnSpace: PieceOnSpace;
   hasFireToken: boolean;
   selectedActorId: string | null;
+  jeepEffectActive: boolean;
   mother: MotherState;
   spacePosition: { tileId: number; x: number; y: number };
 }
@@ -129,6 +134,7 @@ function SpaceContent({
   pieceOnSpace,
   hasFireToken,
   selectedActorId,
+  jeepEffectActive,
   mother,
   spacePosition,
 }: SpaceContentProps) {
@@ -147,17 +153,18 @@ function SpaceContent({
     const isSelected = selectedActorId === pieceOnSpace.data.id;
     switch (pieceOnSpace.type) {
       case "scientist":
+        const scientistEmoji = isSelected && jeepEffectActive ? "🚙" : undefined;
         if (hasFireToken) {
           return (
             <>
               <span className="absolute z-5 text-[42px]">🔥</span>
               <div className="relative z-10">
-                <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} />
+                <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} emoji={scientistEmoji} />
               </div>
             </>
           );
         }
-        return <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} />;
+        return <ScientistPiece scientist={pieceOnSpace.data} isSelected={isSelected} emoji={scientistEmoji} />;
       case "baby":
         return <BabyPiece baby={pieceOnSpace.data} isSelected={isSelected} />;
     }

@@ -253,8 +253,8 @@ export function handleMoveJeep(
       [action.scientistId]: { ...scientist, position: { tileId: action.tileId, x: action.x, y: action.y } },
     },
     fireTokens: updatedFireTokens,
-    // Clear actor selection after completing the move
-    scientistInteraction: { ...state.scientistInteraction, selectedActorId: null },
+    // Keep the moved scientist selected so the player can chain jeep moves.
+    scientistInteraction: { ...state.scientistInteraction, selectedActorId: action.scientistId },
   });
 }
 
