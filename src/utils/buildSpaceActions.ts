@@ -332,7 +332,7 @@ export function buildSpaceActions(state: GameState): SpaceActions<GameAction> {
 
   const set = (spaceId: SpaceId, style: SpaceStyle, action?: GameAction, tooltip?: string) => {
     if (!h.has(spaceId)) {
-      h.set(spaceId, { style, action });
+      h.set(spaceId, { style, action, tooltip });
       return;
     }
     const existing = h.get(spaceId);
