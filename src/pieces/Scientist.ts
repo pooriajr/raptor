@@ -2,6 +2,7 @@ import { Piece } from "./Piece.ts";
 import type { Tile } from "../types/board.ts";
 import type { BoardPosition, FireToken } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
+import { getSpaceOnTile, getTileById } from "../utils/boardQueries.ts";
 
 export class Scientist extends Piece {
   jeepMode: boolean = false;
@@ -37,10 +38,8 @@ export class Scientist extends Piece {
       const localPos = globalToLocal(tiles, adjPos.globalX, adjPos.globalY);
       if (localPos) {
         // Scientists can't move onto exit spaces
-        const targetTile = tiles.find((t) => t.id === localPos.tileId);
-        const targetSpace = targetTile?.spaces.find(
-          (s) => s.coordinate.x === localPos.localX && s.coordinate.y === localPos.localY,
-        );
+        const targetTile = getTileById(tiles, localPos.tileId);
+        const targetSpace = getSpaceOnTile(targetTile, localPos.localX, localPos.localY);
         if (targetSpace?.isExit) continue;
 
         moves.push({
@@ -77,12 +76,10 @@ export class Scientist extends Piece {
         const localPos = globalToLocal(tiles, targetGlobalX, targetGlobalY);
         if (!localPos) break;
 
-        const targetTile = tiles.find((t) => t.id === localPos.tileId);
+        const targetTile = getTileById(tiles, localPos.tileId);
         if (!targetTile) break;
 
-        const targetSpace = targetTile.spaces.find(
-          (s) => s.coordinate.x === localPos.localX && s.coordinate.y === localPos.localY,
-        );
+        const targetSpace = getSpaceOnTile(targetTile, localPos.localX, localPos.localY);
         if (!targetSpace) break;
 
         // Stop if mountain or exit (scientists can't enter exits)

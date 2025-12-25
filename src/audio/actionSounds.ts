@@ -1,6 +1,7 @@
 import type { GameState } from "@/types/gameState.ts";
 import type { GameAction } from "@/state/gameReducer.ts";
 import type { SoundId } from "./sounds";
+import { isPhase } from "@/state/guards.ts";
 
 export function getSoundForAction(action: GameAction, state: GameState): SoundId | null {
   switch (action.type) {
@@ -51,7 +52,7 @@ export function getSoundForAction(action: GameAction, state: GameState): SoundId
     case "MOVE_JEEP":
       return "effect_jeep_move";
     case "MOTHER_RETURN":
-      return state.phase === "MOTHER_RETURN" ? "effect_mother_return_place" : null;
+      return isPhase(state, "MOTHER_RETURN") ? "effect_mother_return_place" : null;
 
     // Action phase
     case "ACTION_MOVE_BABY":

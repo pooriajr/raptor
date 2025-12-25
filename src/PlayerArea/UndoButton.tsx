@@ -1,5 +1,6 @@
 import { useGame } from "../state/GameContext";
 import { shouldShowEffectUndo, getEffectPlayer } from "../utils/effectUtils";
+import { isActionPhaseForPlayer, isPhase } from "../state/guards.ts";
 
 interface UndoButtonProps {
   player: "raptor" | "scientist";
@@ -16,10 +17,9 @@ function UndoIcon() {
 function UndoButton({ player }: UndoButtonProps) {
   const { state, dispatch } = useGame();
 
-  const isEffectPhase = state.phase === "EFFECT_PHASE";
-  const isActionPhase = state.phase === "ACTION_PHASE";
+  const isEffectPhase = isPhase(state, "EFFECT_PHASE");
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
-  const isThisPlayerAction = isActionPhase && state.activePlayer === player;
+  const isThisPlayerAction = isActionPhaseForPlayer(state, player);
 
   const showEffectUndo = isThisPlayerEffect && shouldShowEffectUndo(state);
   const showActionReset =

@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "./state/GameContext.tsx";
-import { useReveal } from "./revealContext.ts";
+import { useReveal } from "./RevealContext.tsx";
 import type { CardInfo } from "@/data/cards.ts";
+import { hasActionPoints, isPhase } from "./state/guards.ts";
 
 type HalfState = "active" | "done" | "hidden" | "neutral";
 
@@ -143,16 +144,17 @@ function CardResolution() {
   const { stage: revealStage, effectPlayer } = useReveal();
 
   const { activeEffectCard, actionPoints, effectActionsRemaining } = state;
+  const hasActions = hasActionPoints(state);
 
-  const isCardReveal = state.phase === "CARD_REVEAL";
-  const isRoundEnd = state.phase === "ROUND_END";
+  const isCardReveal = isPhase(state, "CARD_REVEAL");
+  const isRoundEnd = isPhase(state, "ROUND_END");
 
   // During CARD_REVEAL, control visibility based on reveal stage
   const isShowingEffect = revealStage === "show-effect" || revealStage === "show-ap" || revealStage === "complete";
   const isShowingAP = revealStage === "show-ap" || revealStage === "complete";
 
   // Hide if there's no effect or action points to display
-  if (!activeEffectCard && actionPoints === 0) {
+  if (!activeEffectCard && !hasActions) {
     return null;
   }
 
@@ -162,7 +164,7 @@ function CardResolution() {
   }
 
   // Show resolution when we have an active effect card or action points
-  const showResolution = activeEffectCard !== null || actionPoints > 0;
+  const showResolution = activeEffectCard !== null || hasActions;
 
   let raptorContent = null;
   let scientistContent = null;
@@ -181,7 +183,7 @@ function CardResolution() {
         raptorContent = effectContent;
         scientistContent = apContent;
         const raptorDone = state.activePlayer === "scientist" || isRoundEnd;
-        const scientistDone = isRoundEnd || state.phase === "MOTHER_RETURN";
+        const scientistDone = isRoundEnd || isPhase(state, "MOTHER_RETURN");
         if (state.activePlayer === "raptor") raptorState = "active";
         else if (!isCardReveal && raptorDone) raptorState = "done";
         if (state.activePlayer === "scientist") scientistState = "active";

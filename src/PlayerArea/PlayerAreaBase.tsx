@@ -6,6 +6,7 @@ import { useGame } from "../state/GameContext";
 import { getEffectPlayer, getEffectInstruction } from "../utils/effectUtils";
 import { CARDS } from "@/data/cards.ts";
 import type { CardState, InteractionState } from "../types/gameState";
+import { isActionPhaseForPlayer, isPhase } from "../state/guards.ts";
 
 interface SetupInfo {
   phaseLabel: string;
@@ -32,12 +33,11 @@ function PlayerAreaBase({
 }: PlayerAreaBaseProps) {
   const { state } = useGame();
 
-  const isEffectPhase = state.phase === "EFFECT_PHASE";
-  const isActionPhase = state.phase === "ACTION_PHASE";
+  const isEffectPhase = isPhase(state, "EFFECT_PHASE");
   const isRaptor = player === "raptor";
 
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
-  const isThisPlayerAction = isActionPhase && state.activePlayer === player;
+  const isThisPlayerAction = isActionPhaseForPlayer(state, player);
 
   const actionInfo = (() => {
     if (setupInfo) {

@@ -3,6 +3,7 @@ import RoundEndTimer from "./RoundEndTimer.tsx";
 import BoardView from "./BoardView.tsx";
 import { useGame } from "./state/GameContext.tsx";
 import { buildSpaceActions } from "./utils/buildSpaceActions.ts";
+import { isPhase } from "./state/guards.ts";
 
 function Board() {
   const { state, dispatch } = useGame();
@@ -18,7 +19,7 @@ function Board() {
   return (
     <>
       <DevPanel />
-      {state.phase === "ROUND_END" && <RoundEndTimer />}
+      {isPhase(state, "ROUND_END") && <RoundEndTimer />}
       <BoardView state={state} dispatch={dispatch} spaceActions={spaceActions} />
     </>
   );

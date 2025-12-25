@@ -1,20 +1,16 @@
 import { motion } from "framer-motion";
 import type { BabyState } from "./types/gameState.ts";
-import type { PieceType } from "./utils/pieceUtils.ts";
 import { getPieceEmoji } from "./utils/pieceUtils.ts";
 
-interface PieceProps {
-  id: string;
-  type: PieceType;
-  isAsleep?: boolean;
+interface BabyPieceProps {
+  baby: BabyState;
   isSelected: boolean;
 }
 
-function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
+function BabyPiece({ baby, isSelected }: BabyPieceProps) {
   const baseClasses = [
     "relative z-10 inline-block select-none pointer-events-none text-5xl",
-    type === "mother" ? "text-7xl -m-3 z-20" : "",
-    isAsleep
+    baby.isAsleep
       ? "saturate-[0.75] brightness-[0.95] origin-[50%_85%] animate-[asleep-rock_2.4s_ease-in-out_infinite]"
       : "",
     isSelected ? "animate-[piece-bounce_0.6s_ease-in-out_infinite]" : "",
@@ -25,7 +21,7 @@ function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
   return (
     <motion.span
       layout
-      layoutId={`piece-${id}`}
+      layoutId={`piece-${baby.id}`}
       className={baseClasses}
       transition={{
         layout: {
@@ -35,15 +31,10 @@ function Piece({ id, type, isAsleep, isSelected }: PieceProps) {
         },
       }}
     >
-      {getPieceEmoji(type)}
-      {isAsleep && <span className="absolute -top-2 -right-2 text-3xl">😴</span>}
+      {getPieceEmoji("baby")}
+      {baby.isAsleep && <span className="absolute -top-2 -right-2 text-3xl">😴</span>}
     </motion.span>
   );
 }
 
-// Helper to create props from BabyState
-export function BabyPiece({ baby, isSelected }: { baby: BabyState; isSelected: boolean }) {
-  return <Piece id={baby.id} type="baby" isAsleep={baby.isAsleep} isSelected={isSelected} />;
-}
-
-export default Piece;
+export default BabyPiece;

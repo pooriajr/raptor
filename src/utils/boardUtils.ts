@@ -2,6 +2,7 @@ import type { GameState, BoardPosition } from "../types/gameState.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
 import { isMotherPlaced, countPlacedBabies, motherToBoardPosition, boardBabiesToBoardPositions } from "./pieceUtils.ts";
 import { boardScientistsToBoardPositions } from "./scientistUtils.ts";
+import { getSpaceByCoords } from "./boardQueries.ts";
 
 // Helper to find an item by id in an array
 export function findById<T extends { id: string }>(items: T[], id: string): T | undefined {
@@ -69,9 +70,7 @@ export function tileHasScientist(state: GameState, tileId: number): boolean {
 
 // Helper to check if a space has a mountain
 export function spaceHasMountain(state: GameState, tileId: number, x: number, y: number): boolean {
-  const tile = state.tiles.find((t) => t.id === tileId);
-  if (!tile) return true; // Invalid tile, treat as blocked
-  const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
+  const space = getSpaceByCoords(state.tiles, tileId, x, y);
   if (!space) return true; // Invalid space, treat as blocked
   return space.hasMountain;
 }

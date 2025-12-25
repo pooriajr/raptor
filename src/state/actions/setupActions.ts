@@ -2,6 +2,8 @@ import type { GameState } from "@/types/gameState.ts";
 import { isSpaceOccupied, tileHasRaptor, tileHasScientist, spaceHasMountain } from "@/utils/boardUtils.ts";
 import { isMotherPlaced, getUnplacedBabies, getBoardBabies } from "@/utils/pieceUtils.ts";
 import { getNextReserveScientist } from "@/utils/scientistUtils.ts";
+import { getSpaceOnTile, getTileById } from "@/utils/boardQueries.ts";
+import { isPhase, isSetupPhase } from "@/state/guards.ts";
 
 // Action types for setup phase
 export type SetupAction =
@@ -13,18 +15,18 @@ export type SetupAction =
 
 export function handlePlaceScientist(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in scientist setup phase
-  if (state.phase !== "SCIENTIST_SETUP") return state;
+  if (!isPhase(state, "SCIENTIST_SETUP")) return state;
 
   // Validate: must have scientists in reserve
   const reserveScientist = getNextReserveScientist(state.scientists);
   if (!reserveScientist) return state;
 
   // Validate: must be an L-tile
-  const tile = state.tiles.find((t) => t.id === action.tileId);
+  const tile = getTileById(state.tiles, action.tileId);
   if (!tile || tile.shape !== "L") return state;
 
   // Validate: not on exit or unusable space
-  const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
+  const space = getSpaceOnTile(tile, action.x, action.y);
   if (!space || space.isExit || space.isUnusable) return state;
 
   // Validate: no mountain
@@ -50,14 +52,14 @@ export function handlePlaceScientist(state: GameState, action: { tileId: number;
 
 export function handlePlaceMother(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in raptor setup phase
-  if (state.phase !== "RAPTOR_SETUP") return state;
+  if (!isPhase(state, "RAPTOR_SETUP")) return state;
 
   // Validate: mother must be unplaced
   if (isMotherPlaced(state)) return state;
 
   // Validate: must be a central square tile (2 or 7)
   const centralTiles = [2, 7];
-  const tile = state.tiles.find((t) => t.id === action.tileId);
+  const tile = getTileById(state.tiles, action.tileId);
   if (!tile || tile.shape !== "square" || !centralTiles.includes(action.tileId)) return state;
 
   // Validate: no mountain
@@ -94,7 +96,7 @@ export function handlePlaceMother(state: GameState, action: { tileId: number; x:
 
 export function handlePlaceBaby(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
   // Validate: must be in raptor setup phase
-  if (state.phase !== "RAPTOR_SETUP") return state;
+  if (!isPhase(state, "RAPTOR_SETUP")) return state;
 
   // Validate: must have unplaced babies available
   const unplacedBabies = getUnplacedBabies(state);
@@ -102,7 +104,7 @@ export function handlePlaceBaby(state: GameState, action: { tileId: number; x: n
   const unplacedBaby = unplacedBabies[0];
 
   // Validate: must be a square tile
-  const tile = state.tiles.find((t) => t.id === action.tileId);
+  const tile = getTileById(state.tiles, action.tileId);
   if (!tile || tile.shape !== "square") return state;
 
   // Validate: no mountain
@@ -138,7 +140,7 @@ export function handlePlaceBaby(state: GameState, action: { tileId: number; x: n
 
 export function handleRemovePiece(state: GameState, action: { pieceId: string }): GameState {
   // Only allow during setup phases
-  if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return state;
+  if (!isSetupPhase(state)) return state;
 
   const { pieceId } = action;
 
@@ -182,7 +184,7 @@ export function handleMovePieceOnTile(
   action: { pieceId: string; tileId: number; x: number; y: number },
 ): GameState {
   // Only allow during setup phases
-  if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") return state;
+  if (!isSetupPhase(state)) return state;
 
   const { pieceId, tileId, x, y } = action;
 
@@ -207,11 +209,11 @@ export function handleMovePieceOnTile(
   if (currentTileId !== tileId) return state;
 
   // Validate: target space is on the same tile
-  const tile = state.tiles.find((t) => t.id === tileId);
+  const tile = getTileById(state.tiles, tileId);
   if (!tile) return state;
 
   // Validate: target space exists and is valid
-  const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
+  const space = getSpaceOnTile(tile, x, y);
   if (!space || space.isUnusable || space.hasMountain) return state;
 
   // For scientists, can't move to exit spaces

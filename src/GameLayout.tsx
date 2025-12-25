@@ -8,6 +8,7 @@ import GameOverScreen from "./GameOverScreen.tsx";
 import Trackers from "./Trackers.tsx";
 import Tutorial from "./Tutorial/Tutorial.tsx";
 import { useGame } from "./state/GameContext.tsx";
+import { isPhase } from "./state/guards.ts";
 
 function GameLayout() {
   const { state } = useGame();
@@ -45,9 +46,9 @@ function GameLayout() {
         </div>
       </div>
       <ScientistPlayerArea />
-      {state.phase === "MAIN_MENU" && <MainMenu />}
-      {state.phase === "CARD_REVEAL" && <CardReveal />}
-      {state.phase === "GAME_OVER" && <GameOverScreen />}
+      {isPhase(state, "MAIN_MENU") && <MainMenu />}
+      {isPhase(state, "CARD_REVEAL") && <CardReveal />}
+      {isPhase(state, "GAME_OVER") && <GameOverScreen />}
       {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
     </div>
   );

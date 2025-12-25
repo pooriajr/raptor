@@ -3,6 +3,8 @@ import { getAllBoardPositions, isSpaceOccupied } from "@/utils/boardUtils.ts";
 import { getReachableDestinationsOnMotherTile } from "@/utils/pathfinding.ts";
 import { localToGlobal, getAdjacentGlobalCoordinates } from "@/types/coordinates.ts";
 import { getNextReserveScientist } from "@/utils/scientistUtils.ts";
+import { getSpaceOnTile, getTileById } from "@/utils/boardQueries.ts";
+import { isPhase } from "@/state/guards.ts";
 
 // Action types for effect phase - single target actions (executed immediately)
 export type EffectAction =
@@ -105,12 +107,12 @@ export function handleDisappearance(state: GameState): GameState {
 }
 
 export function handleMotherReturn(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
-  if (state.phase !== "MOTHER_RETURN") return state;
+  if (!isPhase(state, "MOTHER_RETURN")) return state;
 
-  const tile = state.tiles.find((t) => t.id === action.tileId);
+  const tile = getTileById(state.tiles, action.tileId);
   if (!tile) return state;
 
-  const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
+  const space = getSpaceOnTile(tile, action.x, action.y);
   if (!space || space.hasMountain || space.isUnusable || space.isExit) return state;
 
   // Check if space is occupied
@@ -157,7 +159,7 @@ export function handlePlaceReinforcement(
   const topRowTiles = [1, 2, 3];
   const bottomRowTiles = [6, 7, 8];
 
-  const tile = state.tiles.find((t) => t.id === action.tileId);
+  const tile = getTileById(state.tiles, action.tileId);
   if (!tile || tile.shape !== "square") return state;
 
   const isTopRow = topRowTiles.includes(action.tileId);
@@ -167,7 +169,7 @@ export function handlePlaceReinforcement(
   const requiredY = isTopRow ? 0 : 2;
   if (action.y !== requiredY) return state;
 
-  const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
+  const space = getSpaceOnTile(tile, action.x, action.y);
   if (!space || space.hasMountain) return state;
 
   if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
@@ -185,10 +187,10 @@ export function handlePlaceReinforcement(
 }
 
 export function handlePlaceFireToken(state: GameState, action: { tileId: number; x: number; y: number }): GameState {
-  const tile = state.tiles.find((t) => t.id === action.tileId);
+  const tile = getTileById(state.tiles, action.tileId);
   if (!tile) return state;
 
-  const space = tile.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
+  const space = getSpaceOnTile(tile, action.x, action.y);
   if (!space || space.hasMountain || space.isUnusable || space.isExit) return state;
 
   // Check no fire already at this location
@@ -261,7 +263,7 @@ export function handleMoveJeep(
 // END_EFFECT_PHASE is now handled by ADVANCE_PHASE
 
 export function handleRevertEffectPhase(state: GameState): GameState {
-  if (state.phase !== "EFFECT_PHASE") return state;
+  if (!isPhase(state, "EFFECT_PHASE")) return state;
   if (!state.undoSnapshot) return state;
 
   return {

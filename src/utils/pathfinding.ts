@@ -1,6 +1,7 @@
 import type { Tile } from "../types/board.ts";
 import type { BoardPosition, FireToken, BabyState, MotherState } from "../types/gameState.ts";
 import { localToGlobal, globalToLocal, getAdjacentGlobalCoordinates } from "../types/coordinates.ts";
+import { getSpaceOnTile, getTileById } from "./boardQueries.ts";
 
 interface Position {
   tileId: number;
@@ -12,10 +13,10 @@ interface Position {
  * Check if a position is blocked (has mountain, fire, or piece)
  */
 function isBlocked(tiles: Tile[], pieces: BoardPosition[], tileId: number, x: number, y: number): boolean {
-  const tile = tiles.find((t) => t.id === tileId);
+  const tile = getTileById(tiles, tileId);
   if (!tile) return true;
 
-  const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
+  const space = getSpaceOnTile(tile, x, y);
   if (!space) return true;
   if (space.isUnusable || space.hasMountain) return true;
 
@@ -30,10 +31,10 @@ function isBlocked(tiles: Tile[], pieces: BoardPosition[], tileId: number, x: nu
  * Check if a position is a valid destination (exists, not blocked, not an exit)
  */
 function isValidDestination(tiles: Tile[], pieces: BoardPosition[], tileId: number, x: number, y: number): boolean {
-  const tile = tiles.find((t) => t.id === tileId);
+  const tile = getTileById(tiles, tileId);
   if (!tile) return false;
 
-  const space = tile.spaces.find((s) => s.coordinate.x === x && s.coordinate.y === y);
+  const space = getSpaceOnTile(tile, x, y);
   if (!space) return false;
   if (space.isUnusable || space.hasMountain || space.isExit) return false;
 
@@ -165,7 +166,7 @@ export function canBabyReachMotherTile(
   if (!baby.position || !mother.position) return false;
 
   // Find all valid destination spaces on mother's tile
-  const motherTile = tiles.find((t) => t.id === mother.position!.tileId);
+  const motherTile = getTileById(tiles, mother.position!.tileId);
   if (!motherTile) return false;
 
   // Filter pieces to exclude the baby we're checking (it can move from its spot)
@@ -219,7 +220,7 @@ export function getReachableDestinationsOnMotherTileWithPaths(
 ): PathResult[] {
   if (!baby.position || !mother.position) return [];
 
-  const motherTile = tiles.find((t) => t.id === mother.position!.tileId);
+  const motherTile = getTileById(tiles, mother.position!.tileId);
   if (!motherTile) return [];
 
   // Filter pieces to exclude the baby we're moving
@@ -312,10 +313,10 @@ export function getJeepDestinationsWithPaths(
       const local = globalToLocal(tiles, targetGlobalX, targetGlobalY);
       if (!local) break; // Off the board
 
-      const tile = tiles.find((t) => t.id === local.tileId);
+      const tile = getTileById(tiles, local.tileId);
       if (!tile) break;
 
-      const space = tile.spaces.find((s) => s.coordinate.x === local.localX && s.coordinate.y === local.localY);
+      const space = getSpaceOnTile(tile, local.localX, local.localY);
       if (!space) break;
 
       // Stop if mountain, unusable, or exit (jeeps can't enter exits)

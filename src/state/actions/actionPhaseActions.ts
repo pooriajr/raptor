@@ -8,6 +8,8 @@ import { MotherRaptor } from "@/pieces/MotherRaptor.ts";
 import { Scientist } from "@/pieces/Scientist.ts";
 import { checkWinConditions } from "@/utils/winConditions.ts";
 import { deleteSave } from "@/utils/saveLoad.ts";
+import { getSpaceByCoords } from "@/utils/boardQueries.ts";
+import { hasActionPoints, isActionPhaseForPlayer, isPhase } from "@/state/guards.ts";
 
 /**
  * Wraps an action handler to check for win conditions after execution.
@@ -84,13 +86,10 @@ function _handleActionMoveBaby(
   action: { pieceId: string; tileId: number; x: number; y: number },
 ): GameState {
   // Validate: must be in action phase
-  if (state.phase !== "ACTION_PHASE") return state;
-
-  // Validate: raptor must be the active player
-  if (state.activePlayer !== "raptor") return state;
+  if (!isActionPhaseForPlayer(state, "raptor")) return state;
 
   // Validate: must have action points
-  if (state.actionPoints <= 0) return state;
+  if (!hasActionPoints(state)) return state;
 
   // Find the baby
   const baby = state.babies[action.pieceId];
@@ -111,8 +110,7 @@ function _handleActionMoveBaby(
   if (isSpaceOccupied(state, action.tileId, action.x, action.y)) return state;
 
   // Check if this is an exit space (baby escapes)
-  const targetTile = state.tiles.find((t) => t.id === action.tileId);
-  const targetSpace = targetTile?.spaces.find((s) => s.coordinate.x === action.x && s.coordinate.y === action.y);
+  const targetSpace = getSpaceByCoords(state.tiles, action.tileId, action.x, action.y);
   const isExit = targetSpace?.isExit ?? false;
 
   if (isExit) {
@@ -143,13 +141,10 @@ export function handleActionMoveScientist(
   action: { pieceId: string; tileId: number; x: number; y: number },
 ): GameState {
   // Validate: must be in action phase
-  if (state.phase !== "ACTION_PHASE") return state;
-
-  // Validate: scientist must be the active player
-  if (state.activePlayer !== "scientist") return state;
+  if (!isActionPhaseForPlayer(state, "scientist")) return state;
 
   // Validate: must have action points
-  if (state.actionPoints <= 0) return state;
+  if (!hasActionPoints(state)) return state;
 
   // Find the scientist
   const scientist = state.scientists[action.pieceId];
@@ -189,10 +184,7 @@ export function handleActionMoveMother(
   action: { pieceId: string; tileId: number; x: number; y: number },
 ): GameState {
   // Validate: must be in action phase
-  if (state.phase !== "ACTION_PHASE") return state;
-
-  // Validate: raptor must be the active player
-  if (state.activePlayer !== "raptor") return state;
+  if (!isActionPhaseForPlayer(state, "raptor")) return state;
 
   // Find the mother
   if (!state.mother.position) return state;
@@ -202,7 +194,7 @@ export function handleActionMoveMother(
   const totalCost = woundCost + 1; // wound cost + 1 for the move itself
 
   // Validate: must have enough action points
-  if (state.actionPoints < totalCost) return state;
+  if (!hasActionPoints(state, totalCost)) return state;
 
   // Validate the move using MotherRaptor class
   const allPieces = getAllBoardPositions(state);
@@ -238,9 +230,8 @@ export function handleActionMoveMother(
 }
 
 function _handleMotherKillScientist(state: GameState, action: { targetId: string }): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "raptor") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "raptor")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const mother = state.mother;
   const scientist = state.scientists[action.targetId];
@@ -261,9 +252,8 @@ function _handleMotherKillScientist(state: GameState, action: { targetId: string
 }
 
 export function handleMotherWakeBaby(state: GameState, action: { targetId: string }): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "raptor") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "raptor")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const mother = state.mother;
   const baby = state.babies[action.targetId];
@@ -292,9 +282,8 @@ export function handleMotherExtinguishFire(
   state: GameState,
   action: { tileId: number; x: number; y: number },
 ): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "raptor") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "raptor")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const mother = state.mother;
   if (!mother.position) return state;
@@ -327,9 +316,8 @@ export function handleScientistSleepBaby(
   state: GameState,
   action: { scientistId: string; targetId: string },
 ): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "scientist") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "scientist")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const scientist = state.scientists[action.scientistId];
   const baby = state.babies[action.targetId];
@@ -362,9 +350,8 @@ export function handleScientistSleepBaby(
 }
 
 function _handleScientistCaptureBaby(state: GameState, action: { scientistId: string; targetId: string }): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "scientist") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "scientist")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const scientist = state.scientists[action.scientistId];
   const baby = state.babies[action.targetId];
@@ -398,9 +385,8 @@ function _handleScientistCaptureBaby(state: GameState, action: { scientistId: st
 }
 
 function _handleScientistShootMother(state: GameState, action: { scientistId: string }): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "scientist") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "scientist")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const scientist = state.scientists[action.scientistId];
   const mother = state.mother;
@@ -427,9 +413,8 @@ function _handleScientistShootMother(state: GameState, action: { scientistId: st
 }
 
 export function handleScientistStandUp(state: GameState, action: { scientistId: string }): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
-  if (state.activePlayer !== "scientist") return state;
-  if (state.actionPoints <= 0) return state;
+  if (!isActionPhaseForPlayer(state, "scientist")) return state;
+  if (!hasActionPoints(state)) return state;
 
   const scientist = state.scientists[action.scientistId];
   if (!scientist?.position) return state;
@@ -453,7 +438,7 @@ export function handleScientistStandUp(state: GameState, action: { scientistId: 
 // END_ACTION_PHASE is now handled by ADVANCE_PHASE
 
 export function handleResetActionPhase(state: GameState): GameState {
-  if (state.phase !== "ACTION_PHASE") return state;
+  if (!isPhase(state, "ACTION_PHASE")) return state;
   if (!state.undoSnapshot) return state;
 
   return {

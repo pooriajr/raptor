@@ -2,6 +2,7 @@ import Card from "../Card";
 import PrivacyScreen from "./PrivacyScreen";
 import { useGame } from "../state/GameContext";
 import type { CardId, CardInfo } from "@/data/cards.ts";
+import { isPhase } from "../state/guards.ts";
 
 interface HandDisplayProps {
   player: "raptor" | "scientist";
@@ -120,18 +121,18 @@ function Hand({ player }: HandProps) {
 
   // Compute display modes based on phase
   const isThisPlayerSelecting =
-    (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
-    (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
+    (player === "scientist" && isPhase(state, "SCIENTIST_CARD_SELECTION")) ||
+    (player === "raptor" && isPhase(state, "RAPTOR_CARD_SELECTION"));
 
   const isOpponentSelecting =
-    (player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION") ||
-    (player === "raptor" && state.phase === "SCIENTIST_CARD_SELECTION");
+    (player === "scientist" && isPhase(state, "RAPTOR_CARD_SELECTION")) ||
+    (player === "raptor" && isPhase(state, "SCIENTIST_CARD_SELECTION"));
 
   // Observation: raptor can see scientist's selected card during raptor's card selection
   const observationRevealsCard =
-    player === "scientist" && state.phase === "RAPTOR_CARD_SELECTION" && state.mother.observationActive;
+    player === "scientist" && isPhase(state, "RAPTOR_CARD_SELECTION") && state.mother.observationActive;
 
-  const isCardReveal = state.phase === "CARD_REVEAL";
+  const isCardReveal = isPhase(state, "CARD_REVEAL");
 
   const showPrivacyScreen = isThisPlayerSelecting && !interaction.privacyDismissed;
 

@@ -1,12 +1,13 @@
 import PlayerAreaBase from "./PlayerAreaBase";
 import { useGame } from "../state/GameContext";
 import { isMotherPlaced, countPlacedBabies } from "../utils/pieceUtils";
+import { isPhase } from "../state/guards.ts";
 
 function RaptorPlayerArea() {
   const { state } = useGame();
 
   const setupInfo = (() => {
-    if (state.phase === "RAPTOR_SETUP") {
+    if (isPhase(state, "RAPTOR_SETUP")) {
       return {
         phaseLabel: "Raptor Setup",
         progress: (
@@ -22,7 +23,7 @@ function RaptorPlayerArea() {
             : "Setup complete!",
       };
     }
-    if (state.phase === "MOTHER_RETURN") {
+    if (isPhase(state, "MOTHER_RETURN")) {
       return {
         phaseLabel: "Mother Returns",
         progress: null,
@@ -41,7 +42,7 @@ function RaptorPlayerArea() {
       cards={state.raptorCards}
       interaction={state.raptorInteraction}
       setupInfo={setupInfo}
-      isSelectingCard={state.phase === "RAPTOR_CARD_SELECTION"}
+      isSelectingCard={isPhase(state, "RAPTOR_CARD_SELECTION")}
       actionInstruction="Select a piece, then click to move or act"
     />
   );

@@ -1,5 +1,6 @@
 import type { GameState, Player } from "@/types/gameState.ts";
 import type { EffectType } from "@/data/cards.ts";
+import { isPhase } from "@/state/guards.ts";
 
 // Re-export EffectType for consumers
 export type { EffectType };
@@ -47,7 +48,7 @@ export function getEffectInstruction(state: GameState): string {
 
 // Check if undo button should be shown for effect phase
 export function shouldShowEffectUndo(state: GameState): boolean {
-  if (state.phase !== "EFFECT_PHASE") return false;
+  if (!isPhase(state, "EFFECT_PHASE")) return false;
   if (!state.undoSnapshot) return false;
   const limit = getEffectLimit(state);
   return state.effectActionsRemaining < limit;

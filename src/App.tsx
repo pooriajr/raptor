@@ -9,6 +9,7 @@ import { playSfx } from "./audio/sfx.ts";
 import { getSoundForAction } from "./audio/actionSounds.ts";
 import { playSoundsForStateChange } from "./audio/stateSounds.ts";
 import type { GameAction } from "./state/gameReducer.ts";
+import { isPhase } from "./state/guards.ts";
 
 function App() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialGameState);
@@ -59,7 +60,7 @@ function App() {
     const ambienceAudio = ambienceAudioRef.current;
     if (!audio || !ambienceAudio) return;
 
-    if (state.phase === "MAIN_MENU") {
+    if (isPhase(state, "MAIN_MENU")) {
       audio.pause();
       audio.currentTime = 0;
       ambienceAudio.pause();
@@ -67,7 +68,7 @@ function App() {
       return;
     }
 
-    const nextSrc = state.phase === "GAME_OVER" ? "/sounds/game-over-bg.mp3" : "/sounds/game-bg.mp3";
+    const nextSrc = isPhase(state, "GAME_OVER") ? "/sounds/game-over-bg.mp3" : "/sounds/game-bg.mp3";
 
     if (audio.src !== `${window.location.origin}${nextSrc}`) {
       audio.src = nextSrc;
@@ -77,7 +78,7 @@ function App() {
       // Autoplay restrictions; should be resolved after user interaction.
     });
 
-    if (state.phase === "GAME_OVER") {
+    if (isPhase(state, "GAME_OVER")) {
       ambienceAudio.pause();
       ambienceAudio.currentTime = 0;
       return;

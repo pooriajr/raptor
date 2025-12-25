@@ -3,6 +3,7 @@ import { createInitialGameState } from "@/types/gameState.ts";
 import { createInitialInteractionState } from "@/types/gameState.ts";
 import type { CardId } from "@/data/cards.ts";
 import { withPhase } from "@/state/phase.ts";
+import { getTileById } from "@/utils/boardQueries.ts";
 import { drawToHand } from "./cardActions.ts";
 import { handleAdvancePhase } from "./phaseActions.ts";
 
@@ -24,7 +25,7 @@ function devAutoSetup(state: GameState): GameState {
   const lTiles = newState.tiles.filter((t) => t.shape === "L");
 
   // Place mother on tile 2
-  const tile2 = squareTiles.find((t) => t.id === 2)!;
+  const tile2 = getTileById(squareTiles, 2)!;
   const motherSpace = tile2.spaces.find((s) => !s.hasMountain)!;
   newState = {
     ...newState,

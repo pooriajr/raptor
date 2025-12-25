@@ -7,10 +7,11 @@ import type { GameState, ScientistState, BabyState, MotherState } from "./types/
 import type { SpaceActions } from "./types/spaceActions.ts";
 import { parseSpaceId } from "./types/spaceActions.ts";
 import type { GameAction } from "./state/gameReducer.ts";
-import { BabyPiece } from "./Piece.tsx";
+import BabyPiece from "./BabyPiece.tsx";
 import MotherPiece from "./MotherPiece.tsx";
 import ScientistPiece from "./ScientistPiece.tsx";
 import { getCurrentEffectType } from "./utils/effectUtils.ts";
+import { isPhase } from "@/state/guards.ts";
 
 interface SpaceProps {
   space: SpaceType;
@@ -42,7 +43,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   const interaction = currentPlayer === "scientist" ? state.scientistInteraction : state.raptorInteraction;
   const selectedActorId = interaction.selectedActorId;
   const jeepEffectActive =
-    state.phase === "EFFECT_PHASE" && getCurrentEffectType(state) === "jeep" && state.effectActionsRemaining > 0;
+    isPhase(state, "EFFECT_PHASE") && getCurrentEffectType(state) === "jeep" && state.effectActionsRemaining > 0;
 
   const handleClick = () => {
     if (spaceAction?.action) {

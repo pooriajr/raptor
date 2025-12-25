@@ -5,6 +5,7 @@ import { getEffectPlayer } from "../utils/effectUtils";
 import { isRaptorSetupComplete } from "../utils/boardUtils";
 import { hasScientistOnFire } from "../utils/fireUtils";
 import { playSfx } from "../audio/sfx";
+import { isActionPhaseForPlayer, isPhase } from "../state/guards.ts";
 
 interface DoneButtonProps {
   player: "raptor" | "scientist";
@@ -17,19 +18,18 @@ function DoneButton({ player }: DoneButtonProps) {
   const interaction = isRaptor ? state.raptorInteraction : state.scientistInteraction;
   const selectedCard = interaction.selectedCard;
 
-  const isEffectPhase = state.phase === "EFFECT_PHASE";
-  const isActionPhase = state.phase === "ACTION_PHASE";
+  const isEffectPhase = isPhase(state, "EFFECT_PHASE");
 
   const isThisPlayerSetup =
-    (isRaptor && state.phase === "RAPTOR_SETUP") || (!isRaptor && state.phase === "SCIENTIST_SETUP");
+    (isRaptor && isPhase(state, "RAPTOR_SETUP")) || (!isRaptor && isPhase(state, "SCIENTIST_SETUP"));
 
   const isThisPlayerSelecting =
-    (player === "scientist" && state.phase === "SCIENTIST_CARD_SELECTION") ||
-    (player === "raptor" && state.phase === "RAPTOR_CARD_SELECTION");
+    (player === "scientist" && isPhase(state, "SCIENTIST_CARD_SELECTION")) ||
+    (player === "raptor" && isPhase(state, "RAPTOR_CARD_SELECTION"));
 
   const isThisPlayerEffect = isEffectPhase && getEffectPlayer(state) === player;
-  const isThisPlayerAction = isActionPhase && state.activePlayer === player;
-  const isMotherReturn = state.phase === "MOTHER_RETURN" && isRaptor;
+  const isThisPlayerAction = isActionPhaseForPlayer(state, player);
+  const isMotherReturn = isPhase(state, "MOTHER_RETURN") && isRaptor;
   const scientistOnFire = hasScientistOnFire(state);
 
   // === Handler ===

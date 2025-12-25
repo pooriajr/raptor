@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useGame } from "./state/GameContext.tsx";
-import { isMotherPlaced, countPlacedBabies, countPlacedScientists } from "./utils/pieceUtils.ts";
+import { countPlacedBabies, countPlacedScientists, isMotherPlaced } from "./utils/pieceUtils.ts";
+import { getTileById } from "./utils/boardQueries.ts";
+import { isPhase, isSetupPhase } from "./state/guards.ts";
 
 function DevPanel() {
   const { state, dispatch } = useGame();
   const [collapsed, setCollapsed] = useState(true);
 
   const handleAutoSetup = () => {
-    if (state.phase !== "RAPTOR_SETUP" && state.phase !== "SCIENTIST_SETUP") {
+    if (!isSetupPhase(state)) {
       return;
     }
 
@@ -15,8 +17,8 @@ function DevPanel() {
     const lTiles = state.tiles.filter((t) => t.shape === "L");
 
     // Place mother on tile 2 if not placed
-    if (state.phase === "RAPTOR_SETUP" && !isMotherPlaced(state)) {
-      const tile2 = squareTiles.find((t) => t.id === 2)!;
+    if (isPhase(state, "RAPTOR_SETUP") && !isMotherPlaced(state)) {
+      const tile2 = getTileById(squareTiles, 2)!;
       const space = tile2.spaces.find((s) => !s.hasMountain)!;
       dispatch({
         type: "PLACE_MOTHER",
@@ -27,7 +29,7 @@ function DevPanel() {
     }
 
     // Place babies on remaining square tiles
-    if (state.phase === "RAPTOR_SETUP") {
+    if (isPhase(state, "RAPTOR_SETUP")) {
       const tilesForBabies = squareTiles.filter((t) => t.id !== 2);
       let babiesPlaced = countPlacedBabies(state);
 
@@ -50,7 +52,7 @@ function DevPanel() {
     }
 
     // Place scientists on L-tiles
-    if (state.phase === "SCIENTIST_SETUP") {
+    if (isPhase(state, "SCIENTIST_SETUP")) {
       let scientistsPlaced = countPlacedScientists(state);
 
       for (const tile of lTiles) {
@@ -81,7 +83,7 @@ function DevPanel() {
     );
   }
 
-  const isSetupPhase = state.phase === "RAPTOR_SETUP" || state.phase === "SCIENTIST_SETUP";
+  const setupPhaseActive = isSetupPhase(state);
 
   return (
     <div className="absolute bottom-2.5 left-2.5 z-1000 min-w-45 rounded-md border border-[#555] bg-[rgba(30,30,30,0.95)] p-3 text-[0.85rem] text-[#ccc]">
@@ -102,7 +104,7 @@ function DevPanel() {
         </label>
       </div>
 
-      {isSetupPhase && (
+      {setupPhaseActive && (
         <div className="mb-2 last:mb-0">
           <button
             className="w-full cursor-pointer rounded bg-[#4a5568] px-3 py-1.5 text-[0.85rem] text-white hover:bg-[#5a6578] active:bg-[#3a4558]"
