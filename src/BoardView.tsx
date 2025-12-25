@@ -49,17 +49,6 @@ function BoardView({
 
   return (
     <div className={containerClassName}>
-      {/* SVG clip-path definitions for exit arrow shapes (defined once for all spaces) */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <clipPath id="exit-arrow-right" clipPathUnits="objectBoundingBox">
-            <path d="M0.12,0 L0.65,0 L1,0.5 L0.65,1 L0.12,1 Q0,1 0,0.88 L0,0.12 Q0,0 0.12,0" />
-          </clipPath>
-          <clipPath id="exit-arrow-left" clipPathUnits="objectBoundingBox">
-            <path d="M0.88,0 L0.35,0 L0,0.5 L0.35,1 L0.88,1 Q1,1 1,0.88 L1,0.12 Q1,0 0.88,0" />
-          </clipPath>
-        </defs>
-      </svg>
       <div className={boardClassNames}>
         {state.tiles.map((tile, index) => (
           <Tile

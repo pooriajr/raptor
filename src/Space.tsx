@@ -63,7 +63,6 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
   const spaceClassName = [
     "relative flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-transparent text-lg border border-white/10",
     "data-[exit=true]:rounded-lg data-[exit=true]:bg-[rgba(200,195,185,0.4)]",
-    "data-[exit-direction=right]:[clip-path:url(#exit-arrow-right)] data-[exit-direction=left]:[clip-path:url(#exit-arrow-left)]",
     "data-[mountain=true]:bg-[rgba(50,49,41,0.71)]",
     "data-[unusable=true]:invisible",
     "data-[style=selectable]:cursor-pointer data-[style=selectable]:bg-[rgba(180,220,255,0.85)] data-[style=selectable]:hover:bg-[rgba(150,200,255,0.95)]",
@@ -105,6 +104,7 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
         jeepEffectActive={jeepEffectActive}
         mother={state.mother}
         spacePosition={spacePosition}
+        exitDirection={exitDirection}
       />
       {overlay}
     </div>
@@ -127,6 +127,7 @@ interface SpaceContentProps {
   jeepEffectActive: boolean;
   mother: MotherState;
   spacePosition: { tileId: number; x: number; y: number };
+  exitDirection?: "left" | "right";
 }
 
 function SpaceContent({
@@ -137,15 +138,35 @@ function SpaceContent({
   jeepEffectActive,
   mother,
   spacePosition,
+  exitDirection,
 }: SpaceContentProps) {
   // Priority 1: Mountain
   if (space.hasMountain) {
     return <span className="relative z-10 inline-block text-5xl filter-[saturate(0.8)_brightness(0.8)]">⛰️</span>;
   }
 
-  // Priority 2: Exit - empty (shape is via CSS clip-path)
+  // Priority 2: Exit - empty (subtle arrow icon)
   if (space.isExit) {
-    return null;
+    const arrowRotationClass = exitDirection === "left" ? "rotate-180" : "rotate-0";
+    return (
+      <span
+        className={[
+          "absolute inset-0 flex items-center justify-center text-[32px] text-[#6a655c]/70",
+          arrowRotationClass,
+        ].join(" ")}
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7">
+          <path
+            d="M4 12h12m0 0-4-4m4 4-4 4"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.6"
+          />
+        </svg>
+      </span>
+    );
   }
 
   // Priority 3: Piece (non-mother)

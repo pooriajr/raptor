@@ -36,9 +36,24 @@ function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays, classN
     const tileClassName = ["relative rounded-2xl transition-shadow", "bg-transparent p-0", className]
       .filter(Boolean)
       .join(" ");
-    const exitColumnClassName = [
-      "flex flex-col",
-      tile.exitPosition === "top" ? "justify-start pt-2" : "justify-end pb-2",
+    const exitColumnClassName = ["flex flex-col", tile.exitPosition === "top" ? "justify-start" : "justify-end"].join(
+      " ",
+    );
+    const mainColumnCornerClassName =
+      tile.side === "left"
+        ? tile.exitPosition === "top"
+          ? "rounded-r-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-none"
+          : "rounded-r-2xl rounded-tr-2xl rounded-br-2xl rounded-tl-2xl rounded-bl-none"
+        : tile.exitPosition === "top"
+          ? "rounded-l-2xl rounded-bl-2xl rounded-br-2xl rounded-tr-none"
+          : "rounded-l-2xl rounded-tl-2xl rounded-bl-2xl rounded-tr-2xl rounded-br-none";
+    const mainColumnClassName = [
+      "flex flex-col gap-1.5 bg-[rgba(160,155,145,0.5)] py-2 px-2",
+      mainColumnCornerClassName,
+    ].join(" ");
+    const exitSpaceWrapperClassName = [
+      "flex flex-col bg-[rgba(160,155,145,0.5)] py-2",
+      tile.side === "left" ? "pl-2 pr-0 rounded-l-2xl rounded-r-none" : "pl-0 pr-2 rounded-r-2xl rounded-l-none",
     ].join(" ");
 
     return (
@@ -48,20 +63,20 @@ function Tile({ tile, spaceActions, game, spaceClassNames, spaceOverlays, classN
         data-side={tile.side}
         data-exit-position={tile.exitPosition}
       >
-        <div className="flex gap-1.5">
+        <div className="flex gap-0">
           {tile.side === "left" ? (
             <>
-              <div className={exitColumnClassName}>{exitSpace && renderSpace(exitSpace)}</div>
-              <div className="flex flex-col gap-1.5 rounded-2xl bg-[rgba(160,155,145,0.5)] p-2">
-                {usableSpaces.map(renderSpace)}
+              <div className={exitColumnClassName}>
+                {exitSpace && <div className={exitSpaceWrapperClassName}>{renderSpace(exitSpace)}</div>}
               </div>
+              <div className={mainColumnClassName}>{usableSpaces.map(renderSpace)}</div>
             </>
           ) : (
             <>
-              <div className="flex flex-col gap-1.5 rounded-2xl bg-[rgba(160,155,145,0.5)] p-2">
-                {usableSpaces.map(renderSpace)}
+              <div className={mainColumnClassName}>{usableSpaces.map(renderSpace)}</div>
+              <div className={exitColumnClassName}>
+                {exitSpace && <div className={exitSpaceWrapperClassName}>{renderSpace(exitSpace)}</div>}
               </div>
-              <div className={exitColumnClassName}>{exitSpace && renderSpace(exitSpace)}</div>
             </>
           )}
         </div>
