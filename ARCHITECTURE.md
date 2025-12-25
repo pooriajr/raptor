@@ -136,6 +136,15 @@ function gameReducer(state, action) {
 Handlers are organized in `src/state/actions/` by domain (setup, cards, effects, actionPhase, etc.).
 Phase transitions are handled by the single `ADVANCE_PHASE` action in `src/state/actions/phaseActions.ts`.
 
+### Guard Helpers
+
+Shared guard functions live in `src/state/guards.ts` and are used by reducers and UI to keep phase/action checks consistent:
+
+- `isPhase`
+- `isSetupPhase`
+- `isActionPhaseForPlayer`
+- `hasActionPoints`
+
 ### Data vs Logic Separation
 
 - **State**: Plain objects only (no class instances)
@@ -152,3 +161,15 @@ Compute rather than store:
 - Escaped baby count: `Object.values(babies).filter(b => b.isEscaped).length`
 - Effect player: `activeEffectCard?.player`
 - Action player: opposite of effect player
+
+### Board Queries
+
+Tile/space lookups are centralized in `src/utils/boardQueries.ts`:
+
+- `getTileById(tiles, tileId)`
+- `getSpaceOnTile(tile, x, y)`
+- `getSpaceByCoords(tiles, tileId, x, y)`
+
+### Space Action Rules
+
+`buildSpaceActions.ts` constructs the `SpaceActions` map from a rule list (`spaceActionRules`) with `when` guards and `run` handlers, keeping per-phase checks in one place.

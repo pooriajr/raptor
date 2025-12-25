@@ -143,7 +143,7 @@ npm run preview
 - Single `GameState` object at App level via `useReducer`
 - React Context (`GameContext`) provides state and dispatch to all components
 - Phase-based state machine controls game flow
-- Piece data stored as plain objects (`PieceState`); piece classes used for logic only
+- Piece data stored as plain objects (MotherState/BabyState/ScientistState); piece classes used for logic only
 - Snapshot-revert pattern for undoable phases (effect and action)
 
 ### Components
@@ -152,9 +152,12 @@ npm run preview
 - **Board.tsx**: Game board container, builds highlights map, dispatches actions
 - **Tile.tsx**: Individual tile component with data attributes for styling
 - **Space.tsx**: Individual space within a tile, renders pieces/fire/highlights
+- **BabyPiece.tsx**: Baby piece render with asleep/selected animation
 - **CardDeck.tsx**: Visual card deck display
 - **Hand.tsx**: Player's hand of cards with selection UI
-- **CardRevealOverlay.tsx**: Card reveal animation with effect/action point display
+- **CardReveal.tsx**: Card reveal animation overlay and stage sequencing
+- **CardResolution.tsx**: Effect/AP resolution display (uses RevealContext for reveal staging)
+- **RevealContext.tsx**: Shared reveal stage/effect player for CardReveal + CardResolution
 - **PrivacyScreen.tsx**: Overlay on hand during opponent's card selection
 - **DevPanel.tsx**: Development tools for testing (auto-setup, skip to effects)
 - **PlayerArea/**: Player-specific UI components (DoneButton, UndoButton, Tracker, etc.)
@@ -164,6 +167,7 @@ npm run preview
 - **gameReducer.ts**: Main reducer, dispatches to action handlers
 - **GameContext.tsx**: React Context and `useGame()` hook for accessing state/dispatch
 - **phase.ts**: Helpers for phase/active-player derivation
+- **guards.ts**: Shared phase/action guards (`isPhase`, `isSetupPhase`, `hasActionPoints`, `isActionPhaseForPlayer`)
 - **actions/**: Action handlers organized by domain:
   - `setupActions.ts` - Piece placement during setup
   - `cardActions.ts` - Card selection and reveal
@@ -175,7 +179,7 @@ npm run preview
 
 ### Types (`src/types/`)
 
-- **gameState.ts**: GameState, PieceState, CardState, FireToken, InteractionState
+- **gameState.ts**: GameState, MotherState, BabyState, ScientistState, CardState, FireToken, InteractionState
 - **board.ts**: Coordinate, Space, SquareTile, LTile types + `createBoard()`
 - **coordinates.ts**: Global coordinate system (localToGlobal, globalToLocal, adjacency)
 - **spaceActions.ts**: SpaceAction, SpaceStyle types for board highlighting
@@ -189,13 +193,15 @@ npm run preview
 - **pieceUtils.ts**: Piece emoji helpers
 - **fireUtils.ts**: Fire token utilities
 - **boardUtils.ts**: Board space utilities
+- **boardQueries.ts**: Tile/space lookup helpers
+- **buildSpaceActions.ts**: Builds `SpaceActions` maps for clickable spaces
 - **saveLoad.ts**: Game state persistence
 
 ### Pieces (`src/pieces/`)
 
-Logic classes instantiated from `PieceState` for computing valid moves and actions.
+Logic classes instantiated from state objects for computing valid moves and actions.
 
-- **Piece.ts**: Abstract base class with `getValidMoves(tiles, pieces, fireTokens)`, `clone()`
+- **Piece.ts**: Abstract logic base class with `getValidMoves(tiles, pieces, fireTokens)`, `clone()`
 - **MotherRaptor.ts**: Mother raptor logic (emoji: 🦖)
 - **BabyRaptor.ts**: Baby raptor logic (emoji: 🦎)
 - **Scientist.ts**: Scientist logic with jeep mode support (emoji: 🧑‍🔬 or 🚙)
@@ -224,6 +230,7 @@ Note: Card selection phases use a privacy screen overlay on the hand that the se
 - If a space has an action, clicking dispatches that action
 - If a space has no action, clicking does nothing
 - Board.tsx should NOT have any click handling logic outside of dispatching space actions
+- `buildSpaceActions.ts` organizes these as `spaceActionRules` with `when` guards and `run` handlers
 
 **Space styles:**
 
@@ -276,14 +283,13 @@ Mother's Call and Jeep use two-step selection via `selectedActorId`:
 - ✅ Snapshot-revert pattern for both effect and action phases
 - ✅ Two-step selection for Mother's Call and Jeep effects
 - ✅ Win condition tracking (isEscaped/isCaptured on babies, motherSleepTokens)
-- ✅ Comprehensive test suite (144 tests)
+- ✅ Game over screen with win condition messaging
+- ✅ Comprehensive test suite (Vitest)
 
-### Next Steps
+### Status Notes
 
-1. **Win condition UI** - Display game over screen when win conditions are met
-2. **Observation mechanic** - After disappearance, see opponent's next card before choosing
-3. **Recovery completion** - Remove sleep tokens from mother (currently only wakes babies)
-4. **Deck shuffle** - Shuffle deck when cards 1 are played
+- Core gameplay loop (setup → card selection → reveal → effect → action → round end) is implemented.
+- Keep future work tracked in issues or `plan.md` to avoid stale TODOs here.
 
 ### Card Animation Rules
 
