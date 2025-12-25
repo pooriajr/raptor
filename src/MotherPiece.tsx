@@ -29,6 +29,14 @@ function MotherPiece({ mother, isSelected, spacePosition }: MotherPieceProps) {
     .filter(Boolean)
     .join(" ");
 
+  const visibleSleepTokens = Math.min(4, mother.sleepTokens);
+  const dartOffsets = [
+    { top: -12, right: 18 },
+    { top: 0, right: 10 },
+    { top: 12, right: 2 },
+    { top: 24, right: -6 },
+  ];
+
   return (
     <AnimatePresence>
       {motherIsHere && (
@@ -51,7 +59,16 @@ function MotherPiece({ mother, isSelected, spacePosition }: MotherPieceProps) {
           }}
         >
           {"🦖"}
-          {mother.sleepTokens > 0 && <span className="absolute -top-2 -right-2 text-3xl">{mother.sleepTokens}</span>}
+          {visibleSleepTokens > 0 &&
+            dartOffsets.slice(0, visibleSleepTokens).map((offset, index) => (
+              <span
+                key={`sleep-dart-${index}`}
+                className="absolute text-2xl rotate-180"
+                style={{ top: `${offset.top}px`, right: `${offset.right}px` }}
+              >
+                {"💉"}
+              </span>
+            ))}
         </motion.span>
       )}
     </AnimatePresence>
