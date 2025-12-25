@@ -4,6 +4,7 @@ import { countPlacedScientists } from "../utils/pieceUtils";
 import { getEffectPlayer } from "../utils/effectUtils";
 import { isRaptorSetupComplete } from "../utils/boardUtils";
 import { hasScientistOnFire } from "../utils/fireUtils";
+import { playSfx } from "../audio/sfx";
 
 interface DoneButtonProps {
   player: "raptor" | "scientist";
@@ -35,6 +36,7 @@ function DoneButton({ player }: DoneButtonProps) {
 
   const handleClick = useCallback(() => {
     // Advance the phase - selectedCard stays in interaction state until card reveal
+    playSfx("phase_advance_done");
     dispatch({ type: "ADVANCE_PHASE" });
   }, [dispatch]);
 

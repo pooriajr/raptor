@@ -29,7 +29,7 @@ export function getSoundForAction(action: GameAction, state: GameState): SoundId
 
     // Phase / flow
     case "ADVANCE_PHASE":
-      return "phase_advance";
+      return null;
 
     // Effects
     case "FRIGHTEN_SCIENTIST":

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./state/GameContext";
 import { hasSavedGame, loadGame } from "./utils/saveLoad";
 import Tutorial from "./Tutorial/Tutorial";
+import { playSfx } from "./audio/sfx";
 
 function MainMenu() {
   const { dispatch } = useGame();
@@ -31,6 +32,7 @@ function MainMenu() {
   }, []);
 
   const handleNewGame = () => {
+    playSfx("phase_start_game");
     dispatch({ type: "ADVANCE_PHASE" });
   };
 

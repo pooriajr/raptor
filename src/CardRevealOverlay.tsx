@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Card from "./Card";
 import { useGame } from "./state/GameContext";
 import { CARDS, type CardInfo } from "@/data/cards.ts";
+import { playSfx } from "./audio/sfx";
 
 function CardRevealOverlay() {
   const { state, dispatch } = useGame();
@@ -83,7 +84,10 @@ function CardRevealOverlay() {
 
             <button
               className="mt-6 rounded-lg bg-[linear-gradient(145deg,#4a8a4a,#2a6a2a)] px-10 py-3 text-[1rem] font-bold text-white transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-[0_4px_12px_rgba(74,138,74,0.4)] active:scale-95"
-              onClick={() => dispatch({ type: "ADVANCE_PHASE" })}
+              onClick={() => {
+                playSfx("phase_advance_card_reveal");
+                dispatch({ type: "ADVANCE_PHASE" });
+              }}
             >
               {sameCards ? "End Round" : "Continue"}
             </button>

@@ -12,11 +12,18 @@ function RoundEndTimer() {
   const didStartRef = useRef(false);
 
   const skip = useCallback(() => {
+    playSfx("phase_advance_round_end");
     dispatch({ type: "ADVANCE_PHASE" });
   }, [dispatch]);
 
   useEffect(() => {
-    const action = secondsLeft > 1 ? () => setSecondsLeft(secondsLeft - 1) : () => dispatch({ type: "ADVANCE_PHASE" });
+    const action =
+      secondsLeft > 1
+        ? () => setSecondsLeft(secondsLeft - 1)
+        : () => {
+            playSfx("phase_advance_round_end");
+            dispatch({ type: "ADVANCE_PHASE" });
+          };
 
     const timer = setTimeout(action, TICK_MS);
     return () => clearTimeout(timer);

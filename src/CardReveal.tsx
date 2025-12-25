@@ -15,6 +15,7 @@ function CardReveal() {
 
   const skip = useCallback(() => {
     setRevealStage("hidden");
+    playSfx("phase_advance_card_reveal");
     dispatch({ type: "ADVANCE_PHASE" });
   }, [setRevealStage, dispatch]);
 
@@ -96,6 +97,7 @@ function CardReveal() {
 
       case "complete":
         setRevealStage("hidden");
+        playSfx("phase_advance_card_reveal");
         dispatch({ type: "ADVANCE_PHASE" });
         break;
     }

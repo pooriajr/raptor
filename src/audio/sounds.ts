@@ -79,7 +79,10 @@ export const SOUNDS = {
   cards_shuffle: { file: "cards_shuffle.mp3", description: "Deck shuffle (e.g., card 1 effect)" },
 
   // Phases / flow
-  phase_advance: { file: "phase_advance.mp3", description: "Phase advance (Done/Continue)" },
+  phase_advance_done: { file: "phase_advance_done.mp3", description: "Phase advance via Done button" },
+  phase_advance_card_reveal: { file: "phase_advance_card_reveal.mp3", description: "Advance after card reveal" },
+  phase_advance_round_end: { file: "phase_advance_round_end.mp3", description: "Advance after round end countdown" },
+  phase_start_game: { file: "phase_start_game.mp3", description: "Start a new game from main menu" },
   phase_enter_card_reveal: { file: "phase_enter_card_reveal.mp3", description: "Entering card reveal" },
   phase_enter_effect: { file: "phase_enter_effect.mp3", description: "Entering effect phase" },
   phase_enter_action: { file: "phase_enter_action.mp3", description: "Entering action phase" },
