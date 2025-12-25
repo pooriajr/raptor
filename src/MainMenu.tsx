@@ -8,6 +8,7 @@ function MainMenu() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const menuAudioRef = useRef<HTMLAudioElement | null>(null);
+  const roarAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const audio = new Audio("/sounds/drums-bg.mp3");
@@ -15,7 +16,14 @@ function MainMenu() {
     audio.volume = 0.5;
     menuAudioRef.current = audio;
 
+    const roarAudio = new Audio("/sounds/big-roar.mp3");
+    roarAudio.volume = 0.9;
+    roarAudioRef.current = roarAudio;
+
     return () => {
+      roarAudio.pause();
+      roarAudio.currentTime = 0;
+      roarAudioRef.current = null;
       audio.pause();
       audio.currentTime = 0;
       menuAudioRef.current = null;
@@ -45,7 +53,7 @@ function MainMenu() {
         className="fixed inset-0 z-100 flex items-center justify-center bg-black text-[1.3rem] font-bold text-white/80 transition-[transform,box-shadow] duration-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
         onClick={() => {
           setHasInteracted(true);
-          void new Audio("/sounds/big-roar.mp3").play();
+          void roarAudioRef.current?.play();
           void menuAudioRef.current?.play();
         }}
       >

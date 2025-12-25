@@ -14,6 +14,7 @@ function App() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialGameState);
   const prevStateRef = useRef(state);
   const gameAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ambienceAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const dispatchWithSfx = useCallback(
     (action: GameAction) => {
@@ -33,12 +34,20 @@ function App() {
   }, [state]);
 
   useEffect(() => {
-    const audio = new Audio("/sounds/ambience-bg.mp3");
+    const audio = new Audio("/sounds/game-bg.mp3");
     audio.loop = true;
     audio.volume = 0.4;
     gameAudioRef.current = audio;
 
+    const ambienceAudio = new Audio("/sounds/jungle-ambience-bg.mp3");
+    ambienceAudio.loop = true;
+    ambienceAudio.volume = 0.15;
+    ambienceAudioRef.current = ambienceAudio;
+
     return () => {
+      ambienceAudio.pause();
+      ambienceAudio.currentTime = 0;
+      ambienceAudioRef.current = null;
       audio.pause();
       audio.currentTime = 0;
       gameAudioRef.current = null;
@@ -47,21 +56,38 @@ function App() {
 
   useEffect(() => {
     const audio = gameAudioRef.current;
-    if (!audio) return;
+    const ambienceAudio = ambienceAudioRef.current;
+    if (!audio || !ambienceAudio) return;
 
     if (state.phase === "MAIN_MENU") {
       audio.pause();
       audio.currentTime = 0;
+      ambienceAudio.pause();
+      ambienceAudio.currentTime = 0;
       return;
     }
 
-    const nextSrc = state.phase === "GAME_OVER" ? "/sounds/game-over-bg.mp3" : "/sounds/ambience-bg.mp3";
+    const nextSrc = state.phase === "GAME_OVER" ? "/sounds/game-over-bg.mp3" : "/sounds/game-bg.mp3";
 
     if (audio.src !== `${window.location.origin}${nextSrc}`) {
       audio.src = nextSrc;
     }
 
     void audio.play().catch(() => {
+      // Autoplay restrictions; should be resolved after user interaction.
+    });
+
+    if (state.phase === "GAME_OVER") {
+      ambienceAudio.pause();
+      ambienceAudio.currentTime = 0;
+      return;
+    }
+
+    if (ambienceAudio.src !== `${window.location.origin}/sounds/jungle-ambience-bg.mp3`) {
+      ambienceAudio.src = "/sounds/jungle-ambience-bg.mp3";
+    }
+
+    void ambienceAudio.play().catch(() => {
       // Autoplay restrictions; should be resolved after user interaction.
     });
   }, [state.phase]);
