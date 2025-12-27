@@ -23,4 +23,5 @@ npm run test:ui
 ## Docs
 
 - `ARCHITECTURE.md` for architecture/state-machine notes
+- `AGENTS.md` for AI agent entry-point guidance (points to `CLAUDE.md`)
 - `MANUAL_TEST_CHECKLIST.md` for quick QA passes
