@@ -65,7 +65,7 @@ function Tutorial({ onClose }: TutorialProps) {
 
   return (
     <div
-      className="fixed inset-0 z-200 flex items-center justify-center bg-[rgba(15,15,30,0.9)] backdrop-blur-sm"
+      className="fixed inset-0 z-[3000] flex items-center justify-center bg-[rgba(15,15,30,0.9)] backdrop-blur-sm"
       onClick={onClose}
     >
       <div
