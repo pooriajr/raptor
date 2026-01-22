@@ -32,7 +32,7 @@ function Card({
   hideTooltip = false,
   skipAnimation = false,
 }: CardProps) {
-  const { value, player, name, icon, description, effectCount } = card;
+  const { value, player, name, description } = card;
   const isInteractive = onClick && !selected;
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -45,18 +45,12 @@ function Card({
 
   // Card face base classes
   const cardFaceBase =
-    "absolute w-full h-full backface-hidden rounded-lg flex flex-col items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)] border";
+    "absolute h-full w-full backface-hidden rounded-xl border-2 border-white object-fill shadow-[0_2px_8px_rgba(0,0,0,0.3)]";
 
   // Player-specific styles
   const isRaptor = player === "raptor";
-  const borderColor = isRaptor ? "border-[#5a7a52]" : "border-[#a08060]";
-  const frontBg = isRaptor
-    ? "bg-[linear-gradient(145deg,#2d5a27,#1a3518)]"
-    : "bg-[linear-gradient(145deg,#8a5a1a,#5a3810)]";
-  const frontText = isRaptor ? "text-[#90ee90]" : "text-[#ffb347]";
-  const backBg = isRaptor
-    ? "bg-[linear-gradient(145deg,#3d6a37,#2a4a22)]"
-    : "bg-[linear-gradient(145deg,#8a5a1a,#5a3810)]";
+  const frontImageSrc = isRaptor ? `/images/r${value}.png` : `/images/s${value}.png`;
+  const backImageSrc = isRaptor ? "/images/rback.png" : "/images/sback.png";
 
   // Selected card glow
   const selectedStyles = selected
@@ -133,26 +127,18 @@ function Card({
       style={{ transformStyle: "preserve-3d" }}
     >
       {/* Front face - shows the card value */}
-      <div
-        className={`${cardFaceBase} ${borderColor} ${frontBg} ${frontText} ${selectedStyles} ${dimmedStyles} transform-[rotateY(0deg)]`}
-      >
-        <div className="absolute top-2 left-3 font-['Bungee'] text-4xl [text-shadow:1px_1px_2px_rgba(0,0,0,0.5)]">
-          {value}
-        </div>
-        <div className="my-1.5 flex flex-1 flex-row flex-wrap items-center justify-center gap-1 pt-5 text-5xl leading-none filter-[drop-shadow(1px_1px_2px_rgba(0,0,0,0.3))]">
-          {Array.from({ length: Math.max(1, effectCount) }, (_, i) => (
-            <span key={i} className="inline-block">
-              {icon}
-            </span>
-          ))}
-        </div>
-        <div className="mt-auto px-2 pb-2.5 text-center text-[15px] leading-tight opacity-90">{name}</div>
-      </div>
+      <img
+        className={`${cardFaceBase} ${selectedStyles} ${dimmedStyles} transform-[rotateY(0deg)]`}
+        src={frontImageSrc}
+        alt={`${name} card`}
+      />
 
       {/* Back face - shows the card back pattern */}
-      <div className={`${cardFaceBase} ${borderColor} ${backBg} ${selectedStyles} transform-[rotateY(180deg)]`}>
-        <div className="text-[42px] opacity-60">{isRaptor ? "🦖" : "🔬"}</div>
-      </div>
+      <img
+        className={`${cardFaceBase} ${selectedStyles} transform-[rotateY(180deg)]`}
+        src={backImageSrc}
+        alt="Card back"
+      />
 
       {/* Tooltip */}
       {showTooltip && (
