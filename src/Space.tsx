@@ -99,7 +99,6 @@ function Space({ space, spaceActions, game, className, overlay }: SpaceProps) {
       <SpaceContent
         space={space}
         pieceOnSpace={pieceOnSpace}
-        style={style}
         hasFireToken={hasFireToken}
         selectedActorId={selectedActorId}
         jeepEffectActive={jeepEffectActive}

@@ -32,6 +32,14 @@ export function getSoundForAction(action: GameAction, state: GameState): SoundId
     case "ADVANCE_PHASE":
       return null;
 
+    // Dev / persistence
+    case "DEV_SKIP_TO_EFFECT":
+    case "DEV_SKIP_TO_ACTION":
+    case "DEV_SKIP_TO_CARD_SELECTION":
+    case "LOAD_GAME":
+    case "RESET_GAME":
+      return null;
+
     // Effects
     case "FRIGHTEN_SCIENTIST":
       return "effect_fear";
