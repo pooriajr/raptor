@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Tooltip from "./Tooltip.tsx";
 import type { CardInfo } from "@/data/cards.ts";
+import { assetUrl } from "./utils/assetUrl";
 
 interface CardProps {
   card: CardInfo;
@@ -49,8 +50,8 @@ function Card({
 
   // Player-specific styles
   const isRaptor = player === "raptor";
-  const frontImageSrc = isRaptor ? `/images/r${value}.png` : `/images/s${value}.png`;
-  const backImageSrc = isRaptor ? "/images/rback.png" : "/images/sback.png";
+  const frontImageSrc = isRaptor ? assetUrl(`images/r${value}.png`) : assetUrl(`images/s${value}.png`);
+  const backImageSrc = isRaptor ? assetUrl("images/rback.png") : assetUrl("images/sback.png");
 
   // Selected card glow
   const selectedStyles = selected

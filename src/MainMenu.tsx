@@ -3,6 +3,7 @@ import { useGame } from "./state/GameContext";
 import { hasSavedGame, loadGame } from "./utils/saveLoad";
 import Tutorial from "./Tutorial/Tutorial";
 import { playSfx } from "./audio/sfx";
+import { assetUrl } from "./utils/assetUrl";
 
 function MainMenu() {
   const { dispatch } = useGame();
@@ -12,12 +13,12 @@ function MainMenu() {
   const roarAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = new Audio("/sounds/drums-bg.mp3");
+    const audio = new Audio(assetUrl("sounds/drums-bg.mp3"));
     audio.loop = true;
     audio.volume = 0.5;
     menuAudioRef.current = audio;
 
-    const roarAudio = new Audio("/sounds/big-roar.mp3");
+    const roarAudio = new Audio(assetUrl("sounds/big-roar.mp3"));
     roarAudio.volume = 0.9;
     roarAudioRef.current = roarAudio;
 

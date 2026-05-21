@@ -10,6 +10,7 @@ import { getSoundForAction } from "./audio/actionSounds.ts";
 import { playSoundsForStateChange } from "./audio/stateSounds.ts";
 import type { GameAction } from "./state/gameReducer.ts";
 import { isPhase } from "./state/guards.ts";
+import { assetUrl } from "./utils/assetUrl.ts";
 
 function App() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialGameState);
@@ -35,12 +36,12 @@ function App() {
   }, [state]);
 
   useEffect(() => {
-    const audio = new Audio("/sounds/game-bg.mp3");
+    const audio = new Audio(assetUrl("sounds/game-bg.mp3"));
     audio.loop = true;
     audio.volume = 0.4;
     gameAudioRef.current = audio;
 
-    const ambienceAudio = new Audio("/sounds/jungle-ambience-bg.mp3");
+    const ambienceAudio = new Audio(assetUrl("sounds/jungle-ambience-bg.mp3"));
     ambienceAudio.loop = true;
     ambienceAudio.volume = 0.15;
     ambienceAudioRef.current = ambienceAudio;
@@ -68,7 +69,7 @@ function App() {
       return;
     }
 
-    const nextSrc = isPhase(state, "GAME_OVER") ? "/sounds/game-over-bg.mp3" : "/sounds/game-bg.mp3";
+    const nextSrc = isPhase(state, "GAME_OVER") ? assetUrl("sounds/game-over-bg.mp3") : assetUrl("sounds/game-bg.mp3");
 
     if (audio.src !== `${window.location.origin}${nextSrc}`) {
       audio.src = nextSrc;
@@ -84,8 +85,9 @@ function App() {
       return;
     }
 
-    if (ambienceAudio.src !== `${window.location.origin}/sounds/jungle-ambience-bg.mp3`) {
-      ambienceAudio.src = "/sounds/jungle-ambience-bg.mp3";
+    const nextAmbienceSrc = assetUrl("sounds/jungle-ambience-bg.mp3");
+    if (ambienceAudio.src !== `${window.location.origin}${nextAmbienceSrc}`) {
+      ambienceAudio.src = nextAmbienceSrc;
     }
 
     void ambienceAudio.play().catch(() => {

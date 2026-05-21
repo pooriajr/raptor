@@ -1,6 +1,6 @@
 import { SOUNDS, type SoundId } from "./sounds";
 
-const BASE_PATH = "/sounds/";
+const BASE_PATH = `${import.meta.env.BASE_URL}sounds/`;
 
 let audioContext: AudioContext | null = null;
 const bufferCache = new Map<SoundId, AudioBuffer>();
