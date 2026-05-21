@@ -50,8 +50,8 @@ function Card({
 
   // Player-specific styles
   const isRaptor = player === "raptor";
-  const frontImageSrc = isRaptor ? assetUrl(`images/r${value}.png`) : assetUrl(`images/s${value}.png`);
-  const backImageSrc = isRaptor ? assetUrl("images/rback.png") : assetUrl("images/sback.png");
+  const frontImageSrc = isRaptor ? assetUrl(`images/r${value}.webp`) : assetUrl(`images/s${value}.webp`);
+  const backImageSrc = isRaptor ? assetUrl("images/rback.webp") : assetUrl("images/sback.webp");
 
   // Selected card glow
   const selectedStyles = selected
