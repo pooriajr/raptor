@@ -6,11 +6,13 @@ import { RevealProvider } from "./RevealContext.tsx";
 import { gameReducer } from "./state/gameReducer.ts";
 import { createInitialGameState } from "./types/gameState.ts";
 import { playSfx } from "./audio/sfx.ts";
+import { registerAudioElement } from "./audio/audioSettings.ts";
 import { getSoundForAction } from "./audio/actionSounds.ts";
 import { playSoundsForStateChange } from "./audio/stateSounds.ts";
 import type { GameAction } from "./state/gameReducer.ts";
 import { isPhase } from "./state/guards.ts";
 import { assetUrl } from "./utils/assetUrl.ts";
+import GlobalMuteButton from "./GlobalMuteButton.tsx";
 
 function App() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialGameState);
@@ -40,16 +42,20 @@ function App() {
     audio.loop = true;
     audio.volume = 0.4;
     gameAudioRef.current = audio;
+    const unregisterGameAudio = registerAudioElement(audio);
 
     const ambienceAudio = new Audio(assetUrl("sounds/jungle-ambience-bg.mp3"));
     ambienceAudio.loop = true;
     ambienceAudio.volume = 0.15;
     ambienceAudioRef.current = ambienceAudio;
+    const unregisterAmbienceAudio = registerAudioElement(ambienceAudio);
 
     return () => {
+      unregisterAmbienceAudio();
       ambienceAudio.pause();
       ambienceAudio.currentTime = 0;
       ambienceAudioRef.current = null;
+      unregisterGameAudio();
       audio.pause();
       audio.currentTime = 0;
       gameAudioRef.current = null;
@@ -99,6 +105,7 @@ function App() {
     <GameContext.Provider value={{ state, dispatch: dispatchWithSfx }}>
       <RevealProvider>
         <GameLayout />
+        <GlobalMuteButton />
       </RevealProvider>
     </GameContext.Provider>
   );

@@ -1,8 +1,10 @@
 import { SOUNDS, type SoundId } from "./sounds";
+import { isAudioMuted, subscribeToAudioSettings } from "./audioSettings";
 
 const BASE_PATH = `${import.meta.env.BASE_URL}sounds/`;
 
 let audioContext: AudioContext | null = null;
+let masterGain: GainNode | null = null;
 const bufferCache = new Map<SoundId, AudioBuffer>();
 const loading = new Map<SoundId, Promise<AudioBuffer>>();
 const missing = new Set<SoundId>();
@@ -21,6 +23,21 @@ function getAudioContext(): AudioContext {
   }
   return audioContext;
 }
+
+function getMasterGain(): GainNode {
+  const ctx = getAudioContext();
+  if (!masterGain) {
+    masterGain = ctx.createGain();
+    masterGain.connect(ctx.destination);
+  }
+  masterGain.gain.value = isAudioMuted() ? 0 : 1;
+  return masterGain;
+}
+
+subscribeToAudioSettings(() => {
+  if (!masterGain) return;
+  masterGain.gain.value = isAudioMuted() ? 0 : 1;
+});
 
 function warnOnce(id: SoundId, message: string) {
   if (warned.has(id)) return;
@@ -65,6 +82,7 @@ export function playSfx(id: SoundId, options: PlaySfxOptions = {}): void {
   if (missing.has(id)) return;
 
   const ctx = getAudioContext();
+  const destination = getMasterGain();
   void ctx.resume();
 
   const allowOverlap = options.allowOverlap ?? true;
@@ -88,7 +106,7 @@ export function playSfx(id: SoundId, options: PlaySfxOptions = {}): void {
       gain.gain.value = options.volume ?? 0.9;
 
       source.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(destination);
 
       source.onended = () => {
         if (!allowOverlap && activeSources.get(id) === source) {
