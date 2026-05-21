@@ -52,18 +52,41 @@ function MainMenu() {
 
   if (!hasInteracted) {
     return (
-      <button
-        className="fixed inset-0 z-100 flex items-center justify-center bg-black text-[1.3rem] font-bold text-white/80 transition-[transform,box-shadow] duration-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
-        onClick={() => {
-          setHasInteracted(true);
-          void roarAudioRef.current?.play();
-          void menuAudioRef.current?.play();
-        }}
-      >
-        <span className="rounded-xl border-2 border-white/30 bg-white/5 px-10 py-6 transition-transform duration-200 hover:scale-105 active:scale-95">
-          Click to Begin
-        </span>
-      </button>
+      <div className="fixed inset-0 z-100 flex items-center justify-center bg-[linear-gradient(180deg,#171717_0%,#101010_100%)] px-6 text-white ">
+        <div className="flex w-full max-w-3xl flex-col items-center gap-8 px-8 py-10 sm:px-12 ">
+          <div className="flex w-full max-w-md flex-col gap-5">
+            <div className="flex items-start gap-4 text-left">
+              <span aria-hidden="true" className="animate-speaker-float pt-1 text-[1.9rem] text-amber-100/95 sm:text-[2.2rem]">
+                🔊
+              </span>
+              <div className="flex flex-col gap-1">
+                <span className="font-['Bungee'] text-[1.05rem] leading-none text-white sm:text-[1.25rem]">Sound Warning</span>
+                <p className="text-sm leading-relaxed text-white/72 sm:text-base">Pushing that button starts the audio.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4 text-left">
+              <span aria-hidden="true" className="pt-1 text-[1.9rem] text-white/80 sm:text-[2.2rem]">
+                💻
+              </span>
+              <div className="flex flex-col gap-1">
+                <span className="font-['Bungee'] text-[1.05rem] leading-none text-white sm:text-[1.25rem]">Laptop or Desktop Only</span>
+                <p className="text-sm leading-relaxed text-white/72 sm:text-base">The game's layout won't work on a phone.</p>
+              </div>
+            </div>
+          </div>
+          <button
+            className="rounded-full bg-white/10 px-10 py-4 text-[1.1rem] font-bold tracking-[0.08em] text-white transition-[transform,background-color,box-shadow] duration-200 hover:scale-105 hover:bg-white/14 hover:shadow-[0_12px_32px_rgba(0,0,0,0.22)] active:scale-95 sm:px-14 sm:text-[1.25rem]"
+            onClick={() => {
+              setHasInteracted(true);
+              void roarAudioRef.current?.play();
+              void menuAudioRef.current?.play();
+            }}
+            type="button"
+          >
+            Click to Begin
+          </button>
+        </div>
+      </div>
     );
   }
 
